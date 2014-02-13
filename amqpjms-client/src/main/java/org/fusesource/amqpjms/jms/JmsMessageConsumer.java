@@ -38,36 +38,31 @@ import org.fusesource.hawtbuf.AsciiBuffer;
  */
 public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
 
-    final JmsSession session;
-    final JmsDestination destination;
-    final AsciiBuffer id;
-    final AtomicBoolean closed = new AtomicBoolean();
-    boolean started;
-    MessageListener messageListener;
-    final String messageSelector;
-    final MessageQueue messageQueue;
-    final Lock lock = new ReentrantLock();
-    final AtomicBoolean suspendedConnection = new AtomicBoolean();
+    protected final JmsSession session;
+    protected final JmsDestination destination;
+    protected final AsciiBuffer id;
+    protected final int acknowledgementMode;
+    protected final AtomicBoolean closed = new AtomicBoolean();
+    protected boolean started;
+    protected MessageListener messageListener;
+    protected final String messageSelector;
+    protected final MessageQueue messageQueue;
+    protected final Lock lock = new ReentrantLock();
+    protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
 
-    protected JmsMessageConsumer(final AsciiBuffer id, JmsSession s, JmsDestination destination, String selector) throws JMSException {
+    protected JmsMessageConsumer(final AsciiBuffer id, JmsSession session, JmsDestination destination, String selector) throws JMSException {
         this.id = id;
-        this.session = s;
+        this.session = session;
         this.destination = destination;
         this.messageSelector = selector;
+        this.acknowledgementMode = session.acknowledgementMode();
 
-        if (session.acknowledgementMode == Session.SESSION_TRANSACTED) {
+        if (acknowledgementMode == Session.SESSION_TRANSACTED) {
             throw new UnsupportedOperationException();
             //this.messageQueue = new TxMessageQueue(session.consumerMessageBufferSize);
         } else {
-            this.messageQueue = new MessageQueue(session.consumerMessageBufferSize);
+            this.messageQueue = new MessageQueue(session.getConsumerMessageBufferSize());
         }
-    }
-
-    public boolean tcpFlowControl() {
-        // Then the STOMP client does not need to issue acks to the server, we
-        // suspend
-        // TCP reads to avoid memory overruns.
-        return session.acknowledgementMode == JmsSession.SERVER_AUTO_ACKNOWLEDGE;
     }
 
     public void init() throws JMSException {
@@ -203,14 +198,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
     }
 
     private void doAck(final JmsMessage message) {
-        if (tcpFlowControl()) {
-            // We may need to resume the message flow.
-            if (!this.messageQueue.isFull()) {
-                if (suspendedConnection.compareAndSet(true, false)) {
-//                    session.channel.connection().resume();
-                }
-            }
-        } else {
 //            try {
 //                StompChannel channel = session.channel;
 //                if (channel == null) {
@@ -245,7 +232,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
 //                session.connection.onException(new JMSException("Exception occurred sending ACK for message id : " + message.getMessageID()));
 //                throw new RuntimeException("Exception occurred sending ACK for message id : " + message.getMessageID(), e);
 //            }
-        }
     }
 
     /**
@@ -254,7 +240,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
     public void onMessage(final JmsMessage message) {
         lock.lock();
         try {
-            if (session.acknowledgementMode == Session.CLIENT_ACKNOWLEDGE) {
+            if (acknowledgementMode == Session.CLIENT_ACKNOWLEDGE) {
                 message.setAcknowledgeCallback(new Callable<Void>() {
                     @Override
                     public Void call() throws Exception {
@@ -270,11 +256,11 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
             // +" recv "+ message.getMessageID());
             this.messageQueue.enqueue(message);
             // We may need to suspend the message flow.
-            if (tcpFlowControl() && this.messageQueue.isFull()) {
-                if (suspendedConnection.compareAndSet(false, true)) {
+//            if (tcpFlowControl() && this.messageQueue.isFull()) {
+//                if (suspendedConnection.compareAndSet(false, true)) {
 //                    session.channel.connection().suspend();
-                }
-            }
+//                }
+//            }
         } finally {
             lock.unlock();
         }
@@ -287,7 +273,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
                         try {
                             messageListener.onMessage(copy(ack(message)));
                         } catch (Exception e) {
-                            session.connection.onException(e);
+                            session.getConnection().onException(e);
                         }
                     }
                 }
@@ -350,7 +336,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
                     try {
                         listener.onMessage(copy(ack(m)));
                     } catch (Exception e) {
-                        session.connection.onException(e);
+                        session.getConnection().onException(e);
                     }
                 }
                 drain.clear();

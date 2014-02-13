@@ -17,6 +17,8 @@
 package org.fusesource.amqpjms.jms;
 
 import java.net.URI;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.Connection;
@@ -45,27 +47,27 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final int clientNumber = 0;
     private boolean clientIdSet;
     private ExceptionListener exceptionListener;
-    //private final List<JmsSession> sessions = new CopyOnWriteArrayList<JmsSession>();
+    private final List<JmsSession> sessions = new CopyOnWriteArrayList<JmsSession>();
     private final AtomicBoolean connected = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
-    String queuePrefix = "/queue/";
-    String topicPrefix = "/topic/";
-    String tempQueuePrefix = "/temp-queue/";
-    String tempTopicPrefix = "/temp-topic/";
+    private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
+    private String queuePrefix = "/queue/";
+    private String topicPrefix = "/topic/";
+    private String tempQueuePrefix = "/temp-queue/";
+    private String tempTopicPrefix = "/temp-topic/";
 
-    boolean forceAsyncSend;
-    boolean omitHost;
+    private boolean forceAsyncSend;
+    private boolean omitHost;
 
-    final URI brokerURI;
-    final URI localURI;
-    final String userName;
-    final String password;
-    final SSLContext sslContext;
+    private final URI brokerURI;
+    private final URI localURI;
+    private final String userName;
+    private final String password;
+    private final SSLContext sslContext;
+    private long disconnectTimeout = 10000;
+
     //StompChannel channel;
-    long disconnectTimeout = 10000;
-
-    //StompJmsPrefetch prefetch = new StompJmsPrefetch();
 
     /**
      * @param brokerURI
@@ -89,18 +91,18 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     @Override
     public synchronized void close() throws JMSException {
         if (closed.compareAndSet(false, true)) {
-//            try {
-//                for (Session s : this.sessions) {
-//                    s.close();
-//                }
-//                this.sessions.clear();
+            try {
+                for (Session s : this.sessions) {
+                    s.close();
+                }
+                this.sessions.clear();
 //                if (channel != null) {
 //                    channel.close();
 //                    channel = null;
 //                }
-//            } catch (Exception e) {
-//                throw StompJmsExceptionSupport.create(e);
-//            }
+            } catch (Exception e) {
+                throw JmsExceptionSupport.create(e);
+            }
         }
     }
 
@@ -154,13 +156,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         checkClosed();
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
-//        StompJmsSession result = new StompJmsSession(this, ackMode, forceAsyncSend);
-//        addSession(result);
-//        if (started.get()) {
-//            result.start();
-//        }
-//        return result;
-        return null;
+        JmsSession result = new JmsSession(this, ackMode, forceAsyncSend);
+        addSession(result);
+        if (started.get()) {
+            result.start();
+        }
+        return result;
     }
 
     /**
@@ -228,13 +229,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         checkClosed();
         connect();
         if (this.started.compareAndSet(false, true)) {
-//            try {
-//                for (StompJmsSession s : this.sessions) {
-//                    s.start();
-//                }
-//            } catch (Exception e) {
-//                throw JmsExceptionSupport.create(e);
-//            }
+            try {
+                for (JmsSession s : this.sessions) {
+                    s.start();
+                }
+            } catch (Exception e) {
+                throw JmsExceptionSupport.create(e);
+            }
         }
     }
 
@@ -248,9 +249,9 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connect();
         if (this.started.compareAndSet(true, false)) {
             try {
-//                for (StompJmsSession s : this.sessions) {
-//                    s.stop();
-//                }
+                for (JmsSession s : this.sessions) {
+                    s.stop();
+                }
             } catch (Exception e) {
                 throw JmsExceptionSupport.create(e);
             }
@@ -287,13 +288,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         checkClosed();
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
-//        StompJmsTopicSession result = new StompJmsTopicSession(this, ackMode, forceAsyncSend);
-//        addSession(result);
-//        if (started.get()) {
-//            result.start();
-//        }
-//        return result;
-        return null;
+        JmsTopicSession result = new JmsTopicSession(this, ackMode, forceAsyncSend);
+        addSession(result);
+        if (started.get()) {
+            result.start();
+        }
+        return result;
     }
 
     /**
@@ -326,13 +326,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         checkClosed();
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
-//        StompJmsQueueSession result = new StompJmsQueueSession(this, ackMode, forceAsyncSend);
-//        addSession(result);
-//        if (started.get()) {
-//            result.start();
-//        }
-//        return result;
-        return null;
+        JmsQueueSession result = new JmsQueueSession(this, ackMode, forceAsyncSend);
+        addSession(result);
+        if (started.get()) {
+            result.start();
+        }
+        return result;
     }
 
     /**
@@ -390,7 +389,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 //        return rc;
 //    }
 //
-//    protected StompChannel createChannel(StompJmsSession s) throws JMSException {
+//    protected StompChannel createChannel(JmsSession s) throws JMSException {
 //        checkClosed();
 //        StompChannel rc;
 //        synchronized (this) {
@@ -406,7 +405,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 //        return rc;
 //    }
 //
-//    protected void removeSession(StompJmsSession s, StompChannel channel) throws JMSException {
+//    protected void removeSession(JmsSession s, StompChannel channel) throws JMSException {
 //        synchronized (this) {
 //            this.sessions.remove(s);
 //            if( channel!=null && this.channel==null ) {
@@ -420,10 +419,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 //            channel.close();
 //        }
 //    }
-//
-//    protected void addSession(StompJmsSession s) {
-//        this.sessions.add(s);
-//    }
+
+    protected void addSession(JmsSession s) {
+        this.sessions.add(s);
+    }
 
     protected void checkClosed() throws IllegalStateException {
         if (this.closed.get()) {
@@ -489,7 +488,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.omitHost = omitHost;
     }
 
-//    StompJmsTempQueue isTempQueue(String value) throws JMSException {
+//    JmsTempQueue isTempQueue(String value) throws JMSException {
 //        connect();
 //        return serverAdaptor().isTempQueue(this, value);
 //    }
@@ -498,18 +497,18 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 //        return getChannel().getServerAdaptor();
 //    }
 //
-//    StompJmsTempTopic isTempTopic(String value) throws JMSException {
+//    JmsTempTopic isTempTopic(String value) throws JMSException {
 //        connect();
 //        return serverAdaptor().isTempTopic(this, value);
 //    }
-//
-//    public StompJmsPrefetch getPrefetch() {
-//        return prefetch;
-//    }
-//
-//    public void setPrefetch(StompJmsPrefetch prefetch) {
-//        this.prefetch = prefetch;
-//    }
+
+    public JmsPrefetchPolicy getPrefetchPolicy() {
+        return prefetchPolicy;
+    }
+
+    public void setPrefetchPolicy(JmsPrefetchPolicy prefetchPolicy) {
+        this.prefetchPolicy = prefetchPolicy;
+    }
 
     public long getDisconnectTimeout() {
         return disconnectTimeout;

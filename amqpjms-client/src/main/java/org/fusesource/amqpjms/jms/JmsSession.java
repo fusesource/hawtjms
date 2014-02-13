@@ -72,23 +72,21 @@ import org.fusesource.hawtbuf.AsciiBuffer;
  */
 public class JmsSession implements Session, QueueSession, TopicSession, JmsMessageListener {
 
-    static final int SERVER_AUTO_ACKNOWLEDGE = -1;
-
-    long nextMessageSwquence = 0;
-    final JmsConnection connection;
-    final int acknowledgementMode;
-    final List<MessageProducer> producers = new CopyOnWriteArrayList<MessageProducer>();
-    final Map<AsciiBuffer, JmsMessageConsumer> consumers = new ConcurrentHashMap<AsciiBuffer, JmsMessageConsumer>();
-    MessageListener messageListener;
-    AtomicBoolean closed = new AtomicBoolean();
-    AtomicBoolean started = new AtomicBoolean();
-    volatile AsciiBuffer currentTransactionId;
-    boolean forceAsyncSend;
-    long consumerMessageBufferSize = 1024 * 64;
-    LinkedBlockingQueue<JmsMessage> stoppedMessages = new LinkedBlockingQueue<JmsMessage>(10000);
+    private final long nextMessageSwquence = 0;
+    private final JmsConnection connection;
+    private final int acknowledgementMode;
+    private final List<MessageProducer> producers = new CopyOnWriteArrayList<MessageProducer>();
+    private final Map<AsciiBuffer, JmsMessageConsumer> consumers = new ConcurrentHashMap<AsciiBuffer, JmsMessageConsumer>();
+    private MessageListener messageListener;
+    private final AtomicBoolean closed = new AtomicBoolean();
+    private final AtomicBoolean started = new AtomicBoolean();
+    private volatile AsciiBuffer currentTransactionId;
+    private boolean forceAsyncSend;
+    private final long consumerMessageBufferSize = 1024 * 64;
+    private final LinkedBlockingQueue<JmsMessage> stoppedMessages = new LinkedBlockingQueue<JmsMessage>(10000);
+    private JmsPrefetchPolicy prefetchPolicy;
 
     // StompChannel channel;
-    // JmsPrefetch prefetch;
 
     /**
      * Constructor
@@ -100,7 +98,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         this.connection = connection;
         this.acknowledgementMode = acknowledgementMode;
         this.forceAsyncSend = forceAsyncSend;
-        // TODO this.prefetch = new JmsPrefetch(connection.prefetch);
+        this.prefetchPolicy = new JmsPrefetchPolicy(connection.getPrefetchPolicy());
+    }
+
+    int acknowledgementMode() {
+        return this.acknowledgementMode;
     }
 
     // ///////////////////////////////////////////////////////////////////////
@@ -486,10 +488,9 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     public MessageProducer createProducer(Destination destination) throws JMSException {
         checkClosed();
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
-//        JmsMessageProducer result = new JmsMessageProducer(this, dest);
-//        add(result);
-//        return result;
-        return null;
+        JmsMessageProducer result = new JmsMessageProducer(this, dest);
+        add(result);
+        return result;
     }
 
     /**
@@ -502,9 +503,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     public QueueSender createSender(Queue queue) throws JMSException {
         checkClosed();
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, queue);
-//        JmsQueueSender result = new JmsQueueSender(this, dest);
-//        return result;
-        return null;
+        JmsQueueSender result = new JmsQueueSender(this, dest);
+        return result;
     }
 
     /**
@@ -517,10 +517,9 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     public TopicPublisher createPublisher(Topic topic) throws JMSException {
         checkClosed();
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
-//        JmsTopicPublisher result = new JmsTopicPublisher(this, dest);
-//        add(result);
-//        return result;
-        return null;
+        JmsTopicPublisher result = new JmsTopicPublisher(this, dest);
+        add(result);
+        return result;
     }
 
     // ///////////////////////////////////////////////////////////////////////
@@ -683,9 +682,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     protected void add(JmsMessageConsumer consumer) throws JMSException {
         this.consumers.put(consumer.getId(), consumer);
-//        if (consumer.tcpFlowControl()) {
-//            getChannel().serverAckSubs.incrementAndGet();
-//        }
 
         AsciiBuffer mode;
 //        if (this.acknowledgementMode == JmsSession.SERVER_AUTO_ACKNOWLEDGE) {
@@ -945,11 +941,15 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return message;
     }
 
-    // public JmsPrefetch getPrefetch() {
-    // return prefetch;
-    // }
-    //
-    // public void setPrefetch(JmsPrefetch prefetch) {
-    // this.prefetch = prefetch;
-    // }
+    public JmsPrefetchPolicy getPrefetchPolicy() {
+        return prefetchPolicy;
+    }
+
+    public void setPrefetchPolicy(JmsPrefetchPolicy prefetchPolicy) {
+        this.prefetchPolicy = prefetchPolicy;
+    }
+
+    public long getConsumerMessageBufferSize() {
+        return consumerMessageBufferSize;
+    }
 }

@@ -208,12 +208,12 @@ public class JmsDestination extends JNDIStorable implements Externalizable, java
         // return x;
         // }
 
-        if (name.startsWith(connection.topicPrefix)) {
-            return new JmsTopic(connection, name.substring(connection.topicPrefix.length()));
+        if (name.startsWith(connection.getTopicPrefix())) {
+            return new JmsTopic(connection, name.substring(connection.getTopicPrefix().length()));
         }
 
-        if (name.startsWith(connection.queuePrefix)) {
-            return new JmsQueue(connection, name.substring(connection.queuePrefix.length()));
+        if (name.startsWith(connection.getQueuePrefix())) {
+            return new JmsQueue(connection, name.substring(connection.getQueuePrefix().length()));
         }
 
         return new JmsDestination("", name);

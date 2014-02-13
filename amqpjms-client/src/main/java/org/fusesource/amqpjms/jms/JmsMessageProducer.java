@@ -30,6 +30,7 @@ import org.fusesource.amqpjms.jms.message.JmsMessageTransformation;
  * Implementation of a Jms MessageProducer
  */
 public class JmsMessageProducer implements MessageProducer {
+
     protected final JmsSession session;
     protected JmsDestination destination;
     protected final boolean flexibleDestination;
@@ -247,7 +248,7 @@ public class JmsMessageProducer implements MessageProducer {
         if (!this.flexibleDestination && !destination.equals(this.destination)) {
             throw new UnsupportedOperationException("This producer can only send messages to: " + this.destination.getName());
         }
-        this.destination = JmsMessageTransformation.transformDestination(session.connection, destination);
+        this.destination = JmsMessageTransformation.transformDestination(session.getConnection(), destination);
     }
 
     protected void checkClosed() throws IllegalStateException {

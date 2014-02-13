@@ -52,7 +52,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String tempTopicPrefix = "/temp-topic/";
     private long disconnectTimeout = 10000;
 
-    // StompJmsPrefetch prefetch = new StompJmsPrefetch();
+    private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
 
     /**
      * Constructor
@@ -120,10 +120,9 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     @Override
     public TopicConnection createTopicConnection(String userName, String password) throws JMSException {
         try {
-//            StompJmsTopicConnection result = new StompJmsTopicConnection(this.brokerURI, this.localURI, userName, password, sslContext);
-//            PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
-//            return result;
-            return null;  // TODO
+            JmsTopicConnection result = new JmsTopicConnection(this.brokerURI, this.localURI, userName, password, sslContext);
+            PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
+            return result;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
         }
@@ -150,10 +149,9 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     @Override
     public Connection createConnection(String userName, String password) throws JMSException {
         try {
-//            StompJmsConnection result = new StompJmsConnection(this.brokerURI, this.localURI, userName, password, sslContext);
-//            PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
-//            return result;
-            return null;  // TODO
+            JmsConnection result = new JmsConnection(this.brokerURI, this.localURI, userName, password, sslContext);
+            PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
+            return result;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
         }
@@ -180,10 +178,9 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     @Override
     public QueueConnection createQueueConnection(String userName, String password) throws JMSException {
         try {
-//            StompJmsQueueConnection result = new StompJmsQueueConnection(this.brokerURI, this.localURI, userName, password, sslContext);
-//            PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
-//            return result;
-            return null;  // TODO
+            JmsQueueConnection result = new JmsQueueConnection(this.brokerURI, this.localURI, userName, password, sslContext);
+            PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
+            return result;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
         }
@@ -319,13 +316,13 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.disconnectTimeout = disconnectTimeout;
     }
 
-//    public StompJmsPrefePropertyUtil.javatch getPrefetch() {
-//        return prefetch;
-//    }
-//
-//    public void setPrefetch(StompJmsPrefetch prefetch) {
-//        this.prefetch = prefetch;
-//    }
+    public JmsPrefetchPolicy getPrefetchPolicy() {
+        return prefetchPolicy;
+    }
+
+    public void setPrefetchPolicy(JmsPrefetchPolicy prefetchPolicy) {
+        this.prefetchPolicy = prefetchPolicy;
+    }
 
     public SSLContext getSslContext() {
         return sslContext;

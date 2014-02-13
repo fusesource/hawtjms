@@ -31,10 +31,19 @@ public class JmsQueueReceiver extends JmsMessageConsumer implements QueueReceive
     /**
      * Constructor
      *
-     * @param s
+     * @param id
+     *      This receiver's assigned Id.
+     * @param session
+     *      The session that created this receiver.
+     * @param dest
+     *      The destination that this receiver listens on.
+     * @param selector
+     *      The selector used to filter messages for this receiver.
+     *
+     * @throws JMSException
      */
-    protected JmsQueueReceiver(AsciiBuffer id, JmsSession s, JmsDestination d, String selector) throws JMSException {
-        super(id, s, d, selector);
+    protected JmsQueueReceiver(AsciiBuffer id, JmsSession session, JmsDestination dest, String selector) throws JMSException {
+        super(id, session, dest, selector);
     }
 
     /**

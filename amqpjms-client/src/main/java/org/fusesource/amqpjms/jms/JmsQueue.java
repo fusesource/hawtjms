@@ -28,7 +28,7 @@ public class JmsQueue extends JmsDestination implements Queue {
     }
 
     public JmsQueue(JmsConnection connection, String name) {
-        this(connection.queuePrefix, name);
+        this(connection.getQueuePrefix(), name);
     }
 
     @Override

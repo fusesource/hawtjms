@@ -28,7 +28,7 @@ public class JmsTopic extends JmsDestination implements Topic {
     }
 
     public JmsTopic(JmsConnection connection, String name) {
-        this(connection.topicPrefix, name);
+        this(connection.getTopicPrefix(), name);
     }
 
     @Override
