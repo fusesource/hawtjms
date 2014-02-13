@@ -96,7 +96,7 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
      */
     @Override
     public String getJMSProviderName() {
-        return "ActiveBlaze";
+        return "AmqpJMS";
     }
 
     /**
