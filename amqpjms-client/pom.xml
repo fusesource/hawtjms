@@ -43,7 +43,11 @@
     <dependency>
       <groupId>org.fusesource.hawtbuf</groupId>
       <artifactId>hawtbuf</artifactId>
-      <version>${hawtbuf-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>apollo-selector</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <!-- would be nice if we could make this dependency optional -->

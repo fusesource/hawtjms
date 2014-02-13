@@ -49,6 +49,7 @@
     <hawtbuf-version>1.9</hawtbuf-version>
     <hawtdispatch-version>1.20</hawtdispatch-version>
     <activemq-version>5.10-SNAPSHOT</activemq-version>
+    <apollo-version>1.6</apollo-version>
     <proton-version>0.6.redhat-002</proton-version>
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
     <jetty-version>8.1.14.v20131031</jetty-version>
@@ -106,6 +107,16 @@
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
         <version>${slf4j-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.fusesource.hawtbuf</groupId>
+        <artifactId>hawtbuf</artifactId>
+        <version>${hawtbuf-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.activemq</groupId>
+        <artifactId>apollo-selector</artifactId>
+        <version>${apollo-version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

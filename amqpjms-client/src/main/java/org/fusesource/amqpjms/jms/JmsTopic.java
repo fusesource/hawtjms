@@ -27,9 +27,9 @@ public class JmsTopic extends JmsDestination implements Topic {
         super(null, null);
     }
 
-    // public JmsTopic(StompJmsConnection connection, String name) {
-    // this(connection.topicPrefix, name);
-    // }
+    public JmsTopic(JmsConnection connection, String name) {
+        this(connection.topicPrefix, name);
+    }
 
     @Override
     public JmsTopic copy() {

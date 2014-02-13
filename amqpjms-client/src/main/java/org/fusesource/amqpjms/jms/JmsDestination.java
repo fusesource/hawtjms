@@ -22,6 +22,8 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Map;
 
+import javax.jms.JMSException;
+
 import org.fusesource.amqpjms.jms.jndi.JNDIStorable;
 import org.fusesource.hawtbuf.AsciiBuffer;
 
@@ -60,8 +62,7 @@ public class JmsDestination extends JNDIStorable implements Externalizable, java
     @Override
     public String toString() {
         if (toString == null) {
-            // TODO
-            // toString = getPrefix() + getName();
+            toString = getPrefix() + getName();
         }
         return toString;
     }
@@ -195,27 +196,28 @@ public class JmsDestination extends JNDIStorable implements Externalizable, java
         this.temporary = in.readBoolean();
     }
 
-//    public static JmsDestination createDestination(JmsConnection connection, String name) throws JMSException {
-//
-//        JmsDestination x = connection.isTempQueue(name);
-//        if (x != null) {
-//            return x;
-//        }
-//        x = connection.isTempTopic(name);
-//        if (x != null) {
-//            return x;
-//        }
-//
-//        if (name.startsWith(connection.topicPrefix)) {
-//            return new JmsTopic(connection, name.substring(connection.topicPrefix.length()));
-//        }
-//
-//        if (name.startsWith(connection.queuePrefix)) {
-//            return new JmsQueue(connection, name.substring(connection.queuePrefix.length()));
-//        }
-//
-//        return new JmsDestination("", name);
-//    }
+    public static JmsDestination createDestination(JmsConnection connection, String name) throws JMSException {
+
+        // TODO
+        // JmsDestination x = connection.isTemporaryQueue(name);
+        // if (x != null) {
+        // return x;
+        // }
+        // x = connection.isTemporaryTopic(name);
+        // if (x != null) {
+        // return x;
+        // }
+
+        if (name.startsWith(connection.topicPrefix)) {
+            return new JmsTopic(connection, name.substring(connection.topicPrefix.length()));
+        }
+
+        if (name.startsWith(connection.queuePrefix)) {
+            return new JmsQueue(connection, name.substring(connection.queuePrefix.length()));
+        }
+
+        return new JmsDestination("", name);
+    }
 
     public Map<String, String> getSubscribeHeaders() {
         return subscribeHeaders;

@@ -16,43 +16,16 @@
  */
 package org.fusesource.amqpjms.jms;
 
-import javax.jms.Queue;
-
 /**
- * JMS Queue implementation
+ * Internal JmsMessage available listener.
  */
-public class JmsQueue extends JmsDestination implements Queue {
-
-    public JmsQueue() {
-        super(null, null);
-    }
-
-    public JmsQueue(JmsConnection connection, String name) {
-        this(connection.queuePrefix, name);
-    }
-
-    @Override
-    public JmsQueue copy() {
-        final JmsQueue copy = new JmsQueue();
-        copy.setProperties(getProperties());
-        return copy;
-    }
+public interface JmsMessageListener {
 
     /**
-     * Constructor
+     * Called when a Message is available to be processes
      *
-     * @param name
+     * @param message
      */
-    public JmsQueue(String type, String name) {
-        super(type, name);
-    }
-
-    /**
-     * @return name
-     * @see javax.jms.Queue#getQueueName()
-     */
-    @Override
-    public String getQueueName() {
-        return getName();
-    }
+    //public void onMessage(JmsMessage message);
+    // TODO
 }
