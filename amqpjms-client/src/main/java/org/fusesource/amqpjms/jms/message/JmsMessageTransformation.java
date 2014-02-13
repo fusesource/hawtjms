@@ -35,8 +35,8 @@ import javax.jms.Topic;
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.JmsQueue;
-import org.fusesource.amqpjms.jms.JmsTempQueue;
-import org.fusesource.amqpjms.jms.JmsTempTopic;
+import org.fusesource.amqpjms.jms.JmsTemporaryQueue;
+import org.fusesource.amqpjms.jms.JmsTemporaryTopic;
 import org.fusesource.amqpjms.jms.JmsTopic;
 
 /**
@@ -70,9 +70,9 @@ public final class JmsMessageTransformation {
 
             } else {
                 if (destination instanceof TemporaryQueue) {
-                    result = new JmsTempQueue(connection.getQueuePrefix(), ((TemporaryQueue) destination).getQueueName());
+                    result = new JmsTemporaryQueue(connection.getQueuePrefix(), ((TemporaryQueue) destination).getQueueName());
                 } else if (destination instanceof TemporaryTopic) {
-                    result = new JmsTempTopic(connection.getTopicPrefix(), ((TemporaryTopic) destination).getTopicName());
+                    result = new JmsTemporaryTopic(connection.getTopicPrefix(), ((TemporaryTopic) destination).getTopicName());
                 } else if (destination instanceof Queue) {
                     result = new JmsQueue(connection, ((Queue) destination).getQueueName());
                 } else if (destination instanceof Topic) {

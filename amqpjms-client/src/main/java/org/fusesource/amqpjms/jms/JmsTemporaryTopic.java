@@ -22,21 +22,26 @@ import javax.jms.TemporaryTopic;
 /**
  * Temporary Topic Object
  */
-public class JmsTempTopic extends JmsDestination implements TemporaryTopic {
+public class JmsTemporaryTopic extends JmsDestination implements TemporaryTopic {
 
-    public JmsTempTopic() {
+    public JmsTemporaryTopic() {
         this(null, null);
     }
 
-    public JmsTempTopic(String prefix, String name) {
+    public JmsTemporaryTopic(String prefix, String name) {
         super(prefix, name);
     }
 
     @Override
-    public JmsTempTopic copy() {
-        final JmsTempTopic copy = new JmsTempTopic();
+    public JmsTemporaryTopic copy() {
+        final JmsTemporaryTopic copy = new JmsTemporaryTopic();
         copy.setProperties(getProperties());
         return copy;
+    }
+
+    @Override
+    public boolean isTemporary() {
+        return true;
     }
 
     /**

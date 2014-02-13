@@ -22,21 +22,26 @@ import javax.jms.TemporaryQueue;
 /**
  * Temporary Queue Object
  */
-public class JmsTempQueue extends JmsDestination implements TemporaryQueue {
+public class JmsTemporaryQueue extends JmsDestination implements TemporaryQueue {
 
-    public JmsTempQueue() {
+    public JmsTemporaryQueue() {
         super(null, null);
     }
 
-    public JmsTempQueue(String prefix, String name) {
+    public JmsTemporaryQueue(String prefix, String name) {
         super(prefix, name);
     }
 
     @Override
-    public JmsTempQueue copy() {
-        final JmsTempQueue copy = new JmsTempQueue();
+    public JmsTemporaryQueue copy() {
+        final JmsTemporaryQueue copy = new JmsTemporaryQueue();
         copy.setProperties(getProperties());
         return copy;
+    }
+
+    @Override
+    public boolean isTemporary() {
+        return true;
     }
 
     /**
