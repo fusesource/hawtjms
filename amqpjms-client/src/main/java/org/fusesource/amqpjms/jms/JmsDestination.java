@@ -41,6 +41,8 @@ public class JmsDestination extends JNDIStorable implements Externalizable, java
     protected transient AsciiBuffer buffer;
     protected transient Map<String, String> subscribeHeaders;
 
+    protected transient JmsConnection connection;
+
     public JmsDestination() {
     }
 
@@ -225,5 +227,25 @@ public class JmsDestination extends JNDIStorable implements Externalizable, java
 
     public void setSubscribeHeaders(Map<String, String> subscribeHeaders) {
         this.subscribeHeaders = subscribeHeaders;
+    }
+
+    void setConnection(JmsConnection connection) {
+        this.connection = connection;
+    }
+
+    JmsConnection getConnection() {
+        return this.connection;
+    }
+
+    /**
+     * Attempts to delete the destination if there is an assigned Connection object.
+     *
+     * @throws JMSException if an error occurs or the provider doesn't support
+     *         delete of destinations from the client.
+     */
+    protected void tryDelete() throws JMSException {
+        if (connection != null) {
+            connection.deleteDestination(this);
+        }
     }
 }

@@ -31,6 +31,7 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicConnectionFactory;
 import javax.net.ssl.SSLContext;
 
+import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.jndi.JNDIStorable;
 import org.fusesource.amqpjms.jms.util.PropertyUtil;
 

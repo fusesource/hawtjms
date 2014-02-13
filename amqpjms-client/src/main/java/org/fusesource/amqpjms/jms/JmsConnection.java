@@ -16,6 +16,7 @@
  */
 package org.fusesource.amqpjms.jms;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -42,6 +43,8 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicSession;
 import javax.net.ssl.SSLContext;
 
+import org.apache.activemq.ConnectionFailedException;
+import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +64,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final AtomicBoolean connected = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
+    private final AtomicBoolean failed = new AtomicBoolean();
+    private IOException firstFailureError;
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
     private String queuePrefix = "/queue/";
     private String topicPrefix = "/topic/";
@@ -455,24 +460,56 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.sessions.add(s);
     }
 
-    protected void checkClosed() throws IllegalStateException {
-        if (this.closed.get()) {
-            throw new IllegalStateException("The MessageProducer is closed");
-        }
-    }
-
     private void connect() throws JMSException {
         if (connected.compareAndSet(false, true)) {
 //            getChannel();
         }
     }
 
+    void deleteDestination(JmsDestination destination) throws JMSException {
+        checkClosedOrFailed();
+        try {
+
+            for (JmsSession session : this.sessions) {
+                if (session.isDestinationInUse(destination)) {
+                    throw new JMSException("A consumer is consuming from the temporary destination");
+                }
+            }
+
+            // Provider delete if supported.
+
+            // TODO if we track temp destinations and this happens to be one
+            //      we need to clean up our internal state.
+            if (destination.isTemporary()) {
+            }
+        } catch (Exception e) {
+            throw JmsExceptionSupport.create(e);
+        }
+    }
+
+    protected void checkClosedOrFailed() throws JMSException {
+        checkClosed();
+        if (failed.get()) {
+            throw new ConnectionFailedException(firstFailureError);
+        }
+    }
+
+    protected void checkClosed() throws IllegalStateException {
+        if (this.closed.get()) {
+            throw new IllegalStateException("The MessageProducer is closed");
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Property setters and getters
+    ////////////////////////////////////////////////////////////////////////////
+
     public boolean isForceAsyncSend() {
         return forceAsyncSend;
     }
 
     /**
-     * If set to true then all mesage sends are done async.
+     * If set to true then all message sends are done async.
      * @param forceAsyncSend
      */
     public void setForceAsyncSend(boolean forceAsyncSend) {
@@ -518,20 +555,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     public void setOmitHost(boolean omitHost) {
         this.omitHost = omitHost;
     }
-
-//    JmsTempQueue isTempQueue(String value) throws JMSException {
-//        connect();
-//        return serverAdaptor().isTempQueue(this, value);
-//    }
-//
-//    StompServerAdaptor serverAdaptor() throws JMSException {
-//        return getChannel().getServerAdaptor();
-//    }
-//
-//    JmsTempTopic isTempTopic(String value) throws JMSException {
-//        connect();
-//        return serverAdaptor().isTempTopic(this, value);
-//    }
 
     public JmsPrefetchPolicy getPrefetchPolicy() {
         return prefetchPolicy;

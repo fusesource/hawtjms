@@ -29,6 +29,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 
+import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.util.MessageQueue;
 import org.fusesource.hawtbuf.AsciiBuffer;
@@ -355,6 +356,10 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
 
     boolean hasMessageListener() {
         return this.messageListener != null;
+    }
+
+    boolean isUsingDestination(JmsDestination destination) {
+        return this.destination.equals(destination);
     }
 
     protected int getMessageQueueSize() {

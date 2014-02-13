@@ -22,7 +22,7 @@ import javax.jms.JMSException;
 import javax.jms.MessageNotWriteableException;
 import javax.jms.TextMessage;
 
-import org.fusesource.amqpjms.jms.JmsExceptionSupport;
+import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.hawtbuf.Buffer;
 
 public class JmsTextMessage extends JmsMessage implements TextMessage {

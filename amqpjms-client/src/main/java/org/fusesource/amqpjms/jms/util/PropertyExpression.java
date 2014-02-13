@@ -24,7 +24,7 @@ import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
 
 import org.fusesource.amqpjms.jms.JmsDestination;
-import org.fusesource.amqpjms.jms.JmsExceptionSupport;
+import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
 
 /**

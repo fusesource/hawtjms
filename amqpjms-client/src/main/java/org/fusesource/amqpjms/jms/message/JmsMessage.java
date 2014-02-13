@@ -37,7 +37,7 @@ import javax.jms.MessageNotWriteableException;
 
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsDestination;
-import org.fusesource.amqpjms.jms.JmsExceptionSupport;
+import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.util.PropertyExpression;
 import org.fusesource.amqpjms.jms.util.TypeConversionSupport;
 import org.fusesource.hawtbuf.AsciiBuffer;

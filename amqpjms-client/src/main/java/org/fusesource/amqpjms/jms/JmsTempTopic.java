@@ -16,6 +16,7 @@
  */
 package org.fusesource.amqpjms.jms;
 
+import javax.jms.JMSException;
 import javax.jms.TemporaryTopic;
 
 /**
@@ -43,7 +44,11 @@ public class JmsTempTopic extends JmsDestination implements TemporaryTopic {
      */
     @Override
     public void delete() {
-        // TODO:
+        try {
+            tryDelete();
+        } catch (JMSException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
