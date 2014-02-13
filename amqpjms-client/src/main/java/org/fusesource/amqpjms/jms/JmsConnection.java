@@ -39,7 +39,7 @@ import javax.net.ssl.SSLContext;
 /**
  * Implementation of a JMS Connection
  */
-public class StompJmsConnection implements Connection, TopicConnection, QueueConnection {
+public class JmsConnection implements Connection, TopicConnection, QueueConnection {
 
     private String clientId;
     private final int clientNumber = 0;
@@ -74,7 +74,7 @@ public class StompJmsConnection implements Connection, TopicConnection, QueueCon
      * @param password
      * @throws JMSException
      */
-    protected StompJmsConnection(URI brokerURI, URI localURI, String userName, String password, SSLContext sslContext) throws JMSException {
+    protected JmsConnection(URI brokerURI, URI localURI, String userName, String password, SSLContext sslContext) throws JMSException {
         this.brokerURI = brokerURI;
         this.localURI = localURI;
         this.userName = userName;
