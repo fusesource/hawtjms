@@ -941,6 +941,17 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return message;
     }
 
+    public void checkMessageListener() throws JMSException {
+        if (messageListener != null) {
+            throw new IllegalStateException("Cannot synchronously receive a message when a MessageListener is set");
+        }
+        for (JmsMessageConsumer consumer : consumers.values()) {
+            if (consumer.hasMessageListener()) {
+                throw new IllegalStateException("Cannot synchronously receive a message when a MessageListener is set");
+            }
+        }
+    }
+
     public JmsPrefetchPolicy getPrefetchPolicy() {
         return prefetchPolicy;
     }

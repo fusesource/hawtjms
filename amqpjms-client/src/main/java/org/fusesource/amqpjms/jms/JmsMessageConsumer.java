@@ -116,6 +116,8 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
     @Override
     public Message receive() throws JMSException {
         checkClosed();
+        checkMessageListener();
+
         try {
             return copy(ack(this.messageQueue.dequeue(-1)));
         } catch (Exception e) {
@@ -132,6 +134,8 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
     @Override
     public Message receive(long timeout) throws JMSException {
         checkClosed();
+        checkMessageListener();
+
         try {
             return copy(ack(this.messageQueue.dequeue(timeout)));
         } catch (InterruptedException e) {
@@ -147,6 +151,8 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
     @Override
     public Message receiveNoWait() throws JMSException {
         checkClosed();
+        checkMessageListener();
+
         Message result = copy(ack(this.messageQueue.dequeueNoWait()));
         return result;
     }
@@ -161,7 +167,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
         checkClosed();
         this.messageListener = listener;
         drainMessageQueueToListener();
-
     }
 
     protected void checkClosed() throws IllegalStateException {
@@ -342,6 +347,14 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
                 drain.clear();
             }
         }
+    }
+
+    protected void checkMessageListener() throws JMSException {
+        session.checkMessageListener();
+    }
+
+    boolean hasMessageListener() {
+        return this.messageListener != null;
     }
 
     protected int getMessageQueueSize() {

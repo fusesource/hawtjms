@@ -19,6 +19,10 @@ package org.fusesource.amqpjms.jms;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.Connection;
@@ -38,10 +42,16 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicSession;
 import javax.net.ssl.SSLContext;
 
+import org.fusesource.amqpjms.jms.util.ThreadPoolUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Implementation of a JMS Connection
  */
 public class JmsConnection implements Connection, TopicConnection, QueueConnection {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JmsConnection.class);
 
     private String clientId;
     private final int clientNumber = 0;
@@ -56,6 +66,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private String topicPrefix = "/topic/";
     private String tempQueuePrefix = "/temp-queue/";
     private String tempTopicPrefix = "/temp-topic/";
+    private final ThreadPoolExecutor executor;
 
     private boolean forceAsyncSend;
     private boolean omitHost;
@@ -82,6 +93,18 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.userName = userName;
         this.password = password;
         this.sslContext = sslContext;
+
+        // This executor can be used for dispatching asynchronous tasks that might block or result
+        // in reentrant calls to this Connection that could block.  The thread in this executor
+        // will also serve as a means of preventing JVM shutdown should a client application
+        // not have it's own mechanism for doing so.
+        executor = new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r, "AmqpJMS Connection Executor: ");
+                return thread;
+            }
+        });
     }
 
     /**
@@ -102,6 +125,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 //                }
             } catch (Exception e) {
                 throw JmsExceptionSupport.create(e);
+            } finally {
+                try {
+                    if (executor != null) {
+                        ThreadPoolUtils.shutdown(executor);
+                    }
+                } catch (Throwable e) {
+                    LOG.warn("Error shutting down thread pool: " + executor + ". This exception will be ignored.", e);
+                }
             }
         }
     }
