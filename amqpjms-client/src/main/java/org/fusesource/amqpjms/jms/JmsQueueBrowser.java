@@ -26,7 +26,7 @@ import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 
 import org.fusesource.amqpjms.jms.message.JmsMessage;
-import org.fusesource.hawtbuf.AsciiBuffer;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 
 /**
  * A client uses a <CODE>QueueBrowser</CODE> object to look at messages on a queue without
@@ -60,7 +60,7 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
 
     private JmsMessageConsumer consumer;
     private boolean closed;
-    private final AsciiBuffer id;
+    private final JmsConsumerId consumerId;
     private final AtomicBoolean browseDone = new AtomicBoolean(true);
     private final Object semaphore = new Object();
 
@@ -73,9 +73,9 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
      * @param selector
      * @throws javax.jms.JMSException
      */
-    protected JmsQueueBrowser(JmsSession session, AsciiBuffer id, JmsDestination destination, String selector) throws JMSException {
+    protected JmsQueueBrowser(JmsConsumerId consumerId, JmsSession session, JmsDestination destination, String selector) throws JMSException {
         this.session = session;
-        this.id = id;
+        this.consumerId = consumerId;
         this.destination = destination;
         this.selector = selector;
     }
@@ -83,7 +83,7 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
     private JmsMessageConsumer createConsumer() throws JMSException {
         browseDone.set(false);
 
-        JmsMessageConsumer rc = new JmsMessageConsumer(id, session, destination, selector) {
+        JmsMessageConsumer rc = new JmsMessageConsumer(consumerId, session, destination, selector) {
 
             @Override
             public boolean isBrowser() {
@@ -252,6 +252,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
 
     @Override
     public String toString() {
-        return "JmsQueueBrowser { value=" + this.id + " }";
+        return "JmsQueueBrowser { value=" + this.consumerId + " }";
     }
 }

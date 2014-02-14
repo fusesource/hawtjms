@@ -25,6 +25,8 @@ import javax.jms.Message;
 import javax.jms.MessageProducer;
 
 import org.fusesource.amqpjms.jms.message.JmsMessageTransformation;
+import org.fusesource.amqpjms.jms.meta.JmsProducerId;
+import org.fusesource.amqpjms.jms.meta.JmsProducerMeta;
 
 /**
  * Implementation of a Jms MessageProducer
@@ -32,7 +34,7 @@ import org.fusesource.amqpjms.jms.message.JmsMessageTransformation;
 public class JmsMessageProducer implements MessageProducer {
 
     protected final JmsSession session;
-    protected JmsDestination destination;
+    protected JmsProducerMeta producerMeta;
     protected final boolean flexibleDestination;
     protected int deliveryMode = DeliveryMode.PERSISTENT;
     protected int priority = Message.DEFAULT_PRIORITY;
@@ -41,10 +43,11 @@ public class JmsMessageProducer implements MessageProducer {
     protected boolean disableMessageId;
     protected boolean disableTimestamp;
 
-    protected JmsMessageProducer(JmsSession s, JmsDestination dest) {
-        this.session = s;
-        this.destination = dest;
-        this.flexibleDestination = dest == null;
+    protected JmsMessageProducer(JmsProducerId producerId, JmsSession session, JmsDestination destination) {
+        this.session = session;
+        this.flexibleDestination = destination == null;
+        this.producerMeta = new JmsProducerMeta(producerId);
+        this.producerMeta.setDestination(destination);
     }
 
     /**
@@ -77,7 +80,7 @@ public class JmsMessageProducer implements MessageProducer {
     @Override
     public Destination getDestination() throws JMSException {
         checkClosed();
-        return this.destination;
+        return this.producerMeta.getDestination();
     }
 
     /**
@@ -131,7 +134,7 @@ public class JmsMessageProducer implements MessageProducer {
      */
     @Override
     public void send(Message message) throws JMSException {
-        send(this.destination, message, this.deliveryMode, this.priority, this.timeToLive);
+        send(producerMeta.getDestination(), message, this.deliveryMode, this.priority, this.timeToLive);
     }
 
     /**
@@ -156,7 +159,7 @@ public class JmsMessageProducer implements MessageProducer {
      */
     @Override
     public void send(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
-        send(this.destination, message, deliveryMode, priority, timeToLive);
+        send(producerMeta.getDestination(), message, deliveryMode, priority, timeToLive);
     }
 
     /**
@@ -174,8 +177,8 @@ public class JmsMessageProducer implements MessageProducer {
         if (destination == null) {
             throw new InvalidDestinationException("Don't understand null destinations");
         }
-        if (!this.flexibleDestination && !destination.equals(this.destination)) {
-            throw new UnsupportedOperationException("This producer can only send messages to: " + this.destination.getName());
+        if (!this.flexibleDestination && !destination.equals(producerMeta.getDestination())) {
+            throw new UnsupportedOperationException("This producer can only send messages to: " + producerMeta.getDestination().getName());
         }
         this.session.send(destination, message, deliveryMode, priority, timeToLive, disableMessageId);
     }
@@ -245,10 +248,10 @@ public class JmsMessageProducer implements MessageProducer {
         if (destination == null) {
             throw new InvalidDestinationException("Don't understand null destinations");
         }
-        if (!this.flexibleDestination && !destination.equals(this.destination)) {
-            throw new UnsupportedOperationException("This producer can only send messages to: " + this.destination.getName());
+        if (!this.flexibleDestination && !destination.equals(producerMeta.getDestination())) {
+            throw new UnsupportedOperationException("This producer can only send messages to: " + producerMeta.getDestination().getName());
         }
-        this.destination = JmsMessageTransformation.transformDestination(session.getConnection(), destination);
+        producerMeta.setDestination(JmsMessageTransformation.transformDestination(session.getConnection(), destination));
     }
 
     protected void checkClosed() throws IllegalStateException {

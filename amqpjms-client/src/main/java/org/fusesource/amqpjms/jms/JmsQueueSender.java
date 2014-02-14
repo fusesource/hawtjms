@@ -22,6 +22,8 @@ import javax.jms.Message;
 import javax.jms.Queue;
 import javax.jms.QueueSender;
 
+import org.fusesource.amqpjms.jms.meta.JmsProducerId;
+
 /**
  * Implementation of a Queue Sender
  */
@@ -30,11 +32,12 @@ public class JmsQueueSender extends JmsMessageProducer implements QueueSender {
     /**
      * Constructor
      *
-     * @param s
-     * @param dest
+     * @param id
+     * @param session
+     * @param destination
      */
-    protected JmsQueueSender(JmsSession s, JmsDestination dest) {
-        super(s, dest);
+    protected JmsQueueSender(JmsProducerId id, JmsSession session, JmsDestination destination) {
+        super(id, session, destination);
     }
 
     /**
@@ -45,7 +48,7 @@ public class JmsQueueSender extends JmsMessageProducer implements QueueSender {
     @Override
     public Queue getQueue() throws IllegalStateException {
         checkClosed();
-        return (Queue) this.destination;
+        return (Queue) this.producerMeta.getDestination();
     }
 
     /**

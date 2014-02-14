@@ -21,7 +21,7 @@ import javax.jms.JMSException;
 import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 
 /**
  * Implementation of a TopicSubscriber
@@ -36,7 +36,7 @@ public class JmsTopicSubscriber extends JmsMessageConsumer implements TopicSubsc
      * @param s
      * @param destination
      */
-    JmsTopicSubscriber(AsciiBuffer id, JmsSession s, JmsDestination destination, boolean noLocal, String selector) throws JMSException {
+    JmsTopicSubscriber(JmsConsumerId id, JmsSession s, JmsDestination destination, boolean noLocal, String selector) throws JMSException {
         super(id, s, destination, selector);
         this.noLocal = noLocal;
     }
@@ -60,6 +60,6 @@ public class JmsTopicSubscriber extends JmsMessageConsumer implements TopicSubsc
     @Override
     public Topic getTopic() throws IllegalStateException {
         checkClosed();
-        return (Topic) this.destination;
+        return (Topic) this.getDestination();
     }
 }

@@ -21,10 +21,10 @@ import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.QueueReceiver;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 
 /**
- * Implementation of a Jms QueueReceiver
+ * Implementation of a JMS QueueReceiver
  */
 public class JmsQueueReceiver extends JmsMessageConsumer implements QueueReceiver {
 
@@ -42,7 +42,7 @@ public class JmsQueueReceiver extends JmsMessageConsumer implements QueueReceive
      *
      * @throws JMSException
      */
-    protected JmsQueueReceiver(AsciiBuffer id, JmsSession session, JmsDestination dest, String selector) throws JMSException {
+    protected JmsQueueReceiver(JmsConsumerId id, JmsSession session, JmsDestination dest, String selector) throws JMSException {
         super(id, session, dest, selector);
     }
 
@@ -54,6 +54,6 @@ public class JmsQueueReceiver extends JmsMessageConsumer implements QueueReceive
     @Override
     public Queue getQueue() throws IllegalStateException {
         checkClosed();
-        return (Queue) this.destination;
+        return (Queue) this.getDestination();
     }
 }

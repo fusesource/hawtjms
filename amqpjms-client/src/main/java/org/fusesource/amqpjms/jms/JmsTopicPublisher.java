@@ -22,6 +22,8 @@ import javax.jms.Message;
 import javax.jms.Topic;
 import javax.jms.TopicPublisher;
 
+import org.fusesource.amqpjms.jms.meta.JmsProducerId;
+
 /**
  * Implementation of a TopicPublisher
  */
@@ -33,8 +35,8 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
      * @param s
      * @param destination
      */
-    protected JmsTopicPublisher(JmsSession s, JmsDestination destination) {
-        super(s, destination);
+    protected JmsTopicPublisher(JmsProducerId id, JmsSession session, JmsDestination destination) {
+        super(id, session, destination);
     }
 
     /**
@@ -45,7 +47,7 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
     @Override
     public Topic getTopic() throws IllegalStateException {
         checkClosed();
-        return (Topic) this.destination;
+        return (Topic) this.producerMeta.getDestination();
     }
 
     /**
@@ -56,7 +58,6 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
     @Override
     public void publish(Message message) throws JMSException {
         super.send(message);
-
     }
 
     /**
@@ -68,7 +69,6 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
     @Override
     public void publish(Topic topic, Message message) throws JMSException {
         super.send(topic, message);
-
     }
 
     /**
@@ -82,7 +82,6 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
     @Override
     public void publish(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
         super.send(message, deliveryMode, priority, timeToLive);
-
     }
 
     /**
@@ -92,12 +91,10 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
      * @param priority
      * @param timeToLive
      * @throws JMSException
-     * @see javax.jms.TopicPublisher#publish(javax.jms.Topic, javax.jms.Message,
-     *      int, int, long)
+     * @see javax.jms.TopicPublisher#publish(javax.jms.Topic, javax.jms.Message, int, int, long)
      */
     @Override
     public void publish(Topic topic, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
         super.send(topic, message, deliveryMode, priority, timeToLive);
-
     }
 }

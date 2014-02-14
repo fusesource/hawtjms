@@ -31,31 +31,27 @@ import javax.jms.Session;
 
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerMeta;
 import org.fusesource.amqpjms.jms.util.MessageQueue;
-import org.fusesource.hawtbuf.AsciiBuffer;
 
 /**
- * implementation of a Jms Message Consumer
+ * implementation of a JMS Message Consumer
  */
 public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
 
     protected final JmsSession session;
-    protected final JmsDestination destination;
-    protected final AsciiBuffer id;
+    protected JmsConsumerMeta consumerMeta;
     protected final int acknowledgementMode;
     protected final AtomicBoolean closed = new AtomicBoolean();
     protected boolean started;
     protected MessageListener messageListener;
-    protected final String messageSelector;
     protected final MessageQueue messageQueue;
     protected final Lock lock = new ReentrantLock();
     protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
 
-    protected JmsMessageConsumer(final AsciiBuffer id, JmsSession session, JmsDestination destination, String selector) throws JMSException {
-        this.id = id;
+    protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination, String selector) throws JMSException {
         this.session = session;
-        this.destination = destination;
-        this.messageSelector = selector;
         this.acknowledgementMode = session.acknowledgementMode();
 
         if (acknowledgementMode == Session.SESSION_TRANSACTED) {
@@ -64,6 +60,10 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
         } else {
             this.messageQueue = new MessageQueue(session.getConsumerMessageBufferSize());
         }
+
+        this.consumerMeta = new JmsConsumerMeta(consumerId);
+        this.consumerMeta.setSelector(selector);
+        this.consumerMeta.setDestination(destination);
     }
 
     public void init() throws JMSException {
@@ -106,7 +106,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
     @Override
     public String getMessageSelector() throws JMSException {
         checkClosed();
-        return this.messageSelector;
+        return this.consumerMeta.getSelector();
     }
 
     /**
@@ -290,15 +290,17 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
     /**
      * @return the id
      */
-    public AsciiBuffer getId() {
-        return this.id;
+    public JmsConsumerId getConsumerId() {
+        // TODO should we check closed?
+        return this.consumerMeta.getConsumerId();
     }
 
     /**
      * @return the Destination
      */
     public JmsDestination getDestination() {
-        return this.destination;
+        // TODO should we check closed?
+        return this.consumerMeta.getDestination();
     }
 
     public void start() {
@@ -359,7 +361,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
     }
 
     boolean isUsingDestination(JmsDestination destination) {
-        return this.destination.equals(destination);
+        return this.consumerMeta.getDestination().equals(destination);
     }
 
     protected int getMessageQueueSize() {

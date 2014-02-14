@@ -18,14 +18,14 @@ package org.fusesource.amqpjms.jms;
 
 import javax.jms.JMSException;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 
 /**
  * Implementation of a TopicSubscriber
  */
 public class JmsDurableTopicSubscriber extends JmsTopicSubscriber {
 
-    public JmsDurableTopicSubscriber(AsciiBuffer id, JmsSession s, JmsDestination destination, boolean noLocal, String selector) throws JMSException {
+    public JmsDurableTopicSubscriber(JmsConsumerId id, JmsSession s, JmsDestination destination, boolean noLocal, String selector) throws JMSException {
         super(id, s, destination, noLocal, selector);
     }
 

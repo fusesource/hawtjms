@@ -81,7 +81,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final JmsConnection connection;
     private final int acknowledgementMode;
     private final List<MessageProducer> producers = new CopyOnWriteArrayList<MessageProducer>();
-    private final Map<AsciiBuffer, JmsMessageConsumer> consumers = new ConcurrentHashMap<AsciiBuffer, JmsMessageConsumer>();
+    private final Map<JmsConsumerId, JmsMessageConsumer> consumers = new ConcurrentHashMap<JmsConsumerId, JmsMessageConsumer>();
     private MessageListener messageListener;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
@@ -496,7 +496,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     public MessageProducer createProducer(Destination destination) throws JMSException {
         checkClosed();
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
-        JmsMessageProducer result = new JmsMessageProducer(this, dest);
+        JmsMessageProducer result = new JmsMessageProducer(getNextProducerId(), this, dest);
         add(result);
         return result;
     }
@@ -511,7 +511,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     public QueueSender createSender(Queue queue) throws JMSException {
         checkClosed();
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, queue);
-        JmsQueueSender result = new JmsQueueSender(this, dest);
+        JmsQueueSender result = new JmsQueueSender(getNextProducerId(), this, dest);
         return result;
     }
 
@@ -525,7 +525,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     public TopicPublisher createPublisher(Topic topic) throws JMSException {
         checkClosed();
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
-        JmsTopicPublisher result = new JmsTopicPublisher(this, dest);
+        JmsTopicPublisher result = new JmsTopicPublisher(getNextProducerId(), this, dest);
         add(result);
         return result;
     }
@@ -689,7 +689,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     // ///////////////////////////////////////////////////////////////////////
 
     protected void add(JmsMessageConsumer consumer) throws JMSException {
-        this.consumers.put(consumer.getId(), consumer);
+        this.consumers.put(consumer.getConsumerId(), consumer);
 
         AsciiBuffer mode;
 //        if (this.acknowledgementMode == JmsSession.SERVER_AUTO_ACKNOWLEDGE) {
