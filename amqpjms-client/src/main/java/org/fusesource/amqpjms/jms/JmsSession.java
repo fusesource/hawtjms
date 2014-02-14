@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
@@ -65,6 +66,10 @@ import org.fusesource.amqpjms.jms.message.JmsMessageTransformation;
 import org.fusesource.amqpjms.jms.message.JmsObjectMessage;
 import org.fusesource.amqpjms.jms.message.JmsStreamMessage;
 import org.fusesource.amqpjms.jms.message.JmsTextMessage;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
+import org.fusesource.amqpjms.jms.meta.JmsProducerId;
+import org.fusesource.amqpjms.jms.meta.JmsSessionId;
+import org.fusesource.amqpjms.jms.meta.JmsSessionMeta;
 import org.fusesource.hawtbuf.AsciiBuffer;
 
 /**
@@ -85,8 +90,10 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final long consumerMessageBufferSize = 1024 * 64;
     private final LinkedBlockingQueue<JmsMessage> stoppedMessages = new LinkedBlockingQueue<JmsMessage>(10000);
     private JmsPrefetchPolicy prefetchPolicy;
+    private final JmsSessionMeta sessionMeta;
 
-    // StompChannel channel;
+    private final AtomicLong consumerIdGenerator = new AtomicLong();
+    private final AtomicLong producerIdGenerator = new AtomicLong();
 
     /**
      * Constructor
@@ -94,11 +101,12 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      * @param connection
      * @param acknowledgementMode
      */
-    protected JmsSession(JmsConnection connection, int acknowledgementMode, boolean forceAsyncSend) {
+    protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) {
         this.connection = connection;
         this.acknowledgementMode = acknowledgementMode;
-        this.forceAsyncSend = forceAsyncSend;
+        this.forceAsyncSend = connection.isForceAsyncSend();
         this.prefetchPolicy = new JmsPrefetchPolicy(connection.getPrefetchPolicy());
+        this.sessionMeta = new JmsSessionMeta(sessionId);
     }
 
     int acknowledgementMode() {
@@ -914,6 +922,14 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 consumer.onMessage(message);
             }
         }
+    }
+
+    protected JmsConsumerId getNextConsumerId() {
+        return new JmsConsumerId(sessionMeta.getSessionId(), consumerIdGenerator.incrementAndGet());
+    }
+
+    protected JmsProducerId getNextProducerId() {
+        return new JmsProducerId(sessionMeta.getSessionId(), producerIdGenerator.incrementAndGet());
     }
 
     private AsciiBuffer getNextMessageId() throws JMSException {

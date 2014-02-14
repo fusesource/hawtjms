@@ -25,6 +25,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionConsumer;
@@ -45,7 +46,12 @@ import javax.net.ssl.SSLContext;
 
 import org.apache.activemq.ConnectionFailedException;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
+import org.fusesource.amqpjms.jms.meta.JmsConnectionId;
+import org.fusesource.amqpjms.jms.meta.JmsConnectionMeta;
+import org.fusesource.amqpjms.jms.meta.JmsSessionId;
+import org.fusesource.amqpjms.jms.util.IdGenerator;
 import org.fusesource.amqpjms.jms.util.ThreadPoolUtils;
+import org.fusesource.amqpjms.provider.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,8 +62,9 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnection.class);
 
-    private String clientId;
-    private final int clientNumber = 0;
+    private JmsConnectionMeta connectionMeta;
+
+    private final IdGenerator clientIdGenerator;
     private boolean clientIdSet;
     private ExceptionListener exceptionListener;
     private final List<JmsSession> sessions = new CopyOnWriteArrayList<JmsSession>();
@@ -67,37 +74,17 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final AtomicBoolean failed = new AtomicBoolean();
     private IOException firstFailureError;
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
-    private String queuePrefix = "/queue/";
-    private String topicPrefix = "/topic/";
-    private String tempQueuePrefix = "/temp-queue/";
-    private String tempTopicPrefix = "/temp-topic/";
+
     private final ThreadPoolExecutor executor;
 
-    private boolean forceAsyncSend;
-    private boolean omitHost;
+    private URI brokerURI;
+    private URI localURI;
+    private SSLContext sslContext;
+    private Provider provider;
 
-    private final URI brokerURI;
-    private final URI localURI;
-    private final String userName;
-    private final String password;
-    private final SSLContext sslContext;
-    private long disconnectTimeout = 10000;
+    private final AtomicLong sessionIdGenerator = new AtomicLong();
 
-    //StompChannel channel;
-
-    /**
-     * @param brokerURI
-     * @param localURI
-     * @param userName
-     * @param password
-     * @throws JMSException
-     */
-    protected JmsConnection(URI brokerURI, URI localURI, String userName, String password, SSLContext sslContext) throws JMSException {
-        this.brokerURI = brokerURI;
-        this.localURI = localURI;
-        this.userName = userName;
-        this.password = password;
-        this.sslContext = sslContext;
+    protected JmsConnection(String connectionId, Provider provider, IdGenerator clientIdGenerator) throws JMSException {
 
         // This executor can be used for dispatching asynchronous tasks that might block or result
         // in reentrant calls to this Connection that could block.  The thread in this executor
@@ -110,6 +97,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                 return thread;
             }
         });
+
+        this.provider = provider;
+        this.clientIdGenerator = clientIdGenerator;
+        this.connectionMeta = new JmsConnectionMeta(new JmsConnectionId(connectionId));
     }
 
     /**
@@ -192,7 +183,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         checkClosed();
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
-        JmsSession result = new JmsSession(this, ackMode, forceAsyncSend);
+        JmsSession result = new JmsSession(this, getNextSessionId(), ackMode);
         addSession(result);
         if (started.get()) {
             result.start();
@@ -206,7 +197,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      */
     @Override
     public String getClientID() {
-        return this.clientId;
+        return this.connectionMeta.getClientId();
     }
 
     /**
@@ -240,10 +231,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         if (clientID == null) {
             throw new IllegalStateException("Cannot have a null clientID");
         }
-        if( connected.get() ) {
+        if (connected.get()) {
             throw new IllegalStateException("Cannot set the client id once connected.");
         }
-        this.clientId = clientID;
+        this.connectionMeta.setClientId(clientID);
         this.clientIdSet = true;
     }
 
@@ -324,7 +315,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         checkClosed();
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
-        JmsTopicSession result = new JmsTopicSession(this, ackMode, forceAsyncSend);
+        JmsTopicSession result = new JmsTopicSession(this, getNextSessionId(), ackMode);
         addSession(result);
         if (started.get()) {
             result.start();
@@ -362,7 +353,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         checkClosed();
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
-        JmsQueueSession result = new JmsQueueSession(this, ackMode, forceAsyncSend);
+        JmsQueueSession result = new JmsQueueSession(this, getNextSessionId(), ackMode);
         addSession(result);
         if (started.get()) {
             result.start();
@@ -500,60 +491,60 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
+    protected JmsSessionId getNextSessionId() {
+        return new JmsSessionId(connectionMeta.getConnectionId(), sessionIdGenerator.incrementAndGet());
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Property setters and getters
     ////////////////////////////////////////////////////////////////////////////
 
     public boolean isForceAsyncSend() {
-        return forceAsyncSend;
+        return connectionMeta.isForceAsyncSend();
     }
 
-    /**
-     * If set to true then all message sends are done async.
-     * @param forceAsyncSend
-     */
     public void setForceAsyncSend(boolean forceAsyncSend) {
-        this.forceAsyncSend = forceAsyncSend;
+        connectionMeta.setForceAsyncSends(forceAsyncSend);
     }
 
     public String getTopicPrefix() {
-        return topicPrefix;
+        return connectionMeta.getTopicPrefix();
     }
 
     public void setTopicPrefix(String topicPrefix) {
-        this.topicPrefix = topicPrefix;
+        connectionMeta.setTopicPrefix(topicPrefix);
     }
 
     public String getTempTopicPrefix() {
-        return tempTopicPrefix;
+        return connectionMeta.getTempTopicPrefix();
     }
 
     public void setTempTopicPrefix(String tempTopicPrefix) {
-        this.tempTopicPrefix = tempTopicPrefix;
+        connectionMeta.setTempTopicPrefix(tempTopicPrefix);
     }
 
     public String getTempQueuePrefix() {
-        return tempQueuePrefix;
+        return connectionMeta.getTempQueuePrefix();
     }
 
     public void setTempQueuePrefix(String tempQueuePrefix) {
-        this.tempQueuePrefix = tempQueuePrefix;
+        connectionMeta.setTempQueuePrefix(tempQueuePrefix);
     }
 
     public String getQueuePrefix() {
-        return queuePrefix;
+        return connectionMeta.getQueuePrefix();
     }
 
     public void setQueuePrefix(String queuePrefix) {
-        this.queuePrefix = queuePrefix;
+        connectionMeta.setQueuePrefix(queuePrefix);
     }
 
     public boolean isOmitHost() {
-        return omitHost;
+        return connectionMeta.isOmitHost();
     }
 
     public void setOmitHost(boolean omitHost) {
-        this.omitHost = omitHost;
+        connectionMeta.setOmitHost(omitHost);
     }
 
     public JmsPrefetchPolicy getPrefetchPolicy() {
@@ -565,10 +556,42 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     public long getDisconnectTimeout() {
-        return disconnectTimeout;
+        return connectionMeta.getDisconnectTimeout();
     }
 
     public void setDisconnectTimeout(long disconnectTimeout) {
-        this.disconnectTimeout = disconnectTimeout;
+        connectionMeta.setDisconnectTimeout(disconnectTimeout);
+    }
+
+    public URI getBrokerURI() {
+        return brokerURI;
+    }
+
+    public void setBrokerURI(URI brokerURI) {
+        this.brokerURI = brokerURI;
+    }
+
+    public URI getLocalURI() {
+        return localURI;
+    }
+
+    public void setLocalURI(URI localURI) {
+        this.localURI = localURI;
+    }
+
+    public SSLContext getSslContext() {
+        return sslContext;
+    }
+
+    public void setSslContext(SSLContext sslContext) {
+        this.sslContext = sslContext;
+    }
+
+    Provider getProvider() {
+        return provider;
+    }
+
+    void setProvider(Provider provider) {
+        this.provider = provider;
     }
 }

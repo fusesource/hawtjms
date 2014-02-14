@@ -26,19 +26,15 @@ import javax.jms.Topic;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSubscriber;
 
+import org.fusesource.amqpjms.jms.meta.JmsSessionId;
+
 /**
- * Jms QueueSession implementation
+ * JMS QueueSession implementation
  */
 public class JmsQueueSession extends JmsSession {
 
-    /**
-     * Constructor
-     *
-     * @param connection
-     * @param acknowledgementMode
-     */
-    protected JmsQueueSession(JmsConnection connection, int acknowledgementMode, boolean forceAsyncSend) {
-        super(connection, acknowledgementMode, forceAsyncSend);
+    protected JmsQueueSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) {
+        super(connection, sessionId, acknowledgementMode);
     }
 
     @Override

@@ -16,19 +16,19 @@
  */
 package org.fusesource.amqpjms.jms;
 
-import java.net.URI;
-
 import javax.jms.ConnectionConsumer;
 import javax.jms.JMSException;
 import javax.jms.ServerSessionPool;
 import javax.jms.Topic;
 import javax.jms.TopicSession;
-import javax.net.ssl.SSLContext;
+
+import org.fusesource.amqpjms.jms.util.IdGenerator;
+import org.fusesource.amqpjms.provider.Provider;
 
 public class JmsQueueConnection extends JmsConnection {
 
-    public JmsQueueConnection(URI brokerURI, URI localURI, String userName, String password, SSLContext sslContext) throws JMSException {
-        super(brokerURI, localURI, userName, password, sslContext);
+    public JmsQueueConnection(String connectionId, Provider provider, IdGenerator clientIdGenerator) throws JMSException {
+        super(connectionId, provider, clientIdGenerator);
     }
 
     @Override

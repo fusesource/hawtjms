@@ -29,13 +29,13 @@ public class JmsConnectionMeta implements Comparable<JmsConnectionMeta> {
     private String clientIp;
     private String username;
     private String password;
-    private boolean forceAsyncSends;
+    private boolean forceAsyncSend;
     private boolean omitHost;
-
-    private final String queuePrefix = "/queue/";
-    private final String topicPrefix = "/topic/";
-    private final String tempQueuePrefix = "/temp-queue/";
-    private final String tempTopicPrefix = "/temp-topic/";
+    public long disconnectTimeout;
+    private String queuePrefix = "/queue/";
+    private String topicPrefix = "/topic/";
+    private String tempQueuePrefix = "/temp-queue/";
+    private String tempTopicPrefix = "/temp-topic/";
 
     public JmsConnectionMeta(JmsConnectionId connectionId) {
         this.connectionId = connectionId;
@@ -52,14 +52,21 @@ public class JmsConnectionMeta implements Comparable<JmsConnectionMeta> {
         copy.username = username;
         copy.password = password;
         copy.clientIp = clientIp;
+        copy.forceAsyncSend = forceAsyncSend;
+        copy.omitHost = omitHost;
+        copy.disconnectTimeout = disconnectTimeout;
+        copy.queuePrefix = queuePrefix;
+        copy.topicPrefix = topicPrefix;
+        copy.tempQueuePrefix = tempQueuePrefix;
+        copy.tempTopicPrefix = tempTopicPrefix;
     }
 
-    public boolean isForceAsyncSends() {
-        return forceAsyncSends;
+    public boolean isForceAsyncSend() {
+        return forceAsyncSend;
     }
 
-    public void setForceAsyncSends(boolean forceAsyncSends) {
-        this.forceAsyncSends = forceAsyncSends;
+    public void setForceAsyncSends(boolean forceAsyncSend) {
+        this.forceAsyncSend = forceAsyncSend;
     }
 
     public JmsConnectionId getConnectionId() {
@@ -110,16 +117,40 @@ public class JmsConnectionMeta implements Comparable<JmsConnectionMeta> {
         return queuePrefix;
     }
 
+    public void setQueuePrefix(String queuePrefix) {
+        this.queuePrefix = queuePrefix;
+    }
+
     public String getTopicPrefix() {
         return topicPrefix;
+    }
+
+    public void setTopicPrefix(String topicPrefix) {
+        this.topicPrefix = topicPrefix;
     }
 
     public String getTempQueuePrefix() {
         return tempQueuePrefix;
     }
 
+    public void setTempQueuePrefix(String tempQueuePrefix) {
+        this.tempQueuePrefix = tempQueuePrefix;
+    }
+
     public String getTempTopicPrefix() {
         return tempTopicPrefix;
+    }
+
+    public void setTempTopicPrefix(String tempTopicPrefix) {
+        this.tempTopicPrefix = tempTopicPrefix;
+    }
+
+    public long getDisconnectTimeout() {
+        return disconnectTimeout;
+    }
+
+    public void setDisconnectTimeout(long disconnectTimeout) {
+        this.disconnectTimeout = disconnectTimeout;
     }
 
     @Override

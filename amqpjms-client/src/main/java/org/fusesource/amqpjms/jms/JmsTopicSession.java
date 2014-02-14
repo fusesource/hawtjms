@@ -27,19 +27,15 @@ import javax.jms.QueueReceiver;
 import javax.jms.QueueSender;
 import javax.jms.TemporaryQueue;
 
+import org.fusesource.amqpjms.jms.meta.JmsSessionId;
+
 /**
  * Implementation of a TopicSession
  */
 public class JmsTopicSession extends JmsSession {
 
-    /**
-     * Constructor
-     *
-     * @param connection
-     * @param acknowledgementMode
-     */
-    protected JmsTopicSession(JmsConnection connection, int acknowledgementMode, boolean forceAsyncSend) {
-        super(connection, acknowledgementMode, forceAsyncSend);
+    protected JmsTopicSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) {
+        super(connection, sessionId, acknowledgementMode);
     }
 
     /**

@@ -33,7 +33,9 @@ import javax.net.ssl.SSLContext;
 
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.jndi.JNDIStorable;
+import org.fusesource.amqpjms.jms.util.IdGenerator;
 import org.fusesource.amqpjms.jms.util.PropertyUtil;
+import org.fusesource.amqpjms.provider.Provider;
 
 /**
  * JMS ConnectionFactory Implementation.
@@ -52,6 +54,11 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String tempQueuePrefix = "/temp-queue/";
     private String tempTopicPrefix = "/temp-topic/";
     private long disconnectTimeout = 10000;
+
+    private IdGenerator clientIdGenerator;
+    private String clientIDPrefix;
+    private IdGenerator connectionIdGenerator;
+    private String connectionIDPrefix;
 
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
 
@@ -121,7 +128,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     @Override
     public TopicConnection createTopicConnection(String userName, String password) throws JMSException {
         try {
-            JmsTopicConnection result = new JmsTopicConnection(this.brokerURI, this.localURI, userName, password, sslContext);
+            String connectionId = getConnectionIdGenerator().generateId();
+            JmsTopicConnection result = new JmsTopicConnection(connectionId, (Provider) null, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
             return result;
         } catch (Exception e) {
@@ -144,13 +152,13 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      * @param password
      * @return Connection
      * @throws JMSException
-     * @see javax.jms.ConnectionFactory#createConnection(java.lang.String,
-     *      java.lang.String)
+     * @see javax.jms.ConnectionFactory#createConnection(java.lang.String, java.lang.String)
      */
     @Override
     public Connection createConnection(String userName, String password) throws JMSException {
         try {
-            JmsConnection result = new JmsConnection(this.brokerURI, this.localURI, userName, password, sslContext);
+            String connectionId = getConnectionIdGenerator().generateId();
+            JmsConnection result = new JmsConnection(connectionId, (Provider) null, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
             return result;
         } catch (Exception e) {
@@ -179,7 +187,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     @Override
     public QueueConnection createQueueConnection(String userName, String password) throws JMSException {
         try {
-            JmsQueueConnection result = new JmsQueueConnection(this.brokerURI, this.localURI, userName, password, sslContext);
+            String connectionId = getConnectionIdGenerator().generateId();
+            JmsQueueConnection result = new JmsQueueConnection(connectionId, (Provider) null, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
             return result;
         } catch (Exception e) {
@@ -331,5 +340,59 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     public void setSslContext(SSLContext sslContext) {
         this.sslContext = sslContext;
+    }
+
+    public String getClientIDPrefix() {
+        return clientIDPrefix;
+    }
+
+    /**
+     * Sets the prefix used by auto-generated JMS Client ID values which are used if the JMS
+     * client does not explicitly specify on.
+     *
+     * @param clientIDPrefix
+     */
+    public void setClientIDPrefix(String clientIDPrefix) {
+        this.clientIDPrefix = clientIDPrefix;
+    }
+
+    protected synchronized IdGenerator getClientIdGenerator() {
+        if (clientIdGenerator == null) {
+            if (clientIDPrefix != null) {
+                clientIdGenerator = new IdGenerator(clientIDPrefix);
+            } else {
+                clientIdGenerator = new IdGenerator();
+            }
+        }
+        return clientIdGenerator;
+    }
+
+    protected void setClientIdGenerator(IdGenerator clientIdGenerator) {
+        this.clientIdGenerator = clientIdGenerator;
+    }
+
+    /**
+     * Sets the prefix used by connection id generator.
+     *
+     * @param connectionIDPrefix
+     *        The string prefix used on all connection Id's created by this factory.
+     */
+    public void setConnectionIDPrefix(String connectionIDPrefix) {
+        this.connectionIDPrefix = connectionIDPrefix;
+    }
+
+    protected synchronized IdGenerator getConnectionIdGenerator() {
+        if (connectionIdGenerator == null) {
+            if (connectionIDPrefix != null) {
+                connectionIdGenerator = new IdGenerator(connectionIDPrefix);
+            } else {
+                connectionIdGenerator = new IdGenerator();
+            }
+        }
+        return connectionIdGenerator;
+    }
+
+    protected void setConnectionIdGenerator(IdGenerator connectionIdGenerator) {
+        this.connectionIdGenerator = connectionIdGenerator;
     }
 }
