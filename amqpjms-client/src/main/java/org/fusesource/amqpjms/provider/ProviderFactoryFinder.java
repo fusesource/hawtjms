@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.activemq.util.IOExceptionSupport;
 import org.fusesource.amqpjms.jms.util.FactoryFinder;
 
 public abstract class ProviderFactoryFinder {
@@ -83,7 +82,7 @@ public abstract class ProviderFactoryFinder {
                 factory = (ProviderFactory) PROVIDER_FACTORY_FINDER.newInstance(scheme);
                 PROVIDER_FACTORYS.put(scheme, factory);
             } catch (Throwable e) {
-                throw IOExceptionSupport.create("Transport scheme NOT recognized: [" + scheme + "]", e);
+                throw new IOException("Transport scheme NOT recognized: [" + scheme + "]", e);
             }
         }
 
