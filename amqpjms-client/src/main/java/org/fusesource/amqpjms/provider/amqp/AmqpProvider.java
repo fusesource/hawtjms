@@ -27,4 +27,9 @@ public class AmqpProvider implements Provider {
     public void initialize(URI connectionURI) throws IOException {
 
     }
+
+    @Override
+    public void close() throws IOException {
+
+    }
 }
