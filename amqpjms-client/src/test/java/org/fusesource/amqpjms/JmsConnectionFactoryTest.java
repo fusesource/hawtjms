@@ -20,13 +20,39 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import javax.jms.JMSException;
+
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 public class JmsConnectionFactoryTest {
 
     private final String username = "USER";
     private final String password = "PASSWORD";
+
+    private final String badProvider = "unknown://127.0.0.1:61616";
+    private final URI badProviderURI;
+
+    private final String goodProvider = "amqp://127.0.0.1:61616";
+    private final URI goodProviderURI;
+
+    public JmsConnectionFactoryTest() throws URISyntaxException {
+        badProviderURI = new URI(badProvider);
+        goodProviderURI = new URI(goodProvider);
+    }
+
+    @Before
+    public void before() {
+    }
+
+    @After
+    public void after() {
+    }
 
     @Test
     public void testConnectionFactoryCreate() {
@@ -44,4 +70,27 @@ public class JmsConnectionFactoryTest {
         assertEquals(password, factory.getPassword());
     }
 
+    @Test(expected = JMSException.class)
+    public void testCreateConnectionBadProviderURI() throws JMSException {
+        JmsConnectionFactory factory = new JmsConnectionFactory(badProviderURI);
+        factory.createConnection();
+    }
+
+    @Test(expected = JMSException.class)
+    public void testCreateConnectionBadProviderString() throws JMSException {
+        JmsConnectionFactory factory = new JmsConnectionFactory(badProvider);
+        factory.createConnection();
+    }
+
+    @Test
+    public void testCreateConnectionGoodProviderURI() throws JMSException {
+        JmsConnectionFactory factory = new JmsConnectionFactory(goodProviderURI);
+        assertNotNull(factory.createConnection());
+    }
+
+    @Test
+    public void testCreateConnectionGoodProviderString() throws JMSException {
+        JmsConnectionFactory factory = new JmsConnectionFactory(goodProvider);
+        assertNotNull(factory.createConnection());
+    }
 }

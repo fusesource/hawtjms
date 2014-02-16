@@ -69,18 +69,32 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
 
-    /**
-     * Constructor
-     */
     public JmsConnectionFactory() {
     }
 
-    /**
-     * Constructor
-     */
     public JmsConnectionFactory(String username, String password) {
         setUsername(username);
         setPassword(password);
+    }
+
+    public JmsConnectionFactory(String brokerURI) {
+        this(createURI(brokerURI));
+    }
+
+    public JmsConnectionFactory(URI brokerURI) {
+        setBrokerURI(brokerURI.toString());
+    }
+
+    public JmsConnectionFactory(String userName, String password, URI brokerURI) {
+        setUsername(userName);
+        setPassword(password);
+        setBrokerURI(brokerURI.toString());
+    }
+
+    public JmsConnectionFactory(String userName, String password, String brokerURI) {
+        setUsername(userName);
+        setPassword(password);
+        setBrokerURI(brokerURI);
     }
 
     /**
@@ -229,7 +243,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         return result;
     }
 
-    private URI createURI(String name) {
+    private static URI createURI(String name) {
         if (name != null && name.trim().isEmpty() == false) {
             try {
                 return new URI(name);

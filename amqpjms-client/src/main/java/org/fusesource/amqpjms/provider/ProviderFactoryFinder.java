@@ -82,7 +82,7 @@ public abstract class ProviderFactoryFinder {
                 factory = (ProviderFactory) PROVIDER_FACTORY_FINDER.newInstance(scheme);
                 PROVIDER_FACTORYS.put(scheme, factory);
             } catch (Throwable e) {
-                throw new IOException("Transport scheme NOT recognized: [" + scheme + "]", e);
+                throw new IOException("Provider scheme NOT recognized: [" + scheme + "]", e);
             }
         }
 
