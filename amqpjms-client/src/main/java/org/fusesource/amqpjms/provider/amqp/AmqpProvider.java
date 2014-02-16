@@ -17,18 +17,17 @@
 package org.fusesource.amqpjms.provider.amqp;
 
 import java.io.IOException;
-import java.net.URI;
 
 import org.fusesource.amqpjms.provider.Provider;
 
 public class AmqpProvider implements Provider {
 
     @Override
-    public void initialize(URI connectionURI) throws IOException {
+    public void connect() throws IOException {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
     }
 
     @Override

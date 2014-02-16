@@ -17,7 +17,6 @@
 package org.fusesource.amqpjms.provider;
 
 import java.io.IOException;
-import java.net.URI;
 
 /**
  * Defines the interface that is implemented by a Protocol Provider object
@@ -25,10 +24,32 @@ import java.net.URI;
  */
 public interface Provider {
 
-    void initialize(URI connectionURI) throws IOException;
+    /**
+     * Performs the initial low level connection for this provider such as TCP or
+     * SSL connection to a remote Broker.  If this operation fails then the Provider
+     * is considered to be unusable and no further operations should be attempted
+     * using this Provider.
+     *
+     * @throws IOException if the remote resource can not be contacted.
+     */
+    void connect() throws IOException;
 
-    void close() throws IOException;
+    /**
+     * Closes this Provider terminating all connections and canceling any pending
+     * operations.  The Provider is considered unusable after this call.
+     */
+    void close();
 
+    /**
+     * Called to indicate that a signaled recovery cycle is not complete.
+     *
+     * This method is used only when the Provider is a fault tolerant implementation and the
+     * recovery started event has been fired after a reconnect.  This allows for the fault
+     * tolerant implementation to perform any intermediate processing before a transition
+     * to a recovered state.
+     *
+     * @throws IOException if an error occurs during recovery completion processing.
+     */
     void receoveryComplate() throws IOException;
 
 }
