@@ -25,11 +25,13 @@ public class AmqpProvider implements Provider {
 
     @Override
     public void initialize(URI connectionURI) throws IOException {
-
     }
 
     @Override
     public void close() throws IOException {
+    }
 
+    @Override
+    public void receoveryComplate() throws IOException {
     }
 }

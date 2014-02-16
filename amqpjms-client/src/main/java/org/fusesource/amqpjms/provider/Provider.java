@@ -29,4 +29,6 @@ public interface Provider {
 
     void close() throws IOException;
 
+    void receoveryComplate() throws IOException;
+
 }
