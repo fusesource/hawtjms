@@ -14,19 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.amqpjms.provider;
+package org.fusesource.amqpjms.provider.amqp;
 
-import java.io.IOException;
-import java.net.URI;
+import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.ProviderFactory;
 
 /**
- * Defines the interface that is implemented by a Protocol Provider object
- * in order to map JMS functionality into the given wire level protocol.
+ * Factory for creating the AMQP over TCP provider.
  */
-public interface Provider {
+public class AmqpProviderFactory implements ProviderFactory {
 
-    void initialize(URI connectionURI) throws IOException;
+    /* (non-Javadoc)
+     * @see org.fusesource.amqpjms.provider.ProviderFactory#createProvider()
+     */
+    @Override
+    public Provider createProvider() {
+        return new AmqpProvider();
+    }
 
-    void close() throws IOException;
-
+    /* (non-Javadoc)
+     * @see org.fusesource.amqpjms.provider.ProviderFactory#getName()
+     */
+    @Override
+    public String getName() {
+        return "AMQP";
+    }
 }

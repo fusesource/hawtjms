@@ -115,10 +115,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                     s.close();
                 }
                 this.sessions.clear();
-//                if (channel != null) {
-//                    channel.close();
-//                    channel = null;
-//                }
+                if (provider != null) {
+                    provider.close();
+                    provider = null;
+                }
             } catch (Exception e) {
                 throw JmsExceptionSupport.create(e);
             } finally {
@@ -201,15 +201,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     /**
-     * @return ExceptionListener
-     * @see javax.jms.Connection#getExceptionListener()
-     */
-    @Override
-    public ExceptionListener getExceptionListener() {
-        return this.exceptionListener;
-    }
-
-    /**
      * @return ConnectionMetaData
      * @see javax.jms.Connection#getMetaData()
      */
@@ -236,15 +227,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
         this.connectionMeta.setClientId(clientID);
         this.clientIdSet = true;
-    }
-
-    /**
-     * @param listener
-     * @see javax.jms.Connection#setExceptionListener(javax.jms.ExceptionListener)
-     */
-    @Override
-    public void setExceptionListener(ExceptionListener listener) {
-        this.exceptionListener = listener;
     }
 
     /**
@@ -498,6 +480,24 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     ////////////////////////////////////////////////////////////////////////////
     // Property setters and getters
     ////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @return ExceptionListener
+     * @see javax.jms.Connection#getExceptionListener()
+     */
+    @Override
+    public ExceptionListener getExceptionListener() {
+        return this.exceptionListener;
+    }
+
+    /**
+     * @param listener
+     * @see javax.jms.Connection#setExceptionListener(javax.jms.ExceptionListener)
+     */
+    @Override
+    public void setExceptionListener(ExceptionListener listener) {
+        this.exceptionListener = listener;
+    }
 
     public boolean isForceAsyncSend() {
         return connectionMeta.isForceAsyncSend();

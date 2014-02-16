@@ -24,6 +24,7 @@ import java.util.Properties;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
@@ -36,11 +37,17 @@ import org.fusesource.amqpjms.jms.jndi.JNDIStorable;
 import org.fusesource.amqpjms.jms.util.IdGenerator;
 import org.fusesource.amqpjms.jms.util.PropertyUtil;
 import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.ProviderFactory;
+import org.fusesource.amqpjms.provider.ProviderFactoryFinder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * JMS ConnectionFactory Implementation.
  */
 public class JmsConnectionFactory extends JNDIStorable implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JmsConnectionFactory.class);
 
     private URI brokerURI;
     private URI localURI;
@@ -54,11 +61,11 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String tempQueuePrefix = "/temp-queue/";
     private String tempTopicPrefix = "/temp-topic/";
     private long disconnectTimeout = 10000;
-
     private IdGenerator clientIdGenerator;
     private String clientIDPrefix;
     private IdGenerator connectionIdGenerator;
     private String connectionIDPrefix;
+    private ExceptionListener exceptionListener;
 
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
 
@@ -66,6 +73,14 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      * Constructor
      */
     public JmsConnectionFactory() {
+    }
+
+    /**
+     * Constructor
+     */
+    public JmsConnectionFactory(String username, String password) {
+        setUsername(username);
+        setPassword(password);
     }
 
     /**
@@ -129,7 +144,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     public TopicConnection createTopicConnection(String userName, String password) throws JMSException {
         try {
             String connectionId = getConnectionIdGenerator().generateId();
-            JmsTopicConnection result = new JmsTopicConnection(connectionId, (Provider) null, getClientIdGenerator());
+            Provider provider = createProvider(brokerURI);
+            JmsTopicConnection result = new JmsTopicConnection(connectionId, provider, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
             return result;
         } catch (Exception e) {
@@ -158,7 +174,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     public Connection createConnection(String userName, String password) throws JMSException {
         try {
             String connectionId = getConnectionIdGenerator().generateId();
-            JmsConnection result = new JmsConnection(connectionId, (Provider) null, getClientIdGenerator());
+            Provider provider = createProvider(brokerURI);
+            JmsConnection result = new JmsConnection(connectionId, provider, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
             return result;
         } catch (Exception e) {
@@ -188,13 +205,57 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     public QueueConnection createQueueConnection(String userName, String password) throws JMSException {
         try {
             String connectionId = getConnectionIdGenerator().generateId();
-            JmsQueueConnection result = new JmsQueueConnection(connectionId, (Provider) null, getClientIdGenerator());
+            Provider provider = createProvider(brokerURI);
+            JmsQueueConnection result = new JmsQueueConnection(connectionId, provider, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
             return result;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
         }
     }
+
+    private Provider createProvider(URI brokerURI) throws Exception {
+        Provider result = null;
+
+        try {
+            ProviderFactory factory = ProviderFactoryFinder.findProviderFactory(brokerURI);
+            result = factory.createProvider();
+        } catch (Exception ex) {
+            LOG.error("Failed to create JMS Provider instance: ", ex);
+        }
+
+        return result;
+    }
+
+    private URI createURI(String name) {
+        if (name != null && name.trim().isEmpty() == false) {
+            try {
+                return new URI(name);
+            } catch (URISyntaxException e) {
+                throw (IllegalArgumentException) new IllegalArgumentException("Invalid broker URI: " + name).initCause(e);
+            }
+        }
+        return null;
+    }
+
+    protected synchronized IdGenerator getConnectionIdGenerator() {
+        if (connectionIdGenerator == null) {
+            if (connectionIDPrefix != null) {
+                connectionIdGenerator = new IdGenerator(connectionIDPrefix);
+            } else {
+                connectionIdGenerator = new IdGenerator();
+            }
+        }
+        return connectionIdGenerator;
+    }
+
+    protected void setConnectionIdGenerator(IdGenerator connectionIdGenerator) {
+        this.connectionIdGenerator = connectionIdGenerator;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Property getters and setters
+    //////////////////////////////////////////////////////////////////////////
 
     /**
      * @return the brokerURI
@@ -227,17 +288,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setLocalURI(String localURI) {
         this.localURI = createURI(localURI);
-    }
-
-    private URI createURI(String name) {
-        if (name != null && name.trim().isEmpty() == false) {
-            try {
-                return new URI(name);
-            } catch (URISyntaxException e) {
-                throw (IllegalArgumentException) new IllegalArgumentException("Invalid broker URI: " + name).initCause(e);
-            }
-        }
-        return null;
     }
 
     /**
@@ -381,18 +431,24 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.connectionIDPrefix = connectionIDPrefix;
     }
 
-    protected synchronized IdGenerator getConnectionIdGenerator() {
-        if (connectionIdGenerator == null) {
-            if (connectionIDPrefix != null) {
-                connectionIdGenerator = new IdGenerator(connectionIDPrefix);
-            } else {
-                connectionIdGenerator = new IdGenerator();
-            }
-        }
-        return connectionIdGenerator;
+    /**
+     * Gets the currently configured JMS ExceptionListener that will be set on all
+     * new Connection objects created from this factory.
+     *
+     * @return the currently configured JMS ExceptionListener.
+     */
+    public ExceptionListener getExceptionListener() {
+        return exceptionListener;
     }
 
-    protected void setConnectionIdGenerator(IdGenerator connectionIdGenerator) {
-        this.connectionIdGenerator = connectionIdGenerator;
+    /**
+     * Sets the JMS ExceptionListener that will be set on all new Connection objects
+     * created from this factory.
+     *
+     * @param exceptionListener
+     *        the JMS ExceptionListenenr to apply to new Connection's or null to clear.
+     */
+    public void setExceptionListener(ExceptionListener exceptionListener) {
+        this.exceptionListener = exceptionListener;
     }
 }
