@@ -16,6 +16,82 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
+import java.io.IOException;
+import java.net.URI;
+
+import org.apache.qpid.proton.engine.Connection;
+import org.apache.qpid.proton.engine.EngineFactory;
+import org.apache.qpid.proton.engine.Transport;
+import org.apache.qpid.proton.engine.impl.EngineFactoryImpl;
+import org.apache.qpid.proton.engine.impl.ProtocolTracer;
+import org.apache.qpid.proton.engine.impl.TransportImpl;
+import org.apache.qpid.proton.framing.TransportFrame;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.vertx.java.core.buffer.Buffer;
+
 public class AmqpConnection {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
+    private static final Logger TRACE_BYTES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".BYTES");
+    private static final Logger TRACE_FRAMES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".FRAMES");
+
+    private final EngineFactory engineFactory = new EngineFactoryImpl();
+    private final Transport protonTransport = engineFactory.createTransport();
+    private final Connection protonConnection = engineFactory.createConnection();
+
+    private URI remoteURI;
+    private boolean trace;
+
+    private AmqpTransport transport;
+
+    public AmqpConnection(URI remoteURI) {
+        this.remoteURI = remoteURI;
+        this.protonTransport.bind(this.protonConnection);
+        updateTracer();
+    }
+
+    public void connect() throws IOException {
+        transport.connect();
+    }
+
+    private void updateTracer() {
+        if (isTrace()) {
+            ((TransportImpl) protonTransport).setProtocolTracer(new ProtocolTracer() {
+                @Override
+                public void receivedFrame(TransportFrame transportFrame) {
+                    TRACE_FRAMES.trace("RECV: {}", transportFrame.getBody());
+                }
+
+                @Override
+                public void sentFrame(TransportFrame transportFrame) {
+                    TRACE_FRAMES.trace("SENT: {}", transportFrame.getBody());
+                }
+            });
+        }
+    }
+
+    void onAmqpData(Buffer input) {
+
+    }
+
+    void onTransportError(Throwable error) {
+
+    }
+
+    public void setRemoteURI(URI remoteURI) {
+        this.remoteURI = remoteURI;
+    }
+
+    public URI getRemoteURI() {
+        return this.remoteURI;
+    }
+
+    public void setTrace(boolean trace) {
+        this.trace = trace;
+    }
+
+    public boolean isTrace() {
+        return this.trace;
+    }
 }

@@ -49,6 +49,16 @@
       <artifactId>apollo-selector</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+      <version>2.0.2-final</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-platform</artifactId>
+      <version>2.0.2-final</version>
+    </dependency>
 
     <!-- would be nice if we could make this dependency optional -->
     <dependency>
