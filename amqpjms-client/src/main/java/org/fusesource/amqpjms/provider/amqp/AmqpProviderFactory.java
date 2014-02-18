@@ -16,6 +16,8 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
+import java.net.URI;
+
 import org.fusesource.amqpjms.provider.Provider;
 import org.fusesource.amqpjms.provider.ProviderFactory;
 
@@ -24,17 +26,11 @@ import org.fusesource.amqpjms.provider.ProviderFactory;
  */
 public class AmqpProviderFactory implements ProviderFactory {
 
-    /* (non-Javadoc)
-     * @see org.fusesource.amqpjms.provider.ProviderFactory#createProvider()
-     */
     @Override
-    public Provider createProvider() {
-        return new AmqpProvider();
+    public Provider createProvider(URI remoteURI) {
+        return new AmqpProvider(remoteURI);
     }
 
-    /* (non-Javadoc)
-     * @see org.fusesource.amqpjms.provider.ProviderFactory#getName()
-     */
     @Override
     public String getName() {
         return "AMQP";

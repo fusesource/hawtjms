@@ -19,6 +19,8 @@ package org.fusesource.amqpjms.provider.amqp;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.fusesource.amqpjms.jms.util.IOExceptionSupport;
 import org.slf4j.Logger;
@@ -43,15 +45,22 @@ public class AmqpTcpTransport implements AmqpTransport {
     private final NetClient client = vertx.createNetClient();
     private final AmqpConnection parent;
     private final URI remoteLocation;
+    private final AtomicBoolean connected = new AtomicBoolean();
+    private final AtomicReference<Throwable> connectionError = new AtomicReference<Throwable>();
 
     private NetSocket socket;
 
     /**
+     * Create a new instance of the transport.
      *
+     * @param parent
+     *        The AmqpConnection instance that this transport is bound to
+     * @param remoteLocation
+     *        The remote location where this transport should connection to.
      */
-    public AmqpTcpTransport(AmqpConnection parent) {
+    public AmqpTcpTransport(AmqpConnection parent, URI remoteLocation) {
         this.parent = parent;
-        this.remoteLocation = parent.getRemoteURI();
+        this.remoteLocation = remoteLocation;
     }
 
     @Override
@@ -64,6 +73,8 @@ public class AmqpTcpTransport implements AmqpTransport {
                     if (asyncResult.succeeded()) {
                         socket = asyncResult.result();
                         LOG.info("We have connected! Socket is {}", socket);
+
+                        connected.set(true);
 
                         socket.dataHandler(new Handler<Buffer>() {
                             @Override
@@ -79,14 +90,18 @@ public class AmqpTcpTransport implements AmqpTransport {
                             }
                         });
                     } else {
-                        // TODO report error;
-                        asyncResult.cause();
+                        connected.set(false);
+                        connectionError.set(asyncResult.cause());
                     }
                 }
             });
         } catch (Throwable reason) {
             LOG.info("Failed to connect to target Broker: {}", reason);
             throw IOExceptionSupport.create(reason);
+        }
+
+        if (!connected.get()) {
+            throw IOExceptionSupport.create(connectionError.get());
         }
     }
 

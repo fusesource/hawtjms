@@ -44,7 +44,7 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicSession;
 import javax.net.ssl.SSLContext;
 
-import org.apache.activemq.ConnectionFailedException;
+import org.fusesource.amqpjms.jms.exceptions.JmsConnectionFailedException;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionId;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionMeta;
@@ -463,7 +463,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     protected void checkClosedOrFailed() throws JMSException {
         checkClosed();
         if (failed.get()) {
-            throw new ConnectionFailedException(firstFailureError);
+            throw new JmsConnectionFailedException(firstFailureError);
         }
     }
 

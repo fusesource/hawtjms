@@ -233,10 +233,11 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
         try {
             ProviderFactory factory = ProviderFactoryFinder.findProviderFactory(brokerURI);
-            result = factory.createProvider();
+            result = factory.createProvider(brokerURI);
             result.connect();
         } catch (Exception ex) {
-            LOG.error("Failed to create JMS Provider instance: ", ex);
+            LOG.error("Failed to create JMS Provider instance for: {}", brokerURI.getScheme());
+            LOG.trace("Error: ", ex);
             throw ex;
         }
 

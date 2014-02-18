@@ -16,9 +16,6 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
-import java.io.IOException;
-import java.net.URI;
-
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EngineFactory;
 import org.apache.qpid.proton.engine.Transport;
@@ -40,19 +37,11 @@ public class AmqpConnection {
     private final Transport protonTransport = engineFactory.createTransport();
     private final Connection protonConnection = engineFactory.createConnection();
 
-    private URI remoteURI;
     private boolean trace;
 
-    private AmqpTransport transport;
-
-    public AmqpConnection(URI remoteURI) {
-        this.remoteURI = remoteURI;
+    public AmqpConnection() {
         this.protonTransport.bind(this.protonConnection);
         updateTracer();
-    }
-
-    public void connect() throws IOException {
-        transport.connect();
     }
 
     private void updateTracer() {
@@ -76,15 +65,7 @@ public class AmqpConnection {
     }
 
     void onTransportError(Throwable error) {
-
-    }
-
-    public void setRemoteURI(URI remoteURI) {
-        this.remoteURI = remoteURI;
-    }
-
-    public URI getRemoteURI() {
-        return this.remoteURI;
+        LOG.info("Transport failed: {}", error.getMessage());
     }
 
     public void setTrace(boolean trace) {

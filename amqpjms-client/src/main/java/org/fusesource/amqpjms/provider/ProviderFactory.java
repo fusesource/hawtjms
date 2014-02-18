@@ -16,13 +16,27 @@
  */
 package org.fusesource.amqpjms.provider;
 
+import java.net.URI;
+
 /**
- *
+ * Interface that all JMS Providers must implement.
  */
 public interface ProviderFactory {
 
-    Provider createProvider();
+    /**
+     * Creates an instance of the given Provider and configures it using the properties set
+     * on the given remote broker URI.
+     *
+     * @param remoteURO
+     *        The URI used to connect to a remote Broker.
+     *
+     * @return a new JMS Provider instance.
+     */
+    Provider createProvider(URI remoteURO);
 
+    /**
+     * @return the name of this JMS Provider, e.g. STOMP, AMQP, MQTT...etc
+     */
     String getName();
 
 }

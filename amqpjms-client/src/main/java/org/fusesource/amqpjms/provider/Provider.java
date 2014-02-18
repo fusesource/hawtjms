@@ -17,6 +17,7 @@
 package org.fusesource.amqpjms.provider;
 
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * Defines the interface that is implemented by a Protocol Provider object
@@ -51,5 +52,13 @@ public interface Provider {
      * @throws IOException if an error occurs during recovery completion processing.
      */
     void receoveryComplate() throws IOException;
+
+    /**
+     * Returns the URI used to configure this Provider and specify the remote address of the
+     * Broker it connects to.
+     *
+     * @return the URI used to configure this Provider.
+     */
+    URI getRemoteURI();
 
 }
