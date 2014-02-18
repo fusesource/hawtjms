@@ -69,7 +69,7 @@ import org.fusesource.amqpjms.jms.message.JmsTextMessage;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
-import org.fusesource.amqpjms.jms.meta.JmsSessionMeta;
+import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.hawtbuf.AsciiBuffer;
 
 /**
@@ -90,7 +90,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final long consumerMessageBufferSize = 1024 * 64;
     private final LinkedBlockingQueue<JmsMessage> stoppedMessages = new LinkedBlockingQueue<JmsMessage>(10000);
     private JmsPrefetchPolicy prefetchPolicy;
-    private final JmsSessionMeta sessionMeta;
+    private final JmsSessionInfo sessionMeta;
 
     private final AtomicLong consumerIdGenerator = new AtomicLong();
     private final AtomicLong producerIdGenerator = new AtomicLong();
@@ -106,7 +106,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         this.acknowledgementMode = acknowledgementMode;
         this.forceAsyncSend = connection.isForceAsyncSend();
         this.prefetchPolicy = new JmsPrefetchPolicy(connection.getPrefetchPolicy());
-        this.sessionMeta = new JmsSessionMeta(sessionId);
+        this.sessionMeta = new JmsSessionInfo(sessionId);
     }
 
     int acknowledgementMode() {

@@ -32,7 +32,7 @@ import javax.jms.Session;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
-import org.fusesource.amqpjms.jms.meta.JmsConsumerMeta;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
 import org.fusesource.amqpjms.jms.util.MessageQueue;
 
 /**
@@ -41,7 +41,7 @@ import org.fusesource.amqpjms.jms.util.MessageQueue;
 public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
 
     protected final JmsSession session;
-    protected JmsConsumerMeta consumerMeta;
+    protected JmsConsumerInfo consumerMeta;
     protected final int acknowledgementMode;
     protected final AtomicBoolean closed = new AtomicBoolean();
     protected boolean started;
@@ -61,7 +61,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
             this.messageQueue = new MessageQueue(session.getConsumerMessageBufferSize());
         }
 
-        this.consumerMeta = new JmsConsumerMeta(consumerId);
+        this.consumerMeta = new JmsConsumerInfo(consumerId);
         this.consumerMeta.setSelector(selector);
         this.consumerMeta.setDestination(destination);
     }

@@ -19,26 +19,26 @@ package org.fusesource.amqpjms.jms.meta;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.util.ToStringSupport;
 
-public class JmsProducerMeta implements Comparable<JmsProducerMeta> {
+public class JmsProducerInfo implements Comparable<JmsProducerInfo> {
 
     protected final JmsProducerId producerId;
     protected JmsDestination destination;
 
-    public JmsProducerMeta(JmsProducerId producerId) {
+    public JmsProducerInfo(JmsProducerId producerId) {
         this.producerId = producerId;
     }
 
-    public JmsProducerMeta(JmsSessionMeta sessionInfo, long producerId) {
+    public JmsProducerInfo(JmsSessionInfo sessionInfo, long producerId) {
         this.producerId = new JmsProducerId(sessionInfo.getSessionId(), producerId);
     }
 
-    public JmsProducerMeta copy() {
-        JmsProducerMeta info = new JmsProducerMeta(producerId);
+    public JmsProducerInfo copy() {
+        JmsProducerInfo info = new JmsProducerInfo(producerId);
         copy(info);
         return info;
     }
 
-    public void copy(JmsProducerMeta info) {
+    public void copy(JmsProducerInfo info) {
         info.destination = destination;
     }
 
@@ -76,7 +76,7 @@ public class JmsProducerMeta implements Comparable<JmsProducerMeta> {
             return false;
         }
 
-        JmsProducerMeta other = (JmsProducerMeta) obj;
+        JmsProducerInfo other = (JmsProducerInfo) obj;
 
         if (producerId == null && other.producerId != null) {
             return false;
@@ -88,7 +88,7 @@ public class JmsProducerMeta implements Comparable<JmsProducerMeta> {
     }
 
     @Override
-    public int compareTo(JmsProducerMeta other) {
+    public int compareTo(JmsProducerInfo other) {
         return this.producerId.compareTo(other.producerId);
     }
 }

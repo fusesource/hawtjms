@@ -47,7 +47,7 @@ import javax.net.ssl.SSLContext;
 import org.fusesource.amqpjms.jms.exceptions.JmsConnectionFailedException;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionId;
-import org.fusesource.amqpjms.jms.meta.JmsConnectionMeta;
+import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.util.IdGenerator;
 import org.fusesource.amqpjms.jms.util.ThreadPoolUtils;
@@ -62,7 +62,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnection.class);
 
-    private JmsConnectionMeta connectionMeta;
+    private JmsConnectionInfo connectionMeta;
 
     private final IdGenerator clientIdGenerator;
     private boolean clientIdSet;
@@ -100,7 +100,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         this.provider = provider;
         this.clientIdGenerator = clientIdGenerator;
-        this.connectionMeta = new JmsConnectionMeta(new JmsConnectionId(connectionId));
+        this.connectionMeta = new JmsConnectionInfo(new JmsConnectionId(connectionId));
     }
 
     /**

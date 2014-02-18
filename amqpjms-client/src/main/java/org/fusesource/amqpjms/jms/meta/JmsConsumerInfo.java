@@ -19,7 +19,7 @@ package org.fusesource.amqpjms.jms.meta;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.util.ToStringSupport;
 
-public class JmsConsumerMeta implements Comparable<JmsConsumerMeta> {
+public class JmsConsumerInfo implements Comparable<JmsConsumerInfo> {
 
     protected final JmsConsumerId consumerId;
     protected JmsDestination destination;
@@ -33,21 +33,21 @@ public class JmsConsumerMeta implements Comparable<JmsConsumerMeta> {
     // Can be used to track the last consumed message.
     private transient long lastDeliveredSequenceId;
 
-    public JmsConsumerMeta(JmsConsumerId consumerId) {
+    public JmsConsumerInfo(JmsConsumerId consumerId) {
         this.consumerId = consumerId;
     }
 
-    public JmsConsumerMeta(JmsSessionMeta sessionInfo, long consumerId) {
+    public JmsConsumerInfo(JmsSessionInfo sessionInfo, long consumerId) {
         this.consumerId = new JmsConsumerId(sessionInfo.getSessionId(), consumerId);
     }
 
-    public JmsConsumerMeta copy() {
-        JmsConsumerMeta info = new JmsConsumerMeta(consumerId);
+    public JmsConsumerInfo copy() {
+        JmsConsumerInfo info = new JmsConsumerInfo(consumerId);
         copy(info);
         return info;
     }
 
-    public void copy(JmsConsumerMeta info) {
+    public void copy(JmsConsumerInfo info) {
         info.destination = destination;
         info.prefetchSize = prefetchSize;
         info.browser = browser;
@@ -151,7 +151,7 @@ public class JmsConsumerMeta implements Comparable<JmsConsumerMeta> {
             return false;
         }
 
-        JmsConsumerMeta other = (JmsConsumerMeta) obj;
+        JmsConsumerInfo other = (JmsConsumerInfo) obj;
 
         if (consumerId == null && other.consumerId != null) {
             return false;
@@ -162,7 +162,7 @@ public class JmsConsumerMeta implements Comparable<JmsConsumerMeta> {
     }
 
     @Override
-    public int compareTo(JmsConsumerMeta other) {
+    public int compareTo(JmsConsumerInfo other) {
         return this.consumerId.compareTo(other.consumerId);
     }
 }

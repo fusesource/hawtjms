@@ -26,7 +26,7 @@ import javax.jms.MessageProducer;
 
 import org.fusesource.amqpjms.jms.message.JmsMessageTransformation;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
-import org.fusesource.amqpjms.jms.meta.JmsProducerMeta;
+import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 
 /**
  * Implementation of a Jms MessageProducer
@@ -34,7 +34,7 @@ import org.fusesource.amqpjms.jms.meta.JmsProducerMeta;
 public class JmsMessageProducer implements MessageProducer {
 
     protected final JmsSession session;
-    protected JmsProducerMeta producerMeta;
+    protected JmsProducerInfo producerMeta;
     protected final boolean flexibleDestination;
     protected int deliveryMode = DeliveryMode.PERSISTENT;
     protected int priority = Message.DEFAULT_PRIORITY;
@@ -46,7 +46,7 @@ public class JmsMessageProducer implements MessageProducer {
     protected JmsMessageProducer(JmsProducerId producerId, JmsSession session, JmsDestination destination) {
         this.session = session;
         this.flexibleDestination = destination == null;
-        this.producerMeta = new JmsProducerMeta(producerId);
+        this.producerMeta = new JmsProducerInfo(producerId);
         this.producerMeta.setDestination(destination);
     }
 

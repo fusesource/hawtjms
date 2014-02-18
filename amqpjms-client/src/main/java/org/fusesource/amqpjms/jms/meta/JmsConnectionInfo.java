@@ -22,7 +22,7 @@ import org.fusesource.amqpjms.jms.util.ToStringSupport;
  * Meta object that contains the JmsConnection identification and configuration
  * options.  Providers can extend this to add Provider specific data as needed.
  */
-public class JmsConnectionMeta implements Comparable<JmsConnectionMeta> {
+public class JmsConnectionInfo implements Comparable<JmsConnectionInfo> {
 
     private final JmsConnectionId connectionId;
     private String clientId;
@@ -37,17 +37,17 @@ public class JmsConnectionMeta implements Comparable<JmsConnectionMeta> {
     private String tempQueuePrefix = "/temp-queue/";
     private String tempTopicPrefix = "/temp-topic/";
 
-    public JmsConnectionMeta(JmsConnectionId connectionId) {
+    public JmsConnectionInfo(JmsConnectionId connectionId) {
         this.connectionId = connectionId;
     }
 
-    public JmsConnectionMeta copy() {
-        JmsConnectionMeta copy = new JmsConnectionMeta(connectionId);
+    public JmsConnectionInfo copy() {
+        JmsConnectionInfo copy = new JmsConnectionInfo(connectionId);
         copy(copy);
         return copy;
     }
 
-    private void copy(JmsConnectionMeta copy) {
+    private void copy(JmsConnectionInfo copy) {
         copy.clientId = clientId;
         copy.username = username;
         copy.password = password;
@@ -175,7 +175,7 @@ public class JmsConnectionMeta implements Comparable<JmsConnectionMeta> {
             return false;
         }
 
-        JmsConnectionMeta other = (JmsConnectionMeta) obj;
+        JmsConnectionInfo other = (JmsConnectionInfo) obj;
 
         if (connectionId == null && other.connectionId != null) {
             return false;
@@ -186,7 +186,7 @@ public class JmsConnectionMeta implements Comparable<JmsConnectionMeta> {
     }
 
     @Override
-    public int compareTo(JmsConnectionMeta other) {
+    public int compareTo(JmsConnectionInfo other) {
         return this.connectionId.compareTo(other.connectionId);
     }
 }

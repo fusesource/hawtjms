@@ -16,15 +16,15 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
-public class JmsSessionMeta {
+public class JmsSessionInfo {
 
     protected final JmsSessionId sessionId;
 
-    public JmsSessionMeta(JmsConnectionMeta connectionMeta, long sessionId) {
+    public JmsSessionInfo(JmsConnectionInfo connectionMeta, long sessionId) {
         this.sessionId = new JmsSessionId(connectionMeta.getConnectionId(), sessionId);
     }
 
-    public JmsSessionMeta(JmsSessionId sessionId) {
+    public JmsSessionInfo(JmsSessionId sessionId) {
         this.sessionId = sessionId;
     }
 
