@@ -35,7 +35,7 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
      * @param s
      * @param destination
      */
-    protected JmsTopicPublisher(JmsProducerId id, JmsSession session, JmsDestination destination) {
+    protected JmsTopicPublisher(JmsProducerId id, JmsSession session, JmsDestination destination) throws JMSException {
         super(id, session, destination);
     }
 
@@ -47,7 +47,7 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
     @Override
     public Topic getTopic() throws IllegalStateException {
         checkClosed();
-        return (Topic) this.producerMeta.getDestination();
+        return (Topic) this.producerInfo.getDestination();
     }
 
     /**

@@ -36,7 +36,7 @@ public class JmsQueueSender extends JmsMessageProducer implements QueueSender {
      * @param session
      * @param destination
      */
-    protected JmsQueueSender(JmsProducerId id, JmsSession session, JmsDestination destination) {
+    protected JmsQueueSender(JmsProducerId id, JmsSession session, JmsDestination destination) throws JMSException {
         super(id, session, destination);
     }
 
@@ -48,7 +48,7 @@ public class JmsQueueSender extends JmsMessageProducer implements QueueSender {
     @Override
     public Queue getQueue() throws IllegalStateException {
         checkClosed();
-        return (Queue) this.producerMeta.getDestination();
+        return (Queue) this.producerInfo.getDestination();
     }
 
     /**
