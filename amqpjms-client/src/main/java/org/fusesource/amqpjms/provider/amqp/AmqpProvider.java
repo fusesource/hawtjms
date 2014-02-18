@@ -22,7 +22,15 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
+import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
+import org.fusesource.amqpjms.jms.meta.JmsResource;
+import org.fusesource.amqpjms.jms.meta.JmsResourceVistor;
+import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.jms.util.IOExceptionSupport;
 import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.ProviderResponse;
 
 /**
  * An AMQP v1.0 Provider.
@@ -92,6 +100,43 @@ public class AmqpProvider implements Provider {
     @Override
     public URI getRemoteURI() {
         return remoteURI;
+    }
+
+    @Override
+    public ProviderResponse<JmsResource> create(JmsResource resource) throws IOException {
+        final ProviderResponse<JmsResource> response = new ProviderResponse<JmsResource>();
+
+        try {
+            resource.visit(new JmsResourceVistor() {
+
+                @Override
+                public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
+                    // TODO Auto-generated method stub
+
+                }
+
+                @Override
+                public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
+                    // TODO Auto-generated method stub
+
+                }
+
+                @Override
+                public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
+                    // TODO Auto-generated method stub
+
+                }
+
+                @Override
+                public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
+                    connection.createConnection(connectionInfo, response);
+                }
+            });
+        } catch (Exception error) {
+            throw IOExceptionSupport.create(error);
+        }
+
+        return response;
     }
 
     /**

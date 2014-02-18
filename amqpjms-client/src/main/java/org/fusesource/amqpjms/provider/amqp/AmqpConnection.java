@@ -16,6 +16,8 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
+import java.io.IOException;
+
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EngineFactory;
 import org.apache.qpid.proton.engine.Transport;
@@ -23,6 +25,9 @@ import org.apache.qpid.proton.engine.impl.EngineFactoryImpl;
 import org.apache.qpid.proton.engine.impl.ProtocolTracer;
 import org.apache.qpid.proton.engine.impl.TransportImpl;
 import org.apache.qpid.proton.framing.TransportFrame;
+import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsResource;
+import org.fusesource.amqpjms.provider.AsyncResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vertx.java.core.buffer.Buffer;
@@ -42,6 +47,9 @@ public class AmqpConnection {
     public AmqpConnection() {
         this.protonTransport.bind(this.protonConnection);
         updateTracer();
+    }
+
+    public void createConnection(JmsConnectionInfo connectionInfo, AsyncResult<JmsResource> result) throws IOException {
     }
 
     private void updateTracer() {

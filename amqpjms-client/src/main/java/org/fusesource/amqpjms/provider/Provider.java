@@ -19,6 +19,8 @@ package org.fusesource.amqpjms.provider;
 import java.io.IOException;
 import java.net.URI;
 
+import org.fusesource.amqpjms.jms.meta.JmsResource;
+
 /**
  * Defines the interface that is implemented by a Protocol Provider object
  * in order to map JMS functionality into the given wire level protocol.
@@ -60,5 +62,22 @@ public interface Provider {
      * @return the URI used to configure this Provider.
      */
     URI getRemoteURI();
+
+    /**
+     * Create the Provider version of the given JmsResource.
+     *
+     * For each JMS Resource type the Provider implementation must create it's own internal
+     * representation and upon successful creation provide the caller with a response.  The
+     * response is either a possible updated version of the requested JmsResource instance
+     * with any necessary configuration changes, or an error value indicating what happened.
+     *
+     * @param resource
+     *        The JmsResouce instance that indicates what is being created.
+     *
+     * @return a response object that allows the caller to await the result.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    ProviderResponse<JmsResource> create(JmsResource resource) throws IOException;
 
 }
