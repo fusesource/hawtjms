@@ -16,7 +16,7 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
-public class JmsSessionInfo implements JmsResource {
+public final class JmsSessionInfo implements JmsResource {
 
     protected final JmsSessionId sessionId;
 

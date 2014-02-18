@@ -22,7 +22,7 @@ import org.fusesource.amqpjms.jms.util.ToStringSupport;
  * Meta object that contains the JmsConnection identification and configuration
  * options.  Providers can extend this to add Provider specific data as needed.
  */
-public class JmsConnectionInfo implements JmsResource, Comparable<JmsConnectionInfo> {
+public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConnectionInfo> {
 
     private final JmsConnectionId connectionId;
     private String clientId;

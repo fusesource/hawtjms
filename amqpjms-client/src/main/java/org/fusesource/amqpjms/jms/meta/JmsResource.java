@@ -22,6 +22,14 @@ package org.fusesource.amqpjms.jms.meta;
  */
 public interface JmsResource {
 
+    /**
+     * Allows a visitor object to walk the resources and process them.
+     *
+     * @param visitor
+     *        The visitor instance that is processing this resource.
+     *
+     * @throws Exception if an error occurs while visiting this resource.
+     */
     void visit(JmsResourceVistor visitor) throws Exception;
 
 }

@@ -19,7 +19,7 @@ package org.fusesource.amqpjms.jms.meta;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.util.ToStringSupport;
 
-public class JmsProducerInfo implements JmsResource, Comparable<JmsProducerInfo> {
+public final class JmsProducerInfo implements JmsResource, Comparable<JmsProducerInfo> {
 
     protected final JmsProducerId producerId;
     protected JmsDestination destination;
