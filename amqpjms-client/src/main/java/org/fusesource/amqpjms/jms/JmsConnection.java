@@ -62,7 +62,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnection.class);
 
-    private JmsConnectionInfo connectionMeta;
+    private JmsConnectionInfo connectionInfo;
 
     private final IdGenerator clientIdGenerator;
     private boolean clientIdSet;
@@ -72,6 +72,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean failed = new AtomicBoolean();
+    private final Object connectLock = new Object();
     private IOException firstFailureError;
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
 
@@ -100,7 +101,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         this.provider = provider;
         this.clientIdGenerator = clientIdGenerator;
-        this.connectionMeta = new JmsConnectionInfo(new JmsConnectionId(connectionId));
+        this.connectionInfo = new JmsConnectionInfo(new JmsConnectionId(connectionId));
     }
 
     /**
@@ -197,11 +198,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      */
     @Override
     public String getClientID() {
-        return this.connectionMeta.getClientId();
+        return this.connectionInfo.getClientId();
     }
 
     /**
-     * @return ConnectionMetaData
+     * @return connectionInfoData
      * @see javax.jms.Connection#getMetaData()
      */
     @Override
@@ -225,7 +226,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         if (connected.get()) {
             throw new IllegalStateException("Cannot set the client id once connected.");
         }
-        this.connectionMeta.setClientId(clientID);
+        this.connectionInfo.setClientId(clientID);
         this.clientIdSet = true;
     }
 
@@ -371,49 +372,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return result;
     }
 
-//    protected synchronized StompChannel createChannel() throws JMSException {
-//        StompChannel rc = new StompChannel();
-//        rc.setBrokerURI(brokerURI);
-//        rc.setLocalURI(localURI);
-//        rc.setUserName(userName);
-//        rc.setPassword(password);
-//        rc.setClientId(clientId);
-//        rc.setOmitHost(omitHost);
-//        rc.setSslContext(sslContext);
-//        rc.setDisconnectTimeout(disconnectTimeout);
-//        rc.setExceptionListener(this.exceptionListener);
-//        rc.setChannelId(clientId + "-" + clientNumber++);
-//        return rc;
-//    }
-//
-//    protected StompChannel getChannel() throws JMSException {
-//        StompChannel rc;
-//        synchronized (this) {
-//            if(channel == null) {
-//                channel = createChannel();
-//            }
-//            rc = channel;
-//        }
-//        rc.connect();
-//        return rc;
-//    }
-//
-//    protected StompChannel createChannel(JmsSession s) throws JMSException {
-//        checkClosed();
-//        StompChannel rc;
-//        synchronized (this) {
-//            if(channel != null) {
-//                rc = channel;
-//                channel = null;
-//            } else {
-//                rc = createChannel();
-//            }
-//        }
-//        rc.connect();
-//        rc.setListener(s);
-//        return rc;
-//    }
-//
 //    protected void removeSession(JmsSession s, StompChannel channel) throws JMSException {
 //        synchronized (this) {
 //            this.sessions.remove(s);
@@ -434,13 +392,35 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     private void connect() throws JMSException {
-        if (connected.compareAndSet(false, true)) {
-//            getChannel();
+        synchronized(this.connectLock) {
+            if (isConnected() || closed.get()) {
+                return;
+            }
+
+            if (connectionInfo.getClientId() == null || connectionInfo.getClientId().trim().isEmpty()) {
+                connectionInfo.setClientId(clientIdGenerator.generateId());
+            }
+
+            try {
+                connectionInfo = (JmsConnectionInfo) provider.create(connectionInfo).getResponse();
+            } catch (IOException ioe) {
+                throw JmsExceptionSupport.create(ioe);
+            }
+
+            this.connected.set(true);
+
+            // TODO - Advisory Support.
+            //
+            // Providers should have an interface for adding a listener for temporary
+            // destination advisory messages for create / destroy so we can track them
+            // and throw exceptions when producers try to send to deleted destinations.
         }
     }
 
     void deleteDestination(JmsDestination destination) throws JMSException {
         checkClosedOrFailed();
+        connect();
+
         try {
 
             for (JmsSession session : this.sessions) {
@@ -474,7 +454,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     protected JmsSessionId getNextSessionId() {
-        return new JmsSessionId(connectionMeta.getConnectionId(), sessionIdGenerator.incrementAndGet());
+        return new JmsSessionId(connectionInfo.getConnectionId(), sessionIdGenerator.incrementAndGet());
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -500,51 +480,51 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     public boolean isForceAsyncSend() {
-        return connectionMeta.isForceAsyncSend();
+        return connectionInfo.isForceAsyncSend();
     }
 
     public void setForceAsyncSend(boolean forceAsyncSend) {
-        connectionMeta.setForceAsyncSends(forceAsyncSend);
+        connectionInfo.setForceAsyncSends(forceAsyncSend);
     }
 
     public String getTopicPrefix() {
-        return connectionMeta.getTopicPrefix();
+        return connectionInfo.getTopicPrefix();
     }
 
     public void setTopicPrefix(String topicPrefix) {
-        connectionMeta.setTopicPrefix(topicPrefix);
+        connectionInfo.setTopicPrefix(topicPrefix);
     }
 
     public String getTempTopicPrefix() {
-        return connectionMeta.getTempTopicPrefix();
+        return connectionInfo.getTempTopicPrefix();
     }
 
     public void setTempTopicPrefix(String tempTopicPrefix) {
-        connectionMeta.setTempTopicPrefix(tempTopicPrefix);
+        connectionInfo.setTempTopicPrefix(tempTopicPrefix);
     }
 
     public String getTempQueuePrefix() {
-        return connectionMeta.getTempQueuePrefix();
+        return connectionInfo.getTempQueuePrefix();
     }
 
     public void setTempQueuePrefix(String tempQueuePrefix) {
-        connectionMeta.setTempQueuePrefix(tempQueuePrefix);
+        connectionInfo.setTempQueuePrefix(tempQueuePrefix);
     }
 
     public String getQueuePrefix() {
-        return connectionMeta.getQueuePrefix();
+        return connectionInfo.getQueuePrefix();
     }
 
     public void setQueuePrefix(String queuePrefix) {
-        connectionMeta.setQueuePrefix(queuePrefix);
+        connectionInfo.setQueuePrefix(queuePrefix);
     }
 
     public boolean isOmitHost() {
-        return connectionMeta.isOmitHost();
+        return connectionInfo.isOmitHost();
     }
 
     public void setOmitHost(boolean omitHost) {
-        connectionMeta.setOmitHost(omitHost);
+        connectionInfo.setOmitHost(omitHost);
     }
 
     public JmsPrefetchPolicy getPrefetchPolicy() {
@@ -556,11 +536,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     public long getDisconnectTimeout() {
-        return connectionMeta.getDisconnectTimeout();
+        return connectionInfo.getDisconnectTimeout();
     }
 
     public void setDisconnectTimeout(long disconnectTimeout) {
-        connectionMeta.setDisconnectTimeout(disconnectTimeout);
+        connectionInfo.setDisconnectTimeout(disconnectTimeout);
     }
 
     public URI getBrokerURI() {
@@ -593,5 +573,9 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     void setProvider(Provider provider) {
         this.provider = provider;
+    }
+
+    boolean isConnected() {
+        return this.connected.get();
     }
 }
