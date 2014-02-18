@@ -16,9 +16,12 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
+
 /**
  * Base class for the JMS object representing JMS resources such as Connection, Session, etc.
  */
-public class JmsResource {
+public interface JmsResource {
+
+    void visit(JmsResourceVistor visitor) throws Exception;
 
 }

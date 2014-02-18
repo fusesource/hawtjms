@@ -16,7 +16,7 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
-public class JmsSessionInfo extends JmsResource {
+public class JmsSessionInfo implements JmsResource {
 
     protected final JmsSessionId sessionId;
 
@@ -30,5 +30,10 @@ public class JmsSessionInfo extends JmsResource {
 
     public JmsSessionId getSessionId() {
         return sessionId;
+    }
+
+    @Override
+    public void visit(JmsResourceVistor vistor) throws Exception {
+        vistor.processSessionInfo(this);
     }
 }

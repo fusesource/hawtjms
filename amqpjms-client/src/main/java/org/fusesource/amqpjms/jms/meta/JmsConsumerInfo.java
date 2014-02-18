@@ -19,7 +19,7 @@ package org.fusesource.amqpjms.jms.meta;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.util.ToStringSupport;
 
-public class JmsConsumerInfo extends JmsResource implements Comparable<JmsConsumerInfo> {
+public class JmsConsumerInfo implements JmsResource, Comparable<JmsConsumerInfo> {
 
     protected final JmsConsumerId consumerId;
     protected JmsDestination destination;
@@ -164,5 +164,10 @@ public class JmsConsumerInfo extends JmsResource implements Comparable<JmsConsum
     @Override
     public int compareTo(JmsConsumerInfo other) {
         return this.consumerId.compareTo(other.consumerId);
+    }
+
+    @Override
+    public void visit(JmsResourceVistor vistor) throws Exception {
+        vistor.processConsumerInfo(this);
     }
 }

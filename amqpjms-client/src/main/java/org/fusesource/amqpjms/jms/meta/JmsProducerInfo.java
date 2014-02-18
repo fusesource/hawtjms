@@ -19,7 +19,7 @@ package org.fusesource.amqpjms.jms.meta;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.util.ToStringSupport;
 
-public class JmsProducerInfo extends JmsResource implements Comparable<JmsProducerInfo> {
+public class JmsProducerInfo implements JmsResource, Comparable<JmsProducerInfo> {
 
     protected final JmsProducerId producerId;
     protected JmsDestination destination;
@@ -90,5 +90,10 @@ public class JmsProducerInfo extends JmsResource implements Comparable<JmsProduc
     @Override
     public int compareTo(JmsProducerInfo other) {
         return this.producerId.compareTo(other.producerId);
+    }
+
+    @Override
+    public void visit(JmsResourceVistor vistor) throws Exception {
+        vistor.processProducerInfo(this);
     }
 }
