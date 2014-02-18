@@ -28,6 +28,7 @@ import javax.jms.JMSException;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class JmsConnectionFactoryTest {
@@ -82,12 +83,14 @@ public class JmsConnectionFactoryTest {
         factory.createConnection();
     }
 
+    @Ignore
     @Test
     public void testCreateConnectionGoodProviderURI() throws JMSException {
         JmsConnectionFactory factory = new JmsConnectionFactory(goodProviderURI);
         assertNotNull(factory.createConnection());
     }
 
+    @Ignore
     @Test
     public void testCreateConnectionGoodProviderString() throws JMSException {
         JmsConnectionFactory factory = new JmsConnectionFactory(goodProvider);

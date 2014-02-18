@@ -19,6 +19,7 @@ package org.fusesource.amqpjms.provider.amqp;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -66,6 +67,8 @@ public class AmqpTcpTransport implements AmqpTransport {
     @Override
     public void connect() throws IOException {
 
+        final CountDownLatch connectLatch = new CountDownLatch(1);
+
         try {
             client.connect(remoteLocation.getPort(), remoteLocation.getHost(), new AsyncResultHandler<NetSocket>() {
                 @Override
@@ -75,6 +78,7 @@ public class AmqpTcpTransport implements AmqpTransport {
                         LOG.info("We have connected! Socket is {}", socket);
 
                         connected.set(true);
+                        connectLatch.countDown();
 
                         socket.dataHandler(new Handler<Buffer>() {
                             @Override
@@ -89,9 +93,11 @@ public class AmqpTcpTransport implements AmqpTransport {
                                 parent.onTransportError(event);
                             }
                         });
+
                     } else {
                         connected.set(false);
                         connectionError.set(asyncResult.cause());
+                        connectLatch.countDown();
                     }
                 }
             });
@@ -100,7 +106,12 @@ public class AmqpTcpTransport implements AmqpTransport {
             throw IOExceptionSupport.create(reason);
         }
 
-        if (!connected.get()) {
+        try {
+            connectLatch.await();
+        } catch (InterruptedException e) {
+        }
+
+        if (connectionError.get() != null) {
             throw IOExceptionSupport.create(connectionError.get());
         }
     }
