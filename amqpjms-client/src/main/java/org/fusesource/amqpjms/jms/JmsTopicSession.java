@@ -34,7 +34,7 @@ import org.fusesource.amqpjms.jms.meta.JmsSessionId;
  */
 public class JmsTopicSession extends JmsSession {
 
-    protected JmsTopicSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) {
+    protected JmsTopicSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         super(connection, sessionId, acknowledgementMode);
     }
 

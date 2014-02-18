@@ -48,6 +48,7 @@ import org.fusesource.amqpjms.jms.exceptions.JmsConnectionFailedException;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionId;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.util.IdGenerator;
 import org.fusesource.amqpjms.jms.util.ThreadPoolUtils;
@@ -401,12 +402,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                 connectionInfo.setClientId(clientIdGenerator.generateId());
             }
 
-            try {
-                connectionInfo = (JmsConnectionInfo) provider.create(connectionInfo).getResponse();
-            } catch (IOException ioe) {
-                throw JmsExceptionSupport.create(ioe);
-            }
-
+            this.connectionInfo = createResource(connectionInfo);
             this.connected.set(true);
 
             // TODO - Advisory Support.
@@ -455,6 +451,18 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     protected JmsSessionId getNextSessionId() {
         return new JmsSessionId(connectionInfo.getConnectionId(), sessionIdGenerator.incrementAndGet());
+    }
+
+    @SuppressWarnings("unchecked")
+    <T extends JmsResource> T createResource(T resource) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+
+        try {
+            return (T) provider.create(resource).getResponse();
+        } catch (Exception ioe) {
+            throw JmsExceptionSupport.create(ioe);
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////

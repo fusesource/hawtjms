@@ -77,7 +77,6 @@ import org.fusesource.hawtbuf.AsciiBuffer;
  */
 public class JmsSession implements Session, QueueSession, TopicSession, JmsMessageListener {
 
-    private final long nextMessageSwquence = 0;
     private final JmsConnection connection;
     private final int acknowledgementMode;
     private final List<MessageProducer> producers = new CopyOnWriteArrayList<MessageProducer>();
@@ -90,7 +89,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final long consumerMessageBufferSize = 1024 * 64;
     private final LinkedBlockingQueue<JmsMessage> stoppedMessages = new LinkedBlockingQueue<JmsMessage>(10000);
     private JmsPrefetchPolicy prefetchPolicy;
-    private final JmsSessionInfo sessionMeta;
+    private JmsSessionInfo sessionInfo;
 
     private final AtomicLong consumerIdGenerator = new AtomicLong();
     private final AtomicLong producerIdGenerator = new AtomicLong();
@@ -101,72 +100,48 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      * @param connection
      * @param acknowledgementMode
      */
-    protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) {
+    protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         this.connection = connection;
         this.acknowledgementMode = acknowledgementMode;
         this.forceAsyncSend = connection.isForceAsyncSend();
         this.prefetchPolicy = new JmsPrefetchPolicy(connection.getPrefetchPolicy());
-        this.sessionMeta = new JmsSessionInfo(sessionId);
+        this.sessionInfo = new JmsSessionInfo(sessionId);
+
+        this.sessionInfo = connection.createResource(sessionInfo);
     }
 
     int acknowledgementMode() {
         return this.acknowledgementMode;
     }
 
-    // ///////////////////////////////////////////////////////////////////////
-    //
+    //////////////////////////////////////////////////////////////////////////
     // Session methods
-    //
-    // ///////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-    /**
-     * @return acknowledgeMode
-     * @throws JMSException
-     * @see javax.jms.Session#getAcknowledgeMode()
-     */
     @Override
     public int getAcknowledgeMode() throws JMSException {
         checkClosed();
         return this.acknowledgementMode;
     }
 
-    /**
-     * @return true if transacted
-     * @throws JMSException
-     * @see javax.jms.Session#getTransacted()
-     */
     @Override
     public boolean getTransacted() throws JMSException {
         checkClosed();
         return this.acknowledgementMode == Session.SESSION_TRANSACTED;
     }
 
-    /**
-     * @return the Session messageListener
-     * @throws JMSException
-     * @see javax.jms.Session#getMessageListener()
-     */
     @Override
     public MessageListener getMessageListener() throws JMSException {
         checkClosed();
         return this.messageListener;
     }
 
-    /**
-     * @param listener
-     * @throws JMSException
-     * @see javax.jms.Session#setMessageListener(javax.jms.MessageListener)
-     */
     @Override
     public void setMessageListener(MessageListener listener) throws JMSException {
         checkClosed();
         this.messageListener = listener;
     }
 
-    /**
-     * @throws JMSException
-     * @see javax.jms.Session#recover()
-     */
     @Override
     public void recover() throws JMSException {
         checkClosed();
@@ -176,10 +151,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         // TODO: re-deliver all un-acked client-ack messages.
     }
 
-    /**
-     * @throws JMSException
-     * @see javax.jms.Session#commit()
-     */
     @Override
     public void commit() throws JMSException {
         checkClosed();
@@ -194,10 +165,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 //        this.currentTransactionId = getChannel().startTransaction();
     }
 
-    /**
-     * @throws JMSException
-     * @see javax.jms.Session#rollback()
-     */
     @Override
     public void rollback() throws JMSException {
         checkClosed();
@@ -220,18 +187,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 //        });
     }
 
-    /**
-     * @see javax.jms.Session#run()
-     */
     @Override
     public void run() {
         // TODO Auto-generated method stub
     }
 
-    /**
-     * @throws JMSException
-     * @see javax.jms.Session#close()
-     */
     @Override
     public void close() throws JMSException {
         if (closed.compareAndSet(false, true)) {
@@ -244,11 +204,9 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         }
     }
 
-    // ///////////////////////////////////////////////////////////////////////
-    //
+    //////////////////////////////////////////////////////////////////////////
     // Consumer creation
-    //
-    // ///////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
     /**
      * @param destination
@@ -925,11 +883,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     protected JmsConsumerId getNextConsumerId() {
-        return new JmsConsumerId(sessionMeta.getSessionId(), consumerIdGenerator.incrementAndGet());
+        return new JmsConsumerId(sessionInfo.getSessionId(), consumerIdGenerator.incrementAndGet());
     }
 
     protected JmsProducerId getNextProducerId() {
-        return new JmsProducerId(sessionMeta.getSessionId(), producerIdGenerator.incrementAndGet());
+        return new JmsProducerId(sessionInfo.getSessionId(), producerIdGenerator.incrementAndGet());
     }
 
     private AsciiBuffer getNextMessageId() throws JMSException {
