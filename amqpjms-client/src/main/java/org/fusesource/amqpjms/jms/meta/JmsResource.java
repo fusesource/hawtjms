@@ -16,19 +16,9 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
-public class JmsSessionInfo extends JmsResource {
+/**
+ * Base class for the JMS object representing JMS resources such as Connection, Session, etc.
+ */
+public class JmsResource {
 
-    protected final JmsSessionId sessionId;
-
-    public JmsSessionInfo(JmsConnectionInfo connectionMeta, long sessionId) {
-        this.sessionId = new JmsSessionId(connectionMeta.getConnectionId(), sessionId);
-    }
-
-    public JmsSessionInfo(JmsSessionId sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    public JmsSessionId getSessionId() {
-        return sessionId;
-    }
 }
