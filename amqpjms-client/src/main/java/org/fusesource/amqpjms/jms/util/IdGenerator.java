@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.activemq.util.InetAddressUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
