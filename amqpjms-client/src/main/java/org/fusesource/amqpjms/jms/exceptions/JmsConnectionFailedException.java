@@ -16,6 +16,8 @@
  */
 package org.fusesource.amqpjms.jms.exceptions;
 
+import java.io.IOException;
+
 import javax.jms.IllegalStateException;
 
 /**
@@ -25,7 +27,21 @@ public class JmsConnectionFailedException extends IllegalStateException {
 
     private static final long serialVersionUID = -3386897790274799220L;
 
+    public JmsConnectionFailedException(IOException cause) {
+        super("The JMS connection has failed: " + extractMessage(cause));
+        initCause(cause);
+        setLinkedException(cause);
+    }
+
     public JmsConnectionFailedException() {
-        super("The connection is already closed", "AlreadyClosed");
+        super("The JMS connection has failed due to a Transport problem", "Connection Failed");
+    }
+
+    private static String extractMessage(IOException cause) {
+        String m = cause.getMessage();
+        if (m == null || m.length() == 0) {
+            m = cause.toString();
+        }
+        return m;
     }
 }
