@@ -30,6 +30,7 @@ import org.fusesource.amqpjms.jms.meta.JmsResourceVistor;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.jms.util.IOExceptionSupport;
 import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.ProviderListener;
 import org.fusesource.amqpjms.provider.ProviderResponse;
 
 /**
@@ -47,6 +48,7 @@ public class AmqpProvider implements Provider {
     private final Map<String, String> extraOptions;
     private AmqpConnection connection;
     private AmqpTransport transport;
+    private ProviderListener listener;
 
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -195,5 +197,15 @@ public class AmqpProvider implements Provider {
         if (closed.get()) {
             throw new IOException("The Provider is already closed");
         }
+    }
+
+    @Override
+    public void setProviderListener(ProviderListener listener) {
+        this.listener = listener;
+    }
+
+    @Override
+    public ProviderListener getProviderListener() {
+        return this.listener;
     }
 }

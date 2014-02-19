@@ -95,4 +95,19 @@ public interface Provider {
      */
     ProviderResponse<Void> destroy(JmsResource resource) throws IOException;
 
+    /**
+     * Sets the listener of events from this Provider instance.
+     *
+     * @param listener
+     *        The listener instance that will receive all event callbacks.
+     */
+    void setProviderListener(ProviderListener listener);
+
+    /**
+     * Gets the currently set ProdiverListener instance.
+     *
+     * @return the currently set ProviderListener instance.
+     */
+    ProviderListener getProviderListener();
+
 }

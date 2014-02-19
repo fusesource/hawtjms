@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import org.fusesource.amqpjms.jms.util.IOExceptionSupport;
 
 /**
- *
+ * Asynchronous Provider response class.
  */
 public class ProviderResponse<T> implements AsyncResult<T> {
 
