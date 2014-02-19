@@ -75,6 +75,7 @@ import org.fusesource.hawtbuf.AsciiBuffer;
 /**
  * JMS Session implementation
  */
+@SuppressWarnings("static-access")
 public class JmsSession implements Session, QueueSession, TopicSession, JmsMessageListener {
 
     private final JmsConnection connection;
@@ -94,12 +95,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final AtomicLong consumerIdGenerator = new AtomicLong();
     private final AtomicLong producerIdGenerator = new AtomicLong();
 
-    /**
-     * Constructor
-     *
-     * @param connection
-     * @param acknowledgementMode
-     */
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         this.connection = connection;
         this.acknowledgementMode = acknowledgementMode;
@@ -404,12 +399,9 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public void unsubscribe(String name) throws JMSException {
         checkClosed();
-//        AsciiBuffer id = StompFrame.encodeHeader(name);
-//        JmsMessageConsumer consumer = this.consumers.remove(id);
-//        if (consumer != null) {
-//            consumer.close();
-//        }
-//        getChannel().unsubscribe(id, true);
+        // TODO - Ask Provider to un-subscribe a durable subscription name
+        //        The code should find the durable subscriber with this name
+        //        and close if prior to attempting the unsubscrive.
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -580,7 +572,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public TemporaryQueue createTemporaryQueue() throws JMSException {
         checkClosed();
-//        return getChannel().getServerAdaptor().createTemporaryQueue(this);
+        // TODO - Ask Provider to create a temporary destination.
         return null;
     }
 
@@ -592,7 +584,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public TemporaryTopic createTemporaryTopic() throws JMSException {
         checkClosed();
-//        return getChannel().getServerAdaptor().createTemporaryTopic(this);
+        // TODO - Ask Provider to create a temporary destination.
         return null;
     }
 
@@ -608,11 +600,9 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return new JmsTopic(connection, topicName);
     }
 
-    // ///////////////////////////////////////////////////////////////////////
-    //
-    // Impl methods
-    //
-    // ///////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    // Session Implementation methods
+    //////////////////////////////////////////////////////////////////////////
 
     protected void add(JmsMessageConsumer consumer) throws JMSException {
         this.consumers.put(consumer.getConsumerId(), consumer);
@@ -724,8 +714,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     // This extra wrapping class around SelectorParser is used to avoid
-    // ClassNotFoundException
-    // if SelectorParser is not in the class path.
+    // ClassNotFoundException if SelectorParser is not in the class path.
     static class OptionalSectorParser {
         public static void check(String selector) throws InvalidSelectorException {
             try {
@@ -783,7 +772,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 dispatch(message);
             }
             if (getTransacted() && this.currentTransactionId == null) {
-//                this.currentTransactionId = getChannel().startTransaction();
+                // TODO - start the new transaction.
             }
             for (JmsMessageConsumer consumer : consumers.values()) {
                 consumer.start();
