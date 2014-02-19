@@ -41,6 +41,7 @@ import org.fusesource.amqpjms.jms.util.MessageQueue;
 public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
 
     protected final JmsSession session;
+    protected final JmsConnection connection;
     protected JmsConsumerInfo consumerInfo;
     protected final int acknowledgementMode;
     protected final AtomicBoolean closed = new AtomicBoolean();
@@ -52,6 +53,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
 
     protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination, String selector) throws JMSException {
         this.session = session;
+        this.connection = session.getConnection();
         this.acknowledgementMode = session.acknowledgementMode();
 
         if (acknowledgementMode == Session.SESSION_TRANSACTED) {
@@ -87,9 +89,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
     public void close() throws JMSException {
         if (closed.compareAndSet(false, true)) {
             this.session.remove(this);
-            if (suspendedConnection.compareAndSet(true, false)) {
-//                session.channel.connection().resume();
-            }
+            this.connection.destroyResource(consumerInfo);
         }
     }
 

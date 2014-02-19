@@ -36,6 +36,7 @@ import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 public class JmsMessageProducer implements MessageProducer {
 
     protected final JmsSession session;
+    protected final JmsConnection connection;
     protected JmsProducerInfo producerInfo;
     protected final boolean flexibleDestination;
     protected int deliveryMode = DeliveryMode.PERSISTENT;
@@ -48,6 +49,7 @@ public class JmsMessageProducer implements MessageProducer {
 
     protected JmsMessageProducer(JmsProducerId producerId, JmsSession session, JmsDestination destination) throws JMSException {
         this.session = session;
+        this.connection = session.getConnection();
         this.flexibleDestination = destination == null;
         this.producerInfo = new JmsProducerInfo(producerId);
         this.producerInfo.setDestination(destination);
@@ -57,12 +59,15 @@ public class JmsMessageProducer implements MessageProducer {
     /**
      * Close the producer
      *
+     * @throws JMSException
+     *
      * @see javax.jms.MessageProducer#close()
      */
     @Override
-    public void close() {
+    public void close() throws JMSException {
         this.closed = true;
         this.session.remove(this);
+        this.connection.destroyResource(producerInfo);
     }
 
     /**
