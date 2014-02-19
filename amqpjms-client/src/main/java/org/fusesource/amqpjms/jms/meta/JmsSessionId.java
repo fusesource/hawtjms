@@ -16,17 +16,15 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
-public class JmsSessionId {
+public final class JmsSessionId implements JmsResourceId, Comparable<JmsSessionId> {
 
-    protected String connectionId;
-    protected long value;
+    private final String connectionId;
+    private final long value;
 
     protected transient int hashCode;
     protected transient String key;
     protected transient JmsConnectionId parentId;
-
-    public JmsSessionId() {
-    }
+    protected transient Object hint;
 
     public JmsSessionId(JmsConnectionId connectionId, long sessionId) {
         this.connectionId = connectionId.getValue();
@@ -79,16 +77,8 @@ public class JmsSessionId {
         return connectionId;
     }
 
-    public void setConnectionId(String connectionId) {
-        this.connectionId = connectionId;
-    }
-
     public long getValue() {
         return value;
-    }
-
-    public void setValue(long sessionId) {
-        this.value = sessionId;
     }
 
     @Override
@@ -97,5 +87,20 @@ public class JmsSessionId {
             key = connectionId + ":" + value;
         }
         return key;
+    }
+
+    @Override
+    public int compareTo(JmsSessionId other) {
+        return toString().compareTo(other.toString());
+    }
+
+    @Override
+    public void setProviderHint(Object hint) {
+        this.hint = hint;
+    }
+
+    @Override
+    public Object getProviderHint() {
+        return this.hint;
     }
 }

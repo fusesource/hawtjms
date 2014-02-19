@@ -16,28 +16,30 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
-public class JmsConsumerId implements Comparable<JmsConsumerId> {
+public final class JmsConsumerId implements JmsResourceId, Comparable<JmsConsumerId> {
 
-    protected String connectionId;
-    protected long sessionId;
-    protected long value;
+    private final String connectionId;
+    private final long sessionId;
+    private final long value;
 
-    protected transient int hashCode;
-    protected transient String key;
-    protected transient JmsSessionId parentId;
+    private transient int hashCode;
+    private transient String key;
+    private transient JmsSessionId parentId;
+    private transient Object hint;
 
-    public JmsConsumerId() {
-    }
-
-    public JmsConsumerId(String str){
+    public JmsConsumerId(String str) throws IllegalArgumentException {
         if (str != null){
             String[] splits = str.split(":");
             if (splits != null && splits.length >= 3){
                 this.connectionId = splits[0];
                 this.sessionId =  Long.parseLong(splits[1]);
                 this.value = Long.parseLong(splits[2]);
+
+                return;
             }
         }
+
+        throw new IllegalArgumentException("Failed to parse Id string: " + str);
     }
 
     public JmsConsumerId(JmsSessionId sessionId, long consumerId) {
@@ -63,26 +65,13 @@ public class JmsConsumerId implements Comparable<JmsConsumerId> {
         return connectionId;
     }
 
-    public void setConnectionId(String connectionId) {
-        this.connectionId = connectionId;
-    }
-
     public long getSessionId() {
         return sessionId;
-    }
-
-    public void setSessionId(long sessionId) {
-        this.sessionId = sessionId;
     }
 
     public long getValue() {
         return value;
     }
-
-    public void setValue(long consumerId) {
-        this.value = consumerId;
-    }
-
 
     @Override
     public int hashCode() {
@@ -115,5 +104,15 @@ public class JmsConsumerId implements Comparable<JmsConsumerId> {
     @Override
     public int compareTo(JmsConsumerId other) {
         return toString().compareTo(other.toString());
+    }
+
+    @Override
+    public void setProviderHint(Object hint) {
+        this.hint = hint;
+    }
+
+    @Override
+    public Object getProviderHint() {
+        return this.hint;
     }
 }

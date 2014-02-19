@@ -16,9 +16,11 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
-public class JmsConnectionId implements Comparable<JmsConnectionId> {
+public class JmsConnectionId implements JmsResourceId, Comparable<JmsConnectionId> {
 
     private final String value;
+
+    private transient Object hint;
 
     public JmsConnectionId(String connectionId) {
         this.value = connectionId;
@@ -69,5 +71,15 @@ public class JmsConnectionId implements Comparable<JmsConnectionId> {
     @Override
     public int compareTo(JmsConnectionId o) {
         return value.compareTo(o.value);
+    }
+
+    @Override
+    public void setProviderHint(Object hint) {
+        this.hint = hint;
+    }
+
+    @Override
+    public Object getProviderHint() {
+        return this.hint;
     }
 }
