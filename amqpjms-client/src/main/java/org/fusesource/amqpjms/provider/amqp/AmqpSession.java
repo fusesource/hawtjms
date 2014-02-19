@@ -16,6 +16,24 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
+import org.apache.qpid.proton.engine.Session;
+import org.fusesource.amqpjms.jms.meta.JmsSessionId;
+
 public class AmqpSession {
 
+    private final JmsSessionId sessionId;
+    private final Session protonSession;
+
+    public AmqpSession(JmsSessionId sessionId, Session protonSession) {
+        this.protonSession = protonSession;
+        this.sessionId = sessionId;
+    }
+
+    public JmsSessionId getSessionId() {
+        return this.sessionId;
+    }
+
+    public Session getProtonSession() {
+        return this.protonSession;
+    }
 }

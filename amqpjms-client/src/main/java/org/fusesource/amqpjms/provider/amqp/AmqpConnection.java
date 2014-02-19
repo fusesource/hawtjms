@@ -16,76 +16,38 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.qpid.proton.engine.Connection;
-import org.apache.qpid.proton.engine.EngineFactory;
-import org.apache.qpid.proton.engine.Transport;
-import org.apache.qpid.proton.engine.impl.EngineFactoryImpl;
-import org.apache.qpid.proton.engine.impl.ProtocolTracer;
-import org.apache.qpid.proton.engine.impl.TransportImpl;
-import org.apache.qpid.proton.framing.TransportFrame;
-import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
-import org.fusesource.amqpjms.jms.meta.JmsResource;
-import org.fusesource.amqpjms.provider.AsyncResult;
+import org.apache.qpid.proton.engine.Session;
+import org.fusesource.amqpjms.jms.meta.JmsSessionId;
+import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vertx.java.core.buffer.Buffer;
 
 public class AmqpConnection {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
-    private static final Logger TRACE_BYTES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".BYTES");
-    private static final Logger TRACE_FRAMES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".FRAMES");
 
-    private final EngineFactory engineFactory = new EngineFactoryImpl();
-    private final Transport protonTransport = engineFactory.createTransport();
-    private final Connection protonConnection = engineFactory.createConnection();
+    private final Connection connection;
+    private final Map<JmsSessionId, AmqpSession> sessions = new HashMap<JmsSessionId, AmqpSession>();
+    private final Map<JmsSessionId, Session> pendingSessions = new HashMap<JmsSessionId, Session>();
 
-    private boolean trace;
-
-    public AmqpConnection() {
-        this.protonTransport.bind(this.protonConnection);
-        updateTracer();
+    public AmqpConnection(Connection connection) {
+        this.connection = connection;
     }
 
-    public void createConnection(JmsConnectionInfo connectionInfo, AsyncResult<JmsResource> result) throws IOException {
-        result.onSuccess(connectionInfo);
+    public void close() {
+        this.connection.close();
     }
 
-    public void destroyConnection(JmsConnectionInfo connectionInfo, AsyncResult<Void> result) throws IOException {
-        result.onSuccess(null);
+    public Connection getProtonConnection() {
+        return this.connection;
     }
 
-    private void updateTracer() {
-        if (isTrace()) {
-            ((TransportImpl) protonTransport).setProtocolTracer(new ProtocolTracer() {
-                @Override
-                public void receivedFrame(TransportFrame transportFrame) {
-                    TRACE_FRAMES.trace("RECV: {}", transportFrame.getBody());
-                }
-
-                @Override
-                public void sentFrame(TransportFrame transportFrame) {
-                    TRACE_FRAMES.trace("SENT: {}", transportFrame.getBody());
-                }
-            });
-        }
-    }
-
-    void onAmqpData(Buffer input) {
-
-    }
-
-    void onTransportError(Throwable error) {
-        LOG.info("Transport failed: {}", error.getMessage());
-    }
-
-    public void setTrace(boolean trace) {
-        this.trace = trace;
-    }
-
-    public boolean isTrace() {
-        return this.trace;
+    public Session createSession(JmsSessionInfo sessionInfo) {
+        Session session = this.connection.session();
+        return session;
     }
 }

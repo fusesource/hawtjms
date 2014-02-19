@@ -22,6 +22,13 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.qpid.proton.engine.Connection;
+import org.apache.qpid.proton.engine.EngineFactory;
+import org.apache.qpid.proton.engine.Transport;
+import org.apache.qpid.proton.engine.impl.EngineFactoryImpl;
+import org.apache.qpid.proton.engine.impl.ProtocolTracer;
+import org.apache.qpid.proton.engine.impl.TransportImpl;
+import org.apache.qpid.proton.framing.TransportFrame;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
@@ -32,6 +39,9 @@ import org.fusesource.amqpjms.jms.util.IOExceptionSupport;
 import org.fusesource.amqpjms.provider.Provider;
 import org.fusesource.amqpjms.provider.ProviderListener;
 import org.fusesource.amqpjms.provider.ProviderResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.vertx.java.core.buffer.Buffer;
 
 /**
  * An AMQP v1.0 Provider.
@@ -44,11 +54,20 @@ import org.fusesource.amqpjms.provider.ProviderResponse;
  */
 public class AmqpProvider implements Provider {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
+
+    private static final Logger TRACE_BYTES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".BYTES");
+    private static final Logger TRACE_FRAMES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".FRAMES");
+
     private final URI remoteURI;
     private final Map<String, String> extraOptions;
     private AmqpConnection connection;
     private AmqpTransport transport;
     private ProviderListener listener;
+    private boolean trace;
+
+    private final EngineFactory engineFactory = new EngineFactoryImpl();
+    private final Transport protonTransport = engineFactory.createTransport();
 
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -75,14 +94,15 @@ public class AmqpProvider implements Provider {
         } else {
             this.extraOptions = Collections.emptyMap();
         }
+
+        updateTracer();
     }
 
     @Override
     public void connect() throws IOException {
         checkClosed();
 
-        connection = new AmqpConnection();
-        transport = createTransport(connection, remoteURI);
+        transport = createTransport(remoteURI);
         transport.connect();
     }
 
@@ -106,6 +126,7 @@ public class AmqpProvider implements Provider {
 
     @Override
     public ProviderResponse<JmsResource> create(JmsResource resource) throws IOException {
+        checkClosed();
         final ProviderResponse<JmsResource> response = new ProviderResponse<JmsResource>();
 
         try {
@@ -113,8 +134,8 @@ public class AmqpProvider implements Provider {
 
                 @Override
                 public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
-                    // TODO Auto-generated method stub
-
+                    connection.createSession(sessionInfo);
+                    response.onSuccess(sessionInfo);
                 }
 
                 @Override
@@ -131,7 +152,11 @@ public class AmqpProvider implements Provider {
 
                 @Override
                 public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
-                    connection.createConnection(connectionInfo, response);
+                    Connection protonConnection = engineFactory.createConnection();
+                    protonTransport.bind(protonConnection);
+                    connection = new AmqpConnection(protonConnection);
+                    protonConnection.open();
+                    response.onSuccess(connectionInfo);
                 }
             });
         } catch (Exception error) {
@@ -143,6 +168,7 @@ public class AmqpProvider implements Provider {
 
     @Override
     public ProviderResponse<Void> destroy(JmsResource resource) throws IOException {
+        checkClosed();
         final ProviderResponse<Void> response = new ProviderResponse<Void>();
 
         try {
@@ -168,7 +194,8 @@ public class AmqpProvider implements Provider {
 
                 @Override
                 public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
-                    connection.destroyConnection(connectionInfo, response);
+                    connection.close();
+                    response.onSuccess(null);
                 }
             });
         } catch (Exception error) {
@@ -182,21 +209,43 @@ public class AmqpProvider implements Provider {
      * Provides an extension point for subclasses to insert other types of transports such
      * as SSL etc.
      *
-     * @param connection
-     *        The connection that owns this newly created Transport.
      * @param remoteLocation
      *        The remote location where the transport should attempt to connect.
      *
      * @return the newly created transport instance.
      */
-    protected AmqpTransport createTransport(AmqpConnection connection, URI remoteLocation) {
-        return new AmqpTcpTransport(connection, remoteLocation);
+    protected AmqpTransport createTransport(URI remoteLocation) {
+        return new AmqpTcpTransport(this, remoteLocation);
     }
 
     protected void checkClosed() throws IOException {
         if (closed.get()) {
             throw new IOException("The Provider is already closed");
         }
+    }
+
+    private void updateTracer() {
+        if (isTrace()) {
+            ((TransportImpl) protonTransport).setProtocolTracer(new ProtocolTracer() {
+                @Override
+                public void receivedFrame(TransportFrame transportFrame) {
+                    TRACE_FRAMES.trace("RECV: {}", transportFrame.getBody());
+                }
+
+                @Override
+                public void sentFrame(TransportFrame transportFrame) {
+                    TRACE_FRAMES.trace("SENT: {}", transportFrame.getBody());
+                }
+            });
+        }
+    }
+
+    void onAmqpData(Buffer input) {
+
+    }
+
+    void onTransportError(Throwable error) {
+        LOG.info("Transport failed: {}", error.getMessage());
     }
 
     @Override
@@ -207,5 +256,13 @@ public class AmqpProvider implements Provider {
     @Override
     public ProviderListener getProviderListener() {
         return this.listener;
+    }
+
+    public void setTrace(boolean trace) {
+        this.trace = trace;
+    }
+
+    public boolean isTrace() {
+        return this.trace;
     }
 }

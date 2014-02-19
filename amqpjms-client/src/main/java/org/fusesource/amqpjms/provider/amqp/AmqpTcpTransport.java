@@ -44,7 +44,7 @@ public class AmqpTcpTransport implements AmqpTransport {
 
     private final Vertx vertx = VertxFactory.newVertx();
     private final NetClient client = vertx.createNetClient();
-    private final AmqpConnection parent;
+    private final AmqpProvider parent;
     private final URI remoteLocation;
     private final AtomicBoolean connected = new AtomicBoolean();
     private final AtomicReference<Throwable> connectionError = new AtomicReference<Throwable>();
@@ -59,7 +59,7 @@ public class AmqpTcpTransport implements AmqpTransport {
      * @param remoteLocation
      *        The remote location where this transport should connection to.
      */
-    public AmqpTcpTransport(AmqpConnection parent, URI remoteLocation) {
+    public AmqpTcpTransport(AmqpProvider parent, URI remoteLocation) {
         this.parent = parent;
         this.remoteLocation = remoteLocation;
     }
