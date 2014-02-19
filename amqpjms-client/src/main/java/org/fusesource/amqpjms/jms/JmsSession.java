@@ -219,10 +219,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkClosed();
         checkDestination(destination);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
-//        JmsMessageConsumer result = new JmsMessageConsumer(getChannel().nextId(), this, dest, "");
-//        result.init();
-//        return result;
-        return null;
+        JmsMessageConsumer result = new JmsMessageConsumer(getNextConsumerId(), this, dest, "");
+        return result;
     }
 
     /**
@@ -239,10 +237,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkDestination(destination);
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
-//        JmsMessageConsumer result = new JmsMessageConsumer(getChannel().nextId(), this, dest, messageSelector);
-//        result.init();
-//        return result;
-        return null;
+        JmsMessageConsumer result = new JmsMessageConsumer(getNextConsumerId(), this, dest, messageSelector);
+        return result;
     }
 
     /**
@@ -260,10 +256,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkDestination(destination);
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
-//        JmsTopicSubscriber result = new JmsTopicSubscriber(getChannel().nextId(), this, dest, NoLocal, messageSelector);
-//        result.init();
-//        return result;
-        return null;
+        JmsTopicSubscriber result = new JmsTopicSubscriber(getNextConsumerId(), this, dest, NoLocal, messageSelector);
+        return result;
     }
 
     /**
@@ -277,10 +271,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkClosed();
         checkDestination(queue);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, queue);
-//        JmsQueueReceiver result = new JmsQueueReceiver(getChannel().nextId(), this, dest, "");
-//        result.init();
-//        return result;
-        return null;
+        JmsQueueReceiver result = new JmsQueueReceiver(getNextConsumerId(), this, dest, "");
+        return result;
     }
 
     /**
@@ -297,10 +289,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkDestination(queue);
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, queue);
-//        JmsQueueReceiver result = new JmsQueueReceiver(getChannel().nextId(), this, dest, messageSelector);
-//        result.init();
-//        return result;
-        return null;
+        JmsQueueReceiver result = new JmsQueueReceiver(getNextConsumerId(), this, dest, messageSelector);
+        return result;
     }
 
     /**
@@ -314,9 +304,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkClosed();
         checkDestination(destination);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
-//        JmsQueueBrowser result = new JmsQueueBrowser(this, getChannel().nextId(), dest, "");
-//        return result;
-        return null;
+        JmsQueueBrowser result = new JmsQueueBrowser(getNextConsumerId(), this, dest, "");
+        return result;
     }
 
     /**
@@ -332,9 +321,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkDestination(destination);
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
-//        JmsQueueBrowser result = new JmsQueueBrowser(this, getChannel().nextId(), dest, messageSelector);
-//        return result;
-        return null;
+        JmsQueueBrowser result = new JmsQueueBrowser(getNextConsumerId(), this, dest, messageSelector);
+        return result;
     }
 
     /**
@@ -348,10 +336,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkClosed();
         checkDestination(topic);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
-//        JmsTopicSubscriber result = new JmsTopicSubscriber(getChannel().nextId(), this, dest, false, "");
-//        result.init();
-//        return result;
-        return null;
+        JmsTopicSubscriber result = new JmsTopicSubscriber(getNextConsumerId(), this, dest, false, "");
+        return result;
     }
 
     /**
@@ -369,9 +355,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkDestination(topic);
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
-//        JmsTopicSubscriber result = new JmsTopicSubscriber(getChannel().nextId(), this, dest, noLocal, messageSelector);
-//        return result;
-        return null;
+        JmsTopicSubscriber result = new JmsTopicSubscriber(getNextConsumerId(), this, dest, noLocal, messageSelector);
+        return result;
     }
 
     /**
@@ -386,12 +371,9 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException {
         checkClosed();
         checkDestination(topic);
-//        AsciiBuffer id = StompFrame.encodeHeader(this.connection.getClientID() + ":" + name);
-//        JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
-//        JmsTopicSubscriber result = new JmsDurableTopicSubscriber(id, this, dest, false, "");
-//        result.init();
-//        return result;
-        return null;
+        JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
+        JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, false, "");
+        return result;
     }
 
     /**
@@ -410,16 +392,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkDestination(topic);
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
-        AsciiBuffer id;
-//        if (name != null) {
-//            id = StompFrame.encodeHeader(name);
-//        } else {
-//            id = getChannel().nextId();
-//        }
-//        JmsTopicSubscriber result = new JmsDurableTopicSubscriber(id, this, dest, noLocal, messageSelector);
-//        result.init();
-//        return result;
-        return null;
+        JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, false, messageSelector);
+        return result;
     }
 
     /**
@@ -438,11 +412,9 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 //        getChannel().unsubscribe(id, true);
     }
 
-    // ///////////////////////////////////////////////////////////////////////
-    //
+    //////////////////////////////////////////////////////////////////////////
     // Producer creation
-    //
-    // ///////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
     /**
      * @param destination
@@ -488,11 +460,9 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return result;
     }
 
-    // ///////////////////////////////////////////////////////////////////////
-    //
+    //////////////////////////////////////////////////////////////////////////
     // Message creation
-    //
-    // ///////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
     /**
      * @return BytesMessage
@@ -586,11 +556,9 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return result;
     }
 
-    // ///////////////////////////////////////////////////////////////////////
-    //
+    //////////////////////////////////////////////////////////////////////////
     // Destination creation
-    //
-    // ///////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
     /**
      * @param queueName
@@ -822,14 +790,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             }
         }
     }
-
-    // protected StompChannel getChannel() throws JMSException {
-    // if(this.channel == null) {
-    // checkClosed();
-    // this.channel = this.connection.createChannel(this);
-    // }
-    // return this.channel;
-    // }
 
     public boolean isForceAsyncSend() {
         return forceAsyncSend;

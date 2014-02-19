@@ -41,7 +41,7 @@ import org.fusesource.amqpjms.jms.util.MessageQueue;
 public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
 
     protected final JmsSession session;
-    protected JmsConsumerInfo consumerMeta;
+    protected JmsConsumerInfo consumerInfo;
     protected final int acknowledgementMode;
     protected final AtomicBoolean closed = new AtomicBoolean();
     protected boolean started;
@@ -61,9 +61,10 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
             this.messageQueue = new MessageQueue(session.getConsumerMessageBufferSize());
         }
 
-        this.consumerMeta = new JmsConsumerInfo(consumerId);
-        this.consumerMeta.setSelector(selector);
-        this.consumerMeta.setDestination(destination);
+        this.consumerInfo = new JmsConsumerInfo(consumerId);
+        this.consumerInfo.setSelector(selector);
+        this.consumerInfo.setDestination(destination);
+        this.consumerInfo = session.getConnection().createResource(consumerInfo);
     }
 
     public void init() throws JMSException {
@@ -106,7 +107,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
     @Override
     public String getMessageSelector() throws JMSException {
         checkClosed();
-        return this.consumerMeta.getSelector();
+        return this.consumerInfo.getSelector();
     }
 
     /**
@@ -292,7 +293,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
      */
     public JmsConsumerId getConsumerId() {
         // TODO should we check closed?
-        return this.consumerMeta.getConsumerId();
+        return this.consumerInfo.getConsumerId();
     }
 
     /**
@@ -300,7 +301,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
      */
     public JmsDestination getDestination() {
         // TODO should we check closed?
-        return this.consumerMeta.getDestination();
+        return this.consumerInfo.getDestination();
     }
 
     public void start() {
@@ -361,7 +362,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
     }
 
     boolean isUsingDestination(JmsDestination destination) {
-        return this.consumerMeta.getDestination().equals(destination);
+        return this.consumerInfo.getDestination().equals(destination);
     }
 
     protected int getMessageQueueSize() {
