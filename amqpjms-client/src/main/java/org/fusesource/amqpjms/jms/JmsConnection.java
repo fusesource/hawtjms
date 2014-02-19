@@ -373,20 +373,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return result;
     }
 
-//    protected void removeSession(JmsSession s, StompChannel channel) throws JMSException {
-//        synchronized (this) {
-//            this.sessions.remove(s);
-//            if( channel!=null && this.channel==null ) {
-//                // just in case some one is in a loop creating/closing sessions.
-//                this.channel = channel;
-//                channel = null;
-//            }
-//        }
-//        if(channel!=null) {
-//            channel.setListener(null);
-//            channel.close();
-//        }
-//    }
+    protected void removeSession(JmsSession session) throws JMSException {
+        synchronized (this) {
+            this.sessions.remove(session);
+        }
+
+        // TODO provider -> remove Session
+    }
 
     protected void addSession(JmsSession s) {
         this.sessions.add(s);

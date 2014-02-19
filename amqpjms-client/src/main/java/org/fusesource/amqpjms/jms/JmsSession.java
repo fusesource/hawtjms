@@ -150,14 +150,18 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     public void commit() throws JMSException {
         checkClosed();
         throw new UnsupportedOperationException();
-//        if (!getTransacted()) {
-//            throw new javax.jms.IllegalStateException("Not a transacted session");
-//        }
-//        for (JmsMessageConsumer c : consumers.values()) {
-//            c.commit();
-//        }
-//        getChannel().commitTransaction(currentTransactionId);
-//        this.currentTransactionId = getChannel().startTransaction();
+
+        // TODO
+        //   if (!getTransacted()) {
+        //       throw new javax.jms.IllegalStateException("Not a transacted session");
+        //   }
+        //
+        //   for (JmsMessageConsumer c : consumers.values()) {
+        //       c.commit();
+        //   }
+        //
+        //   provider -> commitTransaction(currentTransactionId);
+        //   this.currentTransactionId = provider -> startTransaction();
     }
 
     @Override
@@ -167,24 +171,26 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             throw new javax.jms.IllegalStateException("Not a transacted session");
         }
         throw new UnsupportedOperationException();
-//        for (JmsMessageConsumer c : consumers.values()) {
-//            c.rollback();
-//        }
-//        getChannel().rollbackTransaction(currentTransactionId);
-//        this.currentTransactionId = getChannel().startTransaction();
-//        getExecutor().execute(new Runnable() {
-//            @Override
-//            public void run() {
-//                for (JmsMessageConsumer c : consumers.values()) {
-//                    c.drainMessageQueueToListener();
-//                }
-//            }
-//        });
+
+        // TODO
+        //   for (JmsMessageConsumer c : consumers.values()) {
+        //       c.rollback();
+        //   }
+        //   provider -> rollbackTransaction(currentTransactionId);
+        //   this.currentTransactionId = provider -> startTransaction();
+        //   getExecutor().execute(new Runnable() {
+        //       @Override
+        //       public void run() {
+        //           for (JmsMessageConsumer c : consumers.values()) {
+        //               c.drainMessageQueueToListener();
+        //           }
+        //       }
+        //   });
     }
 
     @Override
     public void run() {
-        // TODO Auto-generated method stub
+        // TODO
     }
 
     @Override
@@ -194,8 +200,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             for (JmsMessageConsumer c : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
                 c.close();
             }
-            //this.connection.removeSession(this, channel);
-            //channel = null;
+
+            this.connection.removeSession(this);
         }
     }
 
@@ -663,20 +669,22 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             original.setJMSExpiration(System.currentTimeMillis() + timeToLive);
         }
 
-        AsciiBuffer msgId = null;
+        String msgId = null;
         if (!disableMsgId) {
-            msgId = getNextMessageId();
+            // TODO
+            // msgId = getNextMessageId(producer);
         }
         boolean nativeMessage = original instanceof JmsMessage;
         if (nativeMessage) {
             ((JmsMessage) original).setConnection(connection);
             if (!disableMsgId) {
-                ((JmsMessage) original).setMessageID(msgId);
+                // TODO
+                //((JmsMessage) original).setMessageID(msgId);
             }
             original.setJMSDestination(destination);
         } else {
             if (!disableMsgId) {
-                original.setJMSMessageID(msgId.toString());
+                original.setJMSMessageID(msgId);
             }
         }
 
@@ -688,23 +696,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
         boolean sync = !forceAsyncSend && deliveryMode == DeliveryMode.PERSISTENT && !getTransacted();
 
-        // If we are doing transactions we HAVE to use the
-        // session's channel since that's how the UOWs are being
-        // delimited. And if there are no consumers, then
-        // we know the TCP connection will not be getting flow controlled
-        // by slow consumers, so it's safe to us it too.
-        if (consumers.isEmpty() || getTransacted()) {
-//            StompChannel channel = getChannel();
-//            channel.sendMessage(copy, currentTransactionId, sync);
-        } else {
-            // Non transacted session, with consumers.. they might end up
-            // flow controlling the channel so lets publish the message
-            // over the connection's main channel.
-            if (!disableMsgId) {
-                copy.setMessageID(msgId);
-            }
-//            this.connection.getChannel().sendMessage(copy, currentTransactionId, sync);
-        }
+        // TODO - Provider send either Sync or Async message.
     }
 
     protected void checkClosed() throws IllegalStateException {
@@ -772,7 +764,9 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 dispatch(message);
             }
             if (getTransacted() && this.currentTransactionId == null) {
-                // TODO - start the new transaction.
+                // TODO
+                //   this.currentTransactionId = provider -> new transaction
+                //   provider -> start transaction
             }
             for (JmsMessageConsumer consumer : consumers.values()) {
                 consumer.start();
@@ -839,24 +833,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return new JmsProducerId(sessionInfo.getSessionId(), producerIdGenerator.incrementAndGet());
     }
 
-    private AsciiBuffer getNextMessageId() throws JMSException {
-        // AsciiBuffer session = null;
-        // if(channel!=null) {
-        // session = channel.sessionId();
-        // } else {
-        // session = connection.getChannel().sessionId();
-        // }
-        // AsciiBuffer id = ascii(Long.toString(nextMessageSwquence++));
-        // ByteArrayOutputStream out = new
-        // ByteArrayOutputStream(3+session.length() + 1 + id.length());
-        // out.write('I');
-        // out.write('D');
-        // out.write(':');
-        // out.write(session);
-        // out.write('-');
-        // out.write(id);
-        // return out.toBuffer().ascii();
-        return null;
+    private String getNextMessageId(JmsMessageProducer producer) {
+        return producer.getProducerId() + ":" + producer.getNextMessageSequence();
     }
 
     private <T extends JmsMessage> T init(T message) {

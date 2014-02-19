@@ -16,6 +16,8 @@
  */
 package org.fusesource.amqpjms.jms;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.IllegalStateException;
@@ -42,6 +44,7 @@ public class JmsMessageProducer implements MessageProducer {
     protected boolean closed;
     protected boolean disableMessageId;
     protected boolean disableTimestamp;
+    protected final AtomicLong messageSequence = new AtomicLong();
 
     protected JmsMessageProducer(JmsProducerId producerId, JmsSession session, JmsDestination destination) throws JMSException {
         this.session = session;
@@ -253,6 +256,20 @@ public class JmsMessageProducer implements MessageProducer {
             throw new UnsupportedOperationException("This producer can only send messages to: " + producerInfo.getDestination().getName());
         }
         producerInfo.setDestination(JmsMessageTransformation.transformDestination(session.getConnection(), destination));
+    }
+
+    /**
+     * @return the producer's assigned JmsProducerId.
+     */
+    protected JmsProducerId getProducerId() {
+        return this.producerInfo.getProducerId();
+    }
+
+    /**
+     * @return the next logical sequence for a Message sent from this Producer.
+     */
+    protected long getNextMessageSequence() {
+        return this.messageSequence.incrementAndGet();
     }
 
     protected void checkClosed() throws IllegalStateException {
