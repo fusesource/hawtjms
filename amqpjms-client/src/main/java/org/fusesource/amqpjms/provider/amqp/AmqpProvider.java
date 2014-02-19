@@ -18,12 +18,14 @@ package org.fusesource.amqpjms.provider.amqp;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EngineFactory;
+import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Transport;
 import org.apache.qpid.proton.engine.impl.EngineFactoryImpl;
 import org.apache.qpid.proton.engine.impl.ProtocolTracer;
@@ -154,8 +156,14 @@ public class AmqpProvider implements Provider {
                 public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
                     Connection protonConnection = engineFactory.createConnection();
                     protonTransport.bind(protonConnection);
-                    connection = new AmqpConnection(protonConnection);
                     protonConnection.open();
+                    Sasl sasl = protonTransport.sasl();
+                    if (sasl != null) {
+                        sasl.client();
+                    }
+                    connection = new AmqpConnection(protonConnection, sasl);
+                    pumpToProtonTransport();
+
                     response.onSuccess(connectionInfo);
                 }
             });
@@ -241,11 +249,37 @@ public class AmqpProvider implements Provider {
     }
 
     void onAmqpData(Buffer input) {
-
+        LOG.info("Received from Broker {} bytes.", input.length());
     }
 
     void onTransportError(Throwable error) {
         LOG.info("Transport failed: {}", error.getMessage());
+    }
+
+    void pumpToProtonTransport() {
+        try {
+            boolean done = false;
+            while (!done) {
+                ByteBuffer toWrite = protonTransport.getOutputBuffer();
+                if (toWrite != null && toWrite.hasRemaining()) {
+                    TRACE_BYTES.info("Sending: {}", toWrite.toString().substring(5).replaceAll("(..)", "$1 "));
+                    transport.send(toWrite);
+                    protonTransport.outputConsumed();
+                } else {
+                    done = true;
+                }
+            }
+            LOG.info("Provider write operation done.");;
+        } catch (IOException e) {
+            fireProviderException(e);
+        }
+    }
+
+    void fireProviderException(Exception ex) {
+        ProviderListener listener = this.listener;
+        if (listener != null) {
+            listener.onConnectionFailure(IOExceptionSupport.create(ex));
+        }
     }
 
     @Override

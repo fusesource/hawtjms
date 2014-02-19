@@ -118,6 +118,12 @@ public class AmqpTcpTransport implements AmqpTransport {
 
     @Override
     public void send(ByteBuffer output) throws IOException {
+        checkConnected();
     }
 
+    private void checkConnected() throws IOException {
+        if (!connected.get()) {
+            throw new IOException("Cannot send to a non-connected transport.");
+        }
+    }
 }

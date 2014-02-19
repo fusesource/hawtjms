@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.proton.engine.Connection;
+import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Session;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
@@ -31,11 +32,13 @@ public class AmqpConnection {
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
     private final Connection connection;
+    private final Sasl sasl;
     private final Map<JmsSessionId, AmqpSession> sessions = new HashMap<JmsSessionId, AmqpSession>();
     private final Map<JmsSessionId, Session> pendingSessions = new HashMap<JmsSessionId, Session>();
 
-    public AmqpConnection(Connection connection) {
+    public AmqpConnection(Connection connection, Sasl sasl) {
         this.connection = connection;
+        this.sasl = sasl;
     }
 
     public void close() {
