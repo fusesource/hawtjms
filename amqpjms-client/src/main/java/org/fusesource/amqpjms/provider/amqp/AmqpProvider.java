@@ -139,6 +139,43 @@ public class AmqpProvider implements Provider {
         return response;
     }
 
+    @Override
+    public ProviderResponse<Void> destroy(JmsResource resource) throws IOException {
+        final ProviderResponse<Void> response = new ProviderResponse<Void>();
+
+        try {
+            resource.visit(new JmsResourceVistor() {
+
+                @Override
+                public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
+                    // TODO Auto-generated method stub
+
+                }
+
+                @Override
+                public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
+                    // TODO Auto-generated method stub
+
+                }
+
+                @Override
+                public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
+                    // TODO Auto-generated method stub
+
+                }
+
+                @Override
+                public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
+                    connection.destroyConnection(connectionInfo, response);
+                }
+            });
+        } catch (Exception error) {
+            throw IOExceptionSupport.create(error);
+        }
+
+        return response;
+    }
+
     /**
      * Provides an extension point for subclasses to insert other types of transports such
      * as SSL etc.

@@ -80,4 +80,19 @@ public interface Provider {
      */
     ProviderResponse<JmsResource> create(JmsResource resource) throws IOException;
 
+    /**
+     * Instruct the Provider to dispose of a given JmsResource.
+     *
+     * The provider is given a JmsResource which it should use to remove any associated
+     * resources and inform the remote Broker instance of the removal of this resource.
+     *
+     * @param resource
+     *        The JmsResouce that identifies a previously created JmsResource.
+     *
+     * @return a response object that allows the caller to await the result.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    ProviderResponse<Void> destroy(JmsResource resource) throws IOException;
+
 }

@@ -50,6 +50,11 @@ public class AmqpConnection {
     }
 
     public void createConnection(JmsConnectionInfo connectionInfo, AsyncResult<JmsResource> result) throws IOException {
+        result.onSuccess(connectionInfo);
+    }
+
+    public void destroyConnection(JmsConnectionInfo connectionInfo, AsyncResult<Void> result) throws IOException {
+        result.onSuccess(null);
     }
 
     private void updateTracer() {
