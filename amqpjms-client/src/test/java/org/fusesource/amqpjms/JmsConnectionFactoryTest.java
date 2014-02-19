@@ -26,33 +26,27 @@ import java.net.URISyntaxException;
 import javax.jms.JMSException;
 
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
-public class JmsConnectionFactoryTest {
+public class JmsConnectionFactoryTest extends AmqpTestSupport {
 
     private final String username = "USER";
     private final String password = "PASSWORD";
 
-    private final String badProvider = "unknown://127.0.0.1:61616";
-    private final URI badProviderURI;
-
-    private final String goodProvider = "amqp://127.0.0.1:61616";
-    private final URI goodProviderURI;
-
-    public JmsConnectionFactoryTest() throws URISyntaxException {
-        badProviderURI = new URI(badProvider);
-        goodProviderURI = new URI(goodProvider);
+    protected String getGoodProviderAddress() {
+        return "amqp://127.0.0.1:" + port;
     }
 
-    @Before
-    public void before() {
+    protected URI getGoodProviderAddressURI() throws URISyntaxException {
+        return new URI(getGoodProviderAddress());
     }
 
-    @After
-    public void after() {
+    protected String getBadProviderAddress() {
+        return "bad://127.0.0.1:" + port;
+    }
+
+    protected URI getBadProviderAddressURI() throws URISyntaxException {
+        return new URI(getBadProviderAddress());
     }
 
     @Test
@@ -72,28 +66,26 @@ public class JmsConnectionFactoryTest {
     }
 
     @Test(expected = JMSException.class)
-    public void testCreateConnectionBadProviderURI() throws JMSException {
-        JmsConnectionFactory factory = new JmsConnectionFactory(badProviderURI);
+    public void testCreateConnectionBadProviderURI() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBadProviderAddressURI());
         factory.createConnection();
     }
 
     @Test(expected = JMSException.class)
-    public void testCreateConnectionBadProviderString() throws JMSException {
-        JmsConnectionFactory factory = new JmsConnectionFactory(badProvider);
+    public void testCreateConnectionBadProviderString() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBadProviderAddress());
         factory.createConnection();
     }
 
-    @Ignore
     @Test
-    public void testCreateConnectionGoodProviderURI() throws JMSException {
-        JmsConnectionFactory factory = new JmsConnectionFactory(goodProviderURI);
+    public void testCreateConnectionGoodProviderURI() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getGoodProviderAddressURI());
         assertNotNull(factory.createConnection());
     }
 
-    @Ignore
     @Test
-    public void testCreateConnectionGoodProviderString() throws JMSException {
-        JmsConnectionFactory factory = new JmsConnectionFactory(goodProvider);
+    public void testCreateConnectionGoodProviderString() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getGoodProviderAddress());
         assertNotNull(factory.createConnection());
     }
 }
