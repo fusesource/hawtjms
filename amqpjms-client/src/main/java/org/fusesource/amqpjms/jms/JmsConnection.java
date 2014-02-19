@@ -118,6 +118,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                 }
                 this.sessions.clear();
                 if (provider != null) {
+                    provider.destroy(connectionInfo);
                     provider.close();
                     provider = null;
                 }
@@ -374,11 +375,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     protected void removeSession(JmsSession session) throws JMSException {
-        synchronized (this) {
-            this.sessions.remove(session);
-        }
-
-        // TODO provider -> remove Session
+        this.sessions.remove(session);
     }
 
     protected void addSession(JmsSession s) {
@@ -453,6 +450,22 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             return (T) provider.create(resource).getResponse();
+        } catch (Exception ioe) {
+            throw JmsExceptionSupport.create(ioe);
+        }
+    }
+
+    void destroyResource(JmsResource resource) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+
+        // TODO - We don't currently have a way to say that an operation
+        //        should be done asynchronously.  For a session dispose
+        //        we only care that the request hits the wire, not that
+        //        any response comes back.
+
+        try {
+            provider.destroy(resource).getResponse();
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }

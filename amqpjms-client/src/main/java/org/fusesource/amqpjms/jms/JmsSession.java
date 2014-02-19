@@ -80,7 +80,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     private final JmsConnection connection;
     private final int acknowledgementMode;
-    private final List<MessageProducer> producers = new CopyOnWriteArrayList<MessageProducer>();
+    private final List<JmsMessageProducer> producers = new CopyOnWriteArrayList<JmsMessageProducer>();
     private final Map<JmsConsumerId, JmsMessageConsumer> consumers = new ConcurrentHashMap<JmsConsumerId, JmsMessageConsumer>();
     private MessageListener messageListener;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -197,11 +197,16 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     public void close() throws JMSException {
         if (closed.compareAndSet(false, true)) {
             stop();
-            for (JmsMessageConsumer c : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
-                c.close();
+            for (JmsMessageConsumer consumer : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
+                consumer.close();
+            }
+
+            for (JmsMessageProducer producer : this.producers) {
+                producer.close();
             }
 
             this.connection.removeSession(this);
+            this.connection.destroyResource(sessionInfo);
         }
     }
 
@@ -638,7 +643,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 //        }
     }
 
-    protected void add(MessageProducer producer) {
+    protected void add(JmsMessageProducer producer) {
         this.producers.add(producer);
     }
 
@@ -823,6 +828,10 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 consumer.onMessage(message);
             }
         }
+    }
+
+    protected JmsSessionInfo getSessionInfo() {
+        return this.sessionInfo;
     }
 
     protected JmsConsumerId getNextConsumerId() {
