@@ -21,11 +21,13 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EngineFactory;
-import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Transport;
 import org.apache.qpid.proton.engine.impl.EngineFactoryImpl;
 import org.apache.qpid.proton.engine.impl.ProtocolTracer;
@@ -53,6 +55,9 @@ import org.vertx.java.core.buffer.Buffer;
  * wish to implement failover type connections a new AMQP Provider instance must be created
  * and state replayed from the JMS layer using the standard recovery process defined in the
  * JMS Provider API.
+ *
+ * All work within this Provider is serialized to a single Thread.  Any asynchronous exceptions
+ * will be dispatched from that Thread and all in-bound requests are handled there as well.
  */
 public class AmqpProvider implements Provider {
 
@@ -66,11 +71,12 @@ public class AmqpProvider implements Provider {
     private AmqpConnection connection;
     private AmqpTransport transport;
     private ProviderListener listener;
-    private boolean trace;
+    private boolean traceFrames;
+    private boolean traceBytes;
 
     private final EngineFactory engineFactory = new EngineFactoryImpl();
     private final Transport protonTransport = engineFactory.createTransport();
-
+    private final ExecutorService serializer;
     private final AtomicBoolean closed = new AtomicBoolean();
 
     /**
@@ -98,6 +104,17 @@ public class AmqpProvider implements Provider {
         }
 
         updateTracer();
+
+        this.serializer = Executors.newSingleThreadExecutor(new ThreadFactory() {
+
+            @Override
+            public Thread newThread(Runnable runner) {
+                Thread serial = new Thread(runner);
+                serial.setDaemon(true);
+                serial.setName("AmqpProvider: " + AmqpProvider.this.remoteURI.getHost());
+                return serial;
+            }
+        });
     }
 
     @Override
@@ -111,9 +128,29 @@ public class AmqpProvider implements Provider {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            // TODO close connection and any open AMQP resources.
+            try {
+                // TODO close connection and any open AMQP resources.
+                if (connection != null) {
+                    connection.close();
+                }
 
-            // TODO close down the transport connection.
+                pumpToProtonTransport();
+            } catch (Exception e) {
+                LOG.debug("Caught exception while closing proton connection");
+            } finally {
+                // TODO close down the transport connection.
+                if (transport != null) {
+                    try {
+                        transport.close();
+                    } catch (Exception e) {
+                        LOG.debug("Cuaght exception while closing down Transport: {}", e.getMessage());
+                    }
+                }
+
+                if (serializer != null) {
+                    serializer.shutdown();
+                }
+            }
         }
     }
 
@@ -127,90 +164,102 @@ public class AmqpProvider implements Provider {
     }
 
     @Override
-    public ProviderResponse<JmsResource> create(JmsResource resource) throws IOException {
+    public ProviderResponse<JmsResource> create(final JmsResource resource) throws IOException {
         checkClosed();
-        final ProviderResponse<JmsResource> response = new ProviderResponse<JmsResource>();
+        final ProviderResponse<JmsResource> request = new ProviderResponse<JmsResource>();
+        serializer.execute(new Runnable() {
 
-        try {
-            resource.visit(new JmsResourceVistor() {
+            @Override
+            public void run() {
 
-                @Override
-                public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
-                    connection.createSession(sessionInfo);
-                    response.onSuccess(sessionInfo);
+                try {
+                    resource.visit(new JmsResourceVistor() {
+
+                        @Override
+                        public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
+                            connection.createSession(sessionInfo);
+                            request.onSuccess(sessionInfo);
+                        }
+
+                        @Override
+                        public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
+                            // TODO Auto-generated method stub
+
+                        }
+
+                        @Override
+                        public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
+                            // TODO Auto-generated method stub
+
+                        }
+
+                        @Override
+                        public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
+                            Connection protonConnection = engineFactory.createConnection();
+                            protonTransport.bind(protonConnection);
+//                            Sasl sasl = protonTransport.sasl();
+//                            if (sasl != null) {
+//                                sasl.client();
+//                            }
+                            connection = new AmqpConnection(getRemoteURI(), protonConnection, null, connectionInfo);
+                            connection.open(request);
+                            pumpToProtonTransport();
+
+                            //response.onSuccess(connectionInfo);
+                        }
+                    });
+                } catch (Exception error) {
+                    request.onFailure(error);
                 }
+            }
+        });
 
-                @Override
-                public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
-                    // TODO Auto-generated method stub
-
-                }
-
-                @Override
-                public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
-                    // TODO Auto-generated method stub
-
-                }
-
-                @Override
-                public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
-                    Connection protonConnection = engineFactory.createConnection();
-                    protonTransport.bind(protonConnection);
-                    protonConnection.open();
-                    Sasl sasl = protonTransport.sasl();
-                    if (sasl != null) {
-                        sasl.client();
-                    }
-                    connection = new AmqpConnection(protonConnection, sasl);
-                    pumpToProtonTransport();
-
-                    response.onSuccess(connectionInfo);
-                }
-            });
-        } catch (Exception error) {
-            throw IOExceptionSupport.create(error);
-        }
-
-        return response;
+        return request;
     }
 
     @Override
-    public ProviderResponse<Void> destroy(JmsResource resource) throws IOException {
+    public ProviderResponse<Void> destroy(final JmsResource resource) throws IOException {
         checkClosed();
-        final ProviderResponse<Void> response = new ProviderResponse<Void>();
+        final ProviderResponse<Void> request = new ProviderResponse<Void>();
+        serializer.execute(new Runnable() {
 
-        try {
-            resource.visit(new JmsResourceVistor() {
+            @Override
+            public void run() {
+                try {
+                    resource.visit(new JmsResourceVistor() {
 
-                @Override
-                public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
-                    // TODO Auto-generated method stub
+                        @Override
+                        public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
+                            // TODO Auto-generated method stub
 
+                        }
+
+                        @Override
+                        public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
+                            // TODO Auto-generated method stub
+
+                        }
+
+                        @Override
+                        public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
+                            // TODO Auto-generated method stub
+
+                        }
+
+                        @Override
+                        public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
+                            connection.close();
+                            pumpToProtonTransport();
+                            request.onSuccess(null);
+                        }
+                    });
+                } catch (Exception error) {
+                    request.onFailure(error);
                 }
+            }
+        });
 
-                @Override
-                public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
-                    // TODO Auto-generated method stub
-
-                }
-
-                @Override
-                public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
-                    // TODO Auto-generated method stub
-
-                }
-
-                @Override
-                public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
-                    connection.close();
-                    response.onSuccess(null);
-                }
-            });
-        } catch (Exception error) {
-            throw IOExceptionSupport.create(error);
-        }
-
-        return response;
+        return request;
     }
 
     /**
@@ -233,7 +282,7 @@ public class AmqpProvider implements Provider {
     }
 
     private void updateTracer() {
-        if (isTrace()) {
+        if (isTraceFrames()) {
             ((TransportImpl) protonTransport).setProtocolTracer(new ProtocolTracer() {
                 @Override
                 public void receivedFrame(TransportFrame transportFrame) {
@@ -248,18 +297,55 @@ public class AmqpProvider implements Provider {
         }
     }
 
-    void onAmqpData(Buffer input) {
-        LOG.info("Received from Broker {} bytes.", input.length());
+    void onAmqpData(final Buffer input) {
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                LOG.info("Received from Broker {} bytes.", input.length());
+
+                int position = 0;
+                int limit = 0;
+
+                do {
+                    ByteBuffer buffer = protonTransport.getInputBuffer();
+                    limit = Math.min(position + buffer.capacity(), input.length());
+                    buffer.put(input.getBytes(position, limit));
+                    protonTransport.processInput();
+                    position += limit;
+                } while (limit < input.length());
+
+                // Process the state changes from the latest data and then answer back
+                // any pending updates to the Broker.
+                connection.processUpdates();
+                pumpToProtonTransport();
+            }
+        });
     }
 
-    void onTransportError(Throwable error) {
-        LOG.info("Transport failed: {}", error.getMessage());
+    /**
+     * Callback method for the AmqpTransport to report connection errors.  When called
+     * the method will queue a new task to fire the failure error back to the listener.
+     *
+     * @param error
+     *        the error that causes the transport to fail.
+     */
+    void onTransportError(final Throwable error) {
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                LOG.info("Transport failed: {}", error.getMessage());
+                fireProviderException(error);
+            }
+        });
     }
 
-    void pumpToProtonTransport() {
+    private void pumpToProtonTransport() {
         try {
             boolean done = false;
             while (!done) {
+                LOG.info("Provider write operation starting.");;
                 ByteBuffer toWrite = protonTransport.getOutputBuffer();
                 if (toWrite != null && toWrite.hasRemaining()) {
                     TRACE_BYTES.info("Sending: {}", toWrite.toString().substring(5).replaceAll("(..)", "$1 "));
@@ -275,7 +361,7 @@ public class AmqpProvider implements Provider {
         }
     }
 
-    void fireProviderException(Exception ex) {
+    void fireProviderException(Throwable ex) {
         ProviderListener listener = this.listener;
         if (listener != null) {
             listener.onConnectionFailure(IOExceptionSupport.create(ex));
@@ -292,11 +378,19 @@ public class AmqpProvider implements Provider {
         return this.listener;
     }
 
-    public void setTrace(boolean trace) {
-        this.trace = trace;
+    public void setTraceFrames(boolean trace) {
+        this.traceFrames = trace;
     }
 
-    public boolean isTrace() {
-        return this.trace;
+    public boolean isTraceFrames() {
+        return this.traceFrames;
+    }
+
+    public void setTraceBytes(boolean trace) {
+        this.traceBytes = trace;
+    }
+
+    public boolean isTraceBytes() {
+        return this.traceBytes;
     }
 }

@@ -47,6 +47,7 @@ public class AmqpTcpTransport implements AmqpTransport {
     private final AmqpProvider parent;
     private final URI remoteLocation;
     private final AtomicBoolean connected = new AtomicBoolean();
+    private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicReference<Throwable> connectionError = new AtomicReference<Throwable>();
 
     private NetSocket socket;
@@ -66,7 +67,6 @@ public class AmqpTcpTransport implements AmqpTransport {
 
     @Override
     public void connect() throws IOException {
-
         final CountDownLatch connectLatch = new CountDownLatch(1);
 
         try {
@@ -117,13 +117,36 @@ public class AmqpTcpTransport implements AmqpTransport {
     }
 
     @Override
+    public void close() throws IOException {
+        if (closed.compareAndSet(false, true)) {
+            if (connected.get()) {
+                socket.close();
+                connected.set(false);
+            }
+
+            vertx.stop();
+        }
+    }
+
+    @Override
     public void send(ByteBuffer output) throws IOException {
         checkConnected();
+        Buffer sendBuffer = new Buffer(output.remaining());
+        while (output.hasRemaining()) {
+            sendBuffer.appendByte(output.get());
+        }
+        vertx.eventBus().send(socket.writeHandlerID(), sendBuffer);
     }
 
     private void checkConnected() throws IOException {
         if (!connected.get()) {
             throw new IOException("Cannot send to a non-connected transport.");
+        }
+    }
+
+    private void checkClosed() throws IOException {
+        if (closed.get()) {
+            throw new IOException("Transport is already closed.");
         }
     }
 }

@@ -23,6 +23,8 @@ public interface AmqpTransport {
 
     void connect() throws IOException;
 
+    void close() throws IOException;
+
     void send(ByteBuffer output) throws IOException;
 
 }
