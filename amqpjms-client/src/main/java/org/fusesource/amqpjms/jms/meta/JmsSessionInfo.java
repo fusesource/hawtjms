@@ -18,7 +18,8 @@ package org.fusesource.amqpjms.jms.meta;
 
 public final class JmsSessionInfo implements JmsResource {
 
-    protected final JmsSessionId sessionId;
+    private final JmsSessionId sessionId;
+    private int acknowledgementMode;
 
     public JmsSessionInfo(JmsConnectionInfo connectionMeta, long sessionId) {
         this.sessionId = new JmsSessionId(connectionMeta.getConnectionId(), sessionId);
@@ -35,5 +36,13 @@ public final class JmsSessionInfo implements JmsResource {
     @Override
     public void visit(JmsResourceVistor vistor) throws Exception {
         vistor.processSessionInfo(this);
+    }
+
+    public int getAcknowledgementMode() {
+        return acknowledgementMode;
+    }
+
+    public void setAcknowledgementMode(int acknowledgementMode) {
+        this.acknowledgementMode = acknowledgementMode;
     }
 }
