@@ -16,6 +16,8 @@
  */
 package org.fusesource.amqpjms;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Set;
 import java.util.Vector;
 
@@ -106,6 +108,14 @@ public class AmqpTestSupport {
     @After
     public void tearDown() throws Exception {
         stopBroker();
+    }
+
+    public URI getBrokerAmqpConnectionURI() {
+        try {
+            return new URI("amqp://127.0.0.1:" + port);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException();
+        }
     }
 
     public void sendMessages(Connection connection, Destination destination, int count) throws Exception {
