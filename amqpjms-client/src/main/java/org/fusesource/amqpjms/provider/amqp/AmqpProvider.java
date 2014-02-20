@@ -177,8 +177,7 @@ public class AmqpProvider implements Provider {
 
                         @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
-                            connection.createSession(sessionInfo);
-                            request.onSuccess(sessionInfo);
+                            connection.createSession(sessionInfo, request);
                         }
 
                         @Override
@@ -201,13 +200,12 @@ public class AmqpProvider implements Provider {
 //                            if (sasl != null) {
 //                                sasl.client();
 //                            }
-                            connection = new AmqpConnection(getRemoteURI(), protonConnection, null, connectionInfo);
+                            connection = new AmqpConnection(AmqpProvider.this, protonConnection, null, connectionInfo);
                             connection.open(request);
-                            pumpToProtonTransport();
-
-                            //response.onSuccess(connectionInfo);
                         }
                     });
+
+                    pumpToProtonTransport();
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -230,8 +228,7 @@ public class AmqpProvider implements Provider {
 
                         @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
-                            // TODO Auto-generated method stub
-
+                            connection.closeSession(sessionInfo, request);
                         }
 
                         @Override
@@ -249,10 +246,10 @@ public class AmqpProvider implements Provider {
                         @Override
                         public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
                             connection.close();
-                            pumpToProtonTransport();
-                            request.onSuccess(null);
                         }
                     });
+
+                    pumpToProtonTransport();
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -302,7 +299,7 @@ public class AmqpProvider implements Provider {
 
             @Override
             public void run() {
-                LOG.info("Received from Broker {} bytes.", input.length());
+                LOG.info("Received from Broker {} bytes:", input.length());
 
                 int position = 0;
                 int limit = 0;
@@ -341,30 +338,31 @@ public class AmqpProvider implements Provider {
         });
     }
 
+    void fireProviderException(Throwable ex) {
+        ProviderListener listener = this.listener;
+        if (listener != null) {
+            listener.onConnectionFailure(IOExceptionSupport.create(ex));
+        }
+    }
+
     private void pumpToProtonTransport() {
         try {
             boolean done = false;
             while (!done) {
-                LOG.info("Provider write operation starting.");;
+                LOG.info("Provider write operation starting.");
                 ByteBuffer toWrite = protonTransport.getOutputBuffer();
                 if (toWrite != null && toWrite.hasRemaining()) {
-                    TRACE_BYTES.info("Sending: {}", toWrite.toString().substring(5).replaceAll("(..)", "$1 "));
+                    // TODO - Get Bytes in a readable form
+                    TRACE_BYTES.info("Sending: {}", toWrite.toString());
                     transport.send(toWrite);
                     protonTransport.outputConsumed();
                 } else {
                     done = true;
                 }
             }
-            LOG.info("Provider write operation done.");;
+            LOG.info("Provider write operation done.");
         } catch (IOException e) {
             fireProviderException(e);
-        }
-    }
-
-    void fireProviderException(Throwable ex) {
-        ProviderListener listener = this.listener;
-        if (listener != null) {
-            listener.onConnectionFailure(IOExceptionSupport.create(ex));
         }
     }
 

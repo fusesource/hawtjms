@@ -16,21 +16,63 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
+import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Session;
+import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
+import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.provider.ProviderResponse;
 
 public class AmqpSession {
 
-    private final JmsSessionId sessionId;
+    private final AmqpConnection connection;
+    private final JmsSessionInfo info;
     private final Session protonSession;
 
-    public AmqpSession(JmsSessionId sessionId, Session protonSession) {
+    private ProviderResponse<JmsResource> openRequest;
+    private ProviderResponse<Void> closeRequest;
+
+    public AmqpSession(AmqpConnection connection, JmsSessionInfo info, Session protonSession) {
+        this.connection = connection;
         this.protonSession = protonSession;
-        this.sessionId = sessionId;
+        this.info = info;
+    }
+
+    public void open(ProviderResponse<JmsResource> request) {
+        this.openRequest = request;
+    }
+
+    public boolean isOpen() {
+        return this.protonSession.getRemoteState() == EndpointState.ACTIVE;
+    }
+
+    public void opened() {
+        if (openRequest != null) {
+            openRequest.onSuccess(info);
+        }
+    }
+
+    public void close(ProviderResponse<Void> request) {
+        this.protonSession.close();
+        this.closeRequest = request;
+    }
+
+    public boolean isClosed() {
+        return this.protonSession.getRemoteState() == EndpointState.CLOSED;
+    }
+
+    public void closed() {
+        if (closeRequest != null) {
+            closeRequest.onSuccess(null);
+        }
+    }
+
+    public AmqpConnection getConnection() {
+        return this.connection;
     }
 
     public JmsSessionId getSessionId() {
-        return this.sessionId;
+        return this.info.getSessionId();
     }
 
     public Session getProtonSession() {

@@ -18,8 +18,10 @@ package org.fusesource.amqpjms.provider.amqp;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -43,22 +45,24 @@ public class AmqpConnection {
     private final Sasl sasl;
     private final Map<JmsSessionId, AmqpSession> sessions = new HashMap<JmsSessionId, AmqpSession>();
     private final Map<JmsSessionId, Session> pendingSessions = new HashMap<JmsSessionId, Session>();
+    private final AmqpProvider provider;
 
     private ProviderResponse<JmsResource> pendingConnect;
 
-    public AmqpConnection(URI remoteURI, Connection protonConnection, Sasl sasl, JmsConnectionInfo info) {
+    private final Map<JmsSessionId, AmqpSession> pendingOpenSessions = new HashMap<JmsSessionId, AmqpSession>();
+    private final Map<JmsSessionId, AmqpSession> pendingCloseSessions = new HashMap<JmsSessionId, AmqpSession>();
+
+    public AmqpConnection(AmqpProvider provider, Connection protonConnection, Sasl sasl, JmsConnectionInfo info) {
+        this.provider = provider;
         this.protonConnection = protonConnection;
         this.sasl = sasl;
         this.info = info;
-        this.remoteURI = remoteURI;
+        this.remoteURI = provider.getRemoteURI();
 
         this.protonConnection.setContainer(info.getClientId());
         this.protonConnection.setContext(this);
         this.protonConnection.setHostname(remoteURI.getHost());
         this.protonConnection.open();
-
-        LOG.info("After open() call, state is {}", protonConnection.getLocalState());
-
         // TODO check info to see if we can meet all the requested options.
     }
 
@@ -66,25 +70,25 @@ public class AmqpConnection {
         this.pendingConnect = pendingConnect;
     }
 
-    public JmsConnectionInfo getConnectionInfo() {
-        return this.info;
-    }
-
     public void close() {
         this.protonConnection.close();
     }
 
-    public Connection getProtonConnection() {
-        return this.protonConnection;
-    }
-
-    public URI getRemoteURI() {
-        return this.remoteURI;
-    }
-
-    public Session createSession(JmsSessionInfo sessionInfo) {
+    public void createSession(JmsSessionInfo sessionInfo, ProviderResponse<JmsResource> request) {
+        JmsSessionId sessionId = sessionInfo.getSessionId();
         Session session = this.protonConnection.session();
-        return session;
+        AmqpSession pendingSession = new AmqpSession(this, sessionInfo, session);
+        pendingSession.open(request);
+        pendingOpenSessions.put(sessionId, pendingSession);
+    }
+
+    public void closeSession(JmsSessionInfo sessionInfo, ProviderResponse<Void> request) {
+        JmsSessionId sessionId = sessionInfo.getSessionId();
+        AmqpSession session = sessions.remove(sessionInfo.getSessionId());
+        if (session != null) {
+            session.close(request);
+            pendingCloseSessions.put(sessionId, session);
+        }
     }
 
     public void processUpdates() {
@@ -107,8 +111,63 @@ public class AmqpConnection {
             if (pendingConnect != null) {
                 pendingConnect.onFailure(new IOException("Connection closed by remote Broker."));
             } else {
-                // TODO - Fire an exception to the JMS layer indicating something went wrong.
+                provider.fireProviderException(new IOException("Connection closed by remote Broker."));
             }
         }
+
+        processPendingSessions();
+    }
+
+    private void processPendingSessions() {
+
+        if (pendingOpenSessions.isEmpty() && pendingCloseSessions.isEmpty()) {
+            return;
+        }
+
+        ArrayList<JmsSessionId> toRemove = new ArrayList<JmsSessionId>();
+        for (Entry<JmsSessionId, AmqpSession> entry : pendingOpenSessions.entrySet()) {
+            if (entry.getValue().isOpen()) {
+                toRemove.add(entry.getKey());
+            }
+        }
+
+        for (JmsSessionId id : toRemove) {
+            LOG.info("Session {} is now open", id);
+            pendingOpenSessions.remove(id);
+        }
+
+        toRemove.clear();
+
+        for (Entry<JmsSessionId, AmqpSession> entry : pendingCloseSessions.entrySet()) {
+            if (entry.getValue().isClosed()) {
+                toRemove.add(entry.getKey());
+            }
+        }
+
+        for (JmsSessionId id : toRemove) {
+            LOG.info("Session {} is now closed", id);
+            pendingCloseSessions.remove(id);
+        }
+    }
+
+    public JmsConnectionInfo getConnectionInfo() {
+        return this.info;
+    }
+
+    public Connection getProtonConnection() {
+        return this.protonConnection;
+    }
+
+    public URI getRemoteURI() {
+        return this.remoteURI;
+    }
+
+    public String getUsername() {
+        return this.info.getUsername();
+    }
+
+    public String getPassword() {
+        return this.info.getPassword();
     }
 }
+
