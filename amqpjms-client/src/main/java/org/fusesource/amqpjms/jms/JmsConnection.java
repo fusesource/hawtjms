@@ -446,7 +446,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     @SuppressWarnings("unchecked")
     <T extends JmsResource> T createResource(T resource) throws JMSException {
         checkClosedOrFailed();
-        connect();
 
         try {
             return (T) provider.create(resource).getResponse();
