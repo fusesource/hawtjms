@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Sasl;
@@ -108,10 +109,16 @@ public class AmqpConnection {
         if (protonConnection.getLocalState() != EndpointState.ACTIVE &&
             protonConnection.getRemoteState() == EndpointState.CLOSED) {
             LOG.info("Connection remotely closed on Broker:");
+
+            String message = getRemoteErrorMessage();
+            if (message == null) {
+                message = "Remote perr closed connection unexpectedly.";
+            }
+
             if (pendingConnect != null) {
-                pendingConnect.onFailure(new IOException("Connection closed by remote Broker."));
+                pendingConnect.onFailure(new IOException(message));
             } else {
-                provider.fireProviderException(new IOException("Connection closed by remote Broker."));
+                provider.fireProviderException(new IOException(message));
             }
         }
 
@@ -148,6 +155,17 @@ public class AmqpConnection {
             LOG.info("Session {} is now closed", id);
             pendingCloseSessions.remove(id);
         }
+    }
+
+    private String getRemoteErrorMessage() {
+        if (protonConnection.getRemoteCondition() != null) {
+            ErrorCondition error = protonConnection.getRemoteCondition();
+            if (error.getDescription() != null && !error.getDescription().isEmpty()) {
+                return error.getDescription();
+            }
+        }
+
+        return null;
     }
 
     public JmsConnectionInfo getConnectionInfo() {
