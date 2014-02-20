@@ -27,18 +27,20 @@ public class AmqpSession {
 
     private final AmqpConnection connection;
     private final JmsSessionInfo info;
-    private final Session protonSession;
+    private Session protonSession;
 
     private ProviderResponse<JmsResource> openRequest;
     private ProviderResponse<Void> closeRequest;
 
-    public AmqpSession(AmqpConnection connection, JmsSessionInfo info, Session protonSession) {
+    public AmqpSession(AmqpConnection connection, JmsSessionInfo info) {
         this.connection = connection;
-        this.protonSession = protonSession;
         this.info = info;
     }
 
     public void open(ProviderResponse<JmsResource> request) {
+        this.protonSession = connection.getProtonConnection().session();
+        this.protonSession.setContext(this);
+        this.protonSession.open();
         this.openRequest = request;
     }
 
@@ -49,6 +51,7 @@ public class AmqpSession {
     public void opened() {
         if (openRequest != null) {
             openRequest.onSuccess(info);
+            openRequest = null;
         }
     }
 
@@ -64,6 +67,7 @@ public class AmqpSession {
     public void closed() {
         if (closeRequest != null) {
             closeRequest.onSuccess(null);
+            closeRequest = null;
         }
     }
 

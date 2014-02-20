@@ -77,8 +77,7 @@ public class AmqpConnection {
 
     public void createSession(JmsSessionInfo sessionInfo, ProviderResponse<JmsResource> request) {
         JmsSessionId sessionId = sessionInfo.getSessionId();
-        Session session = this.protonConnection.session();
-        AmqpSession pendingSession = new AmqpSession(this, sessionInfo, session);
+        AmqpSession pendingSession = new AmqpSession(this, sessionInfo);
         pendingSession.open(request);
         pendingOpenSessions.put(sessionId, pendingSession);
     }
@@ -105,7 +104,7 @@ public class AmqpConnection {
             pendingConnect.onSuccess(this.info);
         }
 
-        // We are opened and something on the remote end has closed us, singal an error.
+        // We are opened and something on the remote end has closed us, signal an error.
         if (protonConnection.getLocalState() != EndpointState.ACTIVE &&
             protonConnection.getRemoteState() == EndpointState.CLOSED) {
             LOG.info("Connection remotely closed on Broker:");
@@ -135,6 +134,8 @@ public class AmqpConnection {
         for (Entry<JmsSessionId, AmqpSession> entry : pendingOpenSessions.entrySet()) {
             if (entry.getValue().isOpen()) {
                 toRemove.add(entry.getKey());
+                sessions.put(entry.getKey(), entry.getValue());
+                entry.getValue().opened();
             }
         }
 
@@ -148,6 +149,7 @@ public class AmqpConnection {
         for (Entry<JmsSessionId, AmqpSession> entry : pendingCloseSessions.entrySet()) {
             if (entry.getValue().isClosed()) {
                 toRemove.add(entry.getKey());
+                entry.getValue().closed();
             }
         }
 

@@ -18,27 +18,28 @@ package org.fusesource.amqpjms;
 
 import static org.junit.Assert.assertNotNull;
 
+import javax.jms.Session;
+
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.junit.Test;
 
 /**
- * Test for basic JmsConnection functionality and error handling.
+ * Test basic Session functionality.
  */
-public class JmsConnectionTest extends AmqpTestSupport {
+public class JmsSessionTest extends AmqpTestSupport {
 
-    @Test
-    public void testCreateConnection() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
-        assertNotNull(connection);
-    }
-
-    @Test
-    public void testCreateConnectionAndStart() throws Exception {
+    @Test(timeout = 30000)
+    public void testCreateSession() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
         connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+
+        session.close();
+        connection.close();
     }
 }
