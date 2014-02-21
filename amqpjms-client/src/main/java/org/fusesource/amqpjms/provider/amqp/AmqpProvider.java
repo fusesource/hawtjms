@@ -79,6 +79,8 @@ public class AmqpProvider implements Provider {
     private final ExecutorService serializer;
     private final AtomicBoolean closed = new AtomicBoolean();
 
+    private ProviderRequest<JmsResource> pendingConnect;
+
     /**
      * Create a new instance of an AmqpProvider bonded to the given remote URI.
      *
@@ -135,7 +137,7 @@ public class AmqpProvider implements Provider {
                 public void run() {
                     try {
                         if (connection != null) {
-                            connection.close();
+                            connection.close(request);
                         }
 
                         pumpToProtonTransport();
@@ -159,6 +161,7 @@ public class AmqpProvider implements Provider {
                 }
             });
 
+            // TODO - Add a close timeout.
             try {
                 request.getResponse();
             } catch (IOException e) {
@@ -184,8 +187,8 @@ public class AmqpProvider implements Provider {
 
             @Override
             public void run() {
-
                 try {
+                    checkClosed();
                     resource.visit(new JmsResourceVistor() {
 
                         @Override
@@ -240,6 +243,7 @@ public class AmqpProvider implements Provider {
             @Override
             public void run() {
                 try {
+                    checkClosed();
                     resource.visit(new JmsResourceVistor() {
 
                         @Override
@@ -264,7 +268,7 @@ public class AmqpProvider implements Provider {
 
                         @Override
                         public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
-                            connection.close();
+                            connection.close(request);
                         }
                     });
 
@@ -336,7 +340,7 @@ public class AmqpProvider implements Provider {
 
                 // Process the state changes from the latest data and then answer back
                 // any pending updates to the Broker.
-                connection.processUpdates();
+                processUpdates();
                 pumpToProtonTransport();
             }
         });
@@ -351,11 +355,12 @@ public class AmqpProvider implements Provider {
      */
     void onTransportError(final Throwable error) {
         serializer.execute(new Runnable() {
-
             @Override
             public void run() {
                 LOG.info("Transport failed: {}", error.getMessage());
-                fireProviderException(error);
+                if (!closed.get()) {
+                    fireProviderException(error);
+                }
             }
         });
     }
@@ -367,11 +372,14 @@ public class AmqpProvider implements Provider {
         }
     }
 
+    private void processUpdates() {
+        connection.processUpdates();
+    }
+
     private void pumpToProtonTransport() {
         try {
             boolean done = false;
             while (!done) {
-                LOG.info("Provider write operation starting.");
                 ByteBuffer toWrite = protonTransport.getOutputBuffer();
                 if (toWrite != null && toWrite.hasRemaining()) {
                     // TODO - Get Bytes in a readable form
@@ -382,7 +390,6 @@ public class AmqpProvider implements Provider {
                     done = true;
                 }
             }
-            LOG.info("Provider write operation done.");
         } catch (IOException e) {
             fireProviderException(e);
         }

@@ -117,8 +117,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                     s.close();
                 }
                 this.sessions.clear();
+
                 if (provider != null) {
-                    provider.destroy(connectionInfo);
+                    try {
+                        provider.destroy(connectionInfo).getResponse();
+                    } catch (IOException e) {
+                        LOG.trace("Cuaght exception while closing remote connection: {}", e.getMessage());
+                    }
+
                     provider.close();
                     provider = null;
                 }

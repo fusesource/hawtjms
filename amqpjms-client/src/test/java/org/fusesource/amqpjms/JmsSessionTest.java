@@ -18,6 +18,7 @@ package org.fusesource.amqpjms;
 
 import static org.junit.Assert.assertNotNull;
 
+import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -57,6 +58,22 @@ public class JmsSessionTest extends AmqpTestSupport {
         MessageProducer producer = session.createProducer(queue);
 
         producer.close();
+        session.close();
+        connection.close();
+    }
+
+    @Test
+    public void testSessionCreateConsumer() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+
+        Queue queue = session.createQueue("test.queue");
+        MessageConsumer consumer = session.createConsumer(queue);
+
+        consumer.close();
         session.close();
         connection.close();
     }

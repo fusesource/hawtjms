@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.jms.JMSException;
+
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -35,7 +37,7 @@ import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AmqpConnection {
+public class AmqpConnection implements AmqpResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
@@ -46,7 +48,8 @@ public class AmqpConnection {
     private final Map<JmsSessionId, AmqpSession> sessions = new HashMap<JmsSessionId, AmqpSession>();
     private final AmqpProvider provider;
 
-    private ProviderRequest<JmsResource> pendingConnect;
+    private ProviderRequest<JmsResource> openRequest;
+    private ProviderRequest<Void> closeRequest;
 
     private final Map<JmsSessionId, AmqpSession> pendingOpenSessions = new HashMap<JmsSessionId, AmqpSession>();
     private final Map<JmsSessionId, AmqpSession> pendingCloseSessions = new HashMap<JmsSessionId, AmqpSession>();
@@ -65,12 +68,55 @@ public class AmqpConnection {
         // TODO check info to see if we can meet all the requested options.
     }
 
-    public void open(ProviderRequest<JmsResource> pendingConnect) {
-        this.pendingConnect = pendingConnect;
+    @Override
+    public void open(ProviderRequest<JmsResource> openRequest) {
+        this.openRequest = openRequest;
     }
 
-    public void close() {
+    @Override
+    public boolean isOpen() {
+        return this.protonConnection.getRemoteState() == EndpointState.ACTIVE;
+    }
+
+    @Override
+    public void opened() {
+        if (this.openRequest != null) {
+            this.openRequest.onSuccess(info);
+            this.openRequest = null;
+        }
+    }
+
+    @Override
+    public void close(ProviderRequest<Void> request) {
         this.protonConnection.close();
+        this.closeRequest = request;
+    }
+
+    @Override
+    public boolean isClosed() {
+        return this.protonConnection.getRemoteState() == EndpointState.CLOSED;
+    }
+
+    @Override
+    public void closed() {
+        if (this.closeRequest != null) {
+            this.closeRequest.onSuccess(null);
+            this.closeRequest = null;
+        }
+    }
+
+    @Override
+    public void failed() {
+        // TODO - Figure out a real exception to throw.
+        if (openRequest != null) {
+            openRequest.onFailure(new JMSException("Failed to create Session"));
+            openRequest = null;
+        }
+
+        if (closeRequest != null) {
+            closeRequest.onFailure(new JMSException("Failed to create Session"));
+            closeRequest = null;
+        }
     }
 
     public AmqpSession createSession(JmsSessionInfo sessionInfo) {
@@ -80,15 +126,9 @@ public class AmqpConnection {
 
     public void processUpdates() {
 
-        LOG.info("Connection local {} and remote {} states",
-                 protonConnection.getLocalState(), protonConnection.getRemoteState());
-
-        // We are waiting for the Broker to answer our Connection open request.
-        if (protonConnection.getLocalState() == EndpointState.ACTIVE &&
-            protonConnection.getRemoteState() == EndpointState.ACTIVE) {
-
-            LOG.info("Connection opened on Broker:");
-            pendingConnect.onSuccess(this.info);
+        // TODO - maybe we can make this code smarter about opened vs pending opened state.
+        if (isOpen()) {
+            opened();
         }
 
         // We are opened and something on the remote end has closed us, signal an error.
@@ -97,16 +137,15 @@ public class AmqpConnection {
             protonConnection.getRemoteState() != EndpointState.ACTIVE) {
 
             if (protonConnection.getRemoteCondition().getCondition() != null) {
-                LOG.info("Error condition detected on Connection open {}.",
-                         protonConnection.getRemoteCondition().getCondition());
+                LOG.info("Error condition detected on Connection open {}.", protonConnection.getRemoteCondition().getCondition());
 
                 String message = getRemoteErrorMessage();
                 if (message == null) {
                     message = "Remote perr closed connection unexpectedly.";
                 }
 
-                if (pendingConnect != null) {
-                    pendingConnect.onFailure(new IOException(message));
+                if (openRequest != null) {
+                    openRequest.onFailure(new IOException(message));
                 } else {
                     provider.fireProviderException(new IOException(message));
                 }
@@ -117,6 +156,12 @@ public class AmqpConnection {
 
         for (AmqpSession session : this.sessions.values()) {
             session.processUpdates();
+        }
+
+        if (protonConnection.getLocalState() == EndpointState.CLOSED &&
+            protonConnection.getRemoteState() == EndpointState.CLOSED) {
+
+            closed();
         }
     }
 
