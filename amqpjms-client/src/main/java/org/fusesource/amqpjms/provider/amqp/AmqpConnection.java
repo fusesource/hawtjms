@@ -32,7 +32,7 @@ import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
-import org.fusesource.amqpjms.provider.ProviderResponse;
+import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,7 @@ public class AmqpConnection {
     private final Map<JmsSessionId, Session> pendingSessions = new HashMap<JmsSessionId, Session>();
     private final AmqpProvider provider;
 
-    private ProviderResponse<JmsResource> pendingConnect;
+    private ProviderRequest<JmsResource> pendingConnect;
 
     private final Map<JmsSessionId, AmqpSession> pendingOpenSessions = new HashMap<JmsSessionId, AmqpSession>();
     private final Map<JmsSessionId, AmqpSession> pendingCloseSessions = new HashMap<JmsSessionId, AmqpSession>();
@@ -67,7 +67,7 @@ public class AmqpConnection {
         // TODO check info to see if we can meet all the requested options.
     }
 
-    public void open(ProviderResponse<JmsResource> pendingConnect) {
+    public void open(ProviderRequest<JmsResource> pendingConnect) {
         this.pendingConnect = pendingConnect;
     }
 
@@ -75,14 +75,14 @@ public class AmqpConnection {
         this.protonConnection.close();
     }
 
-    public void createSession(JmsSessionInfo sessionInfo, ProviderResponse<JmsResource> request) {
+    public void createSession(JmsSessionInfo sessionInfo, ProviderRequest<JmsResource> request) {
         JmsSessionId sessionId = sessionInfo.getSessionId();
         AmqpSession pendingSession = new AmqpSession(this, sessionInfo);
         pendingSession.open(request);
         pendingOpenSessions.put(sessionId, pendingSession);
     }
 
-    public void closeSession(JmsSessionInfo sessionInfo, ProviderResponse<Void> request) {
+    public void closeSession(JmsSessionInfo sessionInfo, ProviderRequest<Void> request) {
         JmsSessionId sessionId = sessionInfo.getSessionId();
         AmqpSession session = sessions.remove(sessionInfo.getSessionId());
         if (session != null) {
@@ -105,23 +105,32 @@ public class AmqpConnection {
         }
 
         // We are opened and something on the remote end has closed us, signal an error.
+        // TODO - need to figure out exactly what the failure states are.
         if (protonConnection.getLocalState() == EndpointState.ACTIVE &&
-            protonConnection.getRemoteState() == EndpointState.CLOSED) {
-            LOG.info("Connection remotely closed on Broker:");
+            protonConnection.getRemoteState() != EndpointState.ACTIVE) {
 
-            String message = getRemoteErrorMessage();
-            if (message == null) {
-                message = "Remote perr closed connection unexpectedly.";
-            }
+            if (protonConnection.getRemoteCondition().getCondition() != null) {
+                LOG.info("Error condition detected on Connection open {}.",
+                         protonConnection.getRemoteCondition().getCondition());
 
-            if (pendingConnect != null) {
-                pendingConnect.onFailure(new IOException(message));
-            } else {
-                provider.fireProviderException(new IOException(message));
+                String message = getRemoteErrorMessage();
+                if (message == null) {
+                    message = "Remote perr closed connection unexpectedly.";
+                }
+
+                if (pendingConnect != null) {
+                    pendingConnect.onFailure(new IOException(message));
+                } else {
+                    provider.fireProviderException(new IOException(message));
+                }
             }
         }
 
         processPendingSessions();
+
+        for (AmqpSession session : this.sessions.values()) {
+            session.processUpdates();
+        }
     }
 
     private void processPendingSessions() {
@@ -188,6 +197,20 @@ public class AmqpConnection {
 
     public String getPassword() {
         return this.info.getPassword();
+    }
+
+    /**
+     * Retrieve the indicated Session instance from the list of active sessions.
+     *
+     * @param sessionId
+     *        The JmsSessionId that's associated with the target session.
+     *
+     * @return the AmqpSession associated with the given id.
+     */
+    public AmqpSession getSession(JmsSessionId sessionId) {
+        // TODO - Hide a session reference in the sessionId hint field.
+
+        return this.sessions.get(sessionId);
     }
 }
 

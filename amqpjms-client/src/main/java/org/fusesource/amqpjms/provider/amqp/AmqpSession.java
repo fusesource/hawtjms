@@ -16,12 +16,19 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Session;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
+import org.fusesource.amqpjms.jms.meta.JmsProducerId;
+import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
-import org.fusesource.amqpjms.provider.ProviderResponse;
+import org.fusesource.amqpjms.provider.ProviderRequest;
 
 public class AmqpSession {
 
@@ -29,15 +36,18 @@ public class AmqpSession {
     private final JmsSessionInfo info;
     private Session protonSession;
 
-    private ProviderResponse<JmsResource> openRequest;
-    private ProviderResponse<Void> closeRequest;
+    private ProviderRequest<JmsResource> openRequest;
+    private ProviderRequest<Void> closeRequest;
+
+    private final Map<JmsConsumerId, AmqpConsumer> consumers = new HashMap<JmsConsumerId, AmqpConsumer>();
+    private final Map<JmsProducerId, AmqpProducer> producers = new HashMap<JmsProducerId, AmqpProducer>();
 
     public AmqpSession(AmqpConnection connection, JmsSessionInfo info) {
         this.connection = connection;
         this.info = info;
     }
 
-    public void open(ProviderResponse<JmsResource> request) {
+    public void open(ProviderRequest<JmsResource> request) {
         this.protonSession = connection.getProtonConnection().session();
         this.protonSession.setContext(this);
         this.protonSession.open();
@@ -55,7 +65,7 @@ public class AmqpSession {
         }
     }
 
-    public void close(ProviderResponse<Void> request) {
+    public void close(ProviderRequest<Void> request) {
         this.protonSession.close();
         this.closeRequest = request;
     }
@@ -69,6 +79,33 @@ public class AmqpSession {
             closeRequest.onSuccess(null);
             closeRequest = null;
         }
+    }
+
+    public AmqpProducer createProducer(JmsProducerInfo producerInfo, ProviderRequest<JmsResource> request) {
+        return new AmqpProducer(this, producerInfo);
+    }
+
+    public AmqpProducer getProducer(JmsProducerInfo producerInfo) {
+        // TODO - Hide producer in the hint field in the Id.
+        return this.producers.get(producerInfo.getProducerId());
+    }
+
+    public AmqpConsumer createConsumer(JmsConsumerInfo consumerInfo, ProviderRequest<JmsResource> request) {
+        return new AmqpConsumer(this, consumerInfo);
+    }
+
+    public AmqpConsumer getConsumer(JmsConsumerInfo consumerInfo) {
+        // TODO - Hide producer in the hint field in the Id.
+        return this.consumers.get(consumerInfo.getConsumerId());
+    }
+
+    /**
+     * Called from the parent Connection to check for and react to state changes in the
+     * underlying Proton connection which might indicate a sender / receiver / link state
+     * has changed.
+     */
+    public void processUpdates() {
+
     }
 
     public AmqpConnection getConnection() {

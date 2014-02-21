@@ -42,7 +42,7 @@ import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.jms.util.IOExceptionSupport;
 import org.fusesource.amqpjms.provider.Provider;
 import org.fusesource.amqpjms.provider.ProviderListener;
-import org.fusesource.amqpjms.provider.ProviderResponse;
+import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vertx.java.core.buffer.Buffer;
@@ -129,7 +129,6 @@ public class AmqpProvider implements Provider {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                // TODO close connection and any open AMQP resources.
                 if (connection != null) {
                     connection.close();
                 }
@@ -138,7 +137,6 @@ public class AmqpProvider implements Provider {
             } catch (Exception e) {
                 LOG.debug("Caught exception while closing proton connection");
             } finally {
-                // TODO close down the transport connection.
                 if (transport != null) {
                     try {
                         transport.close();
@@ -164,9 +162,9 @@ public class AmqpProvider implements Provider {
     }
 
     @Override
-    public ProviderResponse<JmsResource> create(final JmsResource resource) throws IOException {
+    public ProviderRequest<JmsResource> create(final JmsResource resource) throws IOException {
         checkClosed();
-        final ProviderResponse<JmsResource> request = new ProviderResponse<JmsResource>();
+        final ProviderRequest<JmsResource> request = new ProviderRequest<JmsResource>();
         serializer.execute(new Runnable() {
 
             @Override
@@ -182,14 +180,14 @@ public class AmqpProvider implements Provider {
 
                         @Override
                         public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
-                            // TODO Auto-generated method stub
-
+                            AmqpSession session = connection.getSession(producerInfo.getParentId());
+                            session.createProducer(producerInfo, request);
                         }
 
                         @Override
                         public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
-                            // TODO Auto-generated method stub
-
+                            AmqpSession session = connection.getSession(consumerInfo.getParentId());
+                            session.createConsumer(consumerInfo, request);
                         }
 
                         @Override
@@ -216,9 +214,9 @@ public class AmqpProvider implements Provider {
     }
 
     @Override
-    public ProviderResponse<Void> destroy(final JmsResource resource) throws IOException {
+    public ProviderRequest<Void> destroy(final JmsResource resource) throws IOException {
         checkClosed();
-        final ProviderResponse<Void> request = new ProviderResponse<Void>();
+        final ProviderRequest<Void> request = new ProviderRequest<Void>();
         serializer.execute(new Runnable() {
 
             @Override
@@ -233,14 +231,16 @@ public class AmqpProvider implements Provider {
 
                         @Override
                         public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
-                            // TODO Auto-generated method stub
-
+                            AmqpSession session = connection.getSession(producerInfo.getParentId());
+                            AmqpProducer producer = session.getProducer(producerInfo);
+                            producer.close(request);
                         }
 
                         @Override
                         public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
-                            // TODO Auto-generated method stub
-
+                            AmqpSession session = connection.getSession(consumerInfo.getParentId());
+                            AmqpConsumer consumer = session.getConsumer(consumerInfo);
+                            consumer.close(request);
                         }
 
                         @Override

@@ -78,7 +78,7 @@ public interface Provider {
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    ProviderResponse<JmsResource> create(JmsResource resource) throws IOException;
+    ProviderRequest<JmsResource> create(JmsResource resource) throws IOException;
 
     /**
      * Instruct the Provider to dispose of a given JmsResource.
@@ -93,7 +93,7 @@ public interface Provider {
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    ProviderResponse<Void> destroy(JmsResource resource) throws IOException;
+    ProviderRequest<Void> destroy(JmsResource resource) throws IOException;
 
     /**
      * Sets the listener of events from this Provider instance.

@@ -25,7 +25,7 @@ import org.fusesource.amqpjms.jms.util.IOExceptionSupport;
 /**
  * Asynchronous Provider response class.
  */
-public class ProviderResponse<T> implements AsyncResult<T> {
+public class ProviderRequest<T> implements AsyncResult<T> {
 
     protected final CountDownLatch latch = new CountDownLatch(1);
     protected Throwable error;

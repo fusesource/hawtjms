@@ -16,6 +16,68 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
+import org.apache.qpid.proton.engine.EndpointState;
+import org.apache.qpid.proton.engine.Sender;
+import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
+import org.fusesource.amqpjms.jms.meta.JmsResource;
+import org.fusesource.amqpjms.provider.ProviderRequest;
+
+/**
+ * AMQP Producer object that is used to manage JMS MessageProducer semantics.
+ */
 public class AmqpProducer {
 
+    private final AmqpSession session;
+    private final JmsProducerInfo info;
+    private Sender protonSender;
+
+    private ProviderRequest<JmsResource> openRequest;
+    private ProviderRequest<Void> closeRequest;
+
+    public AmqpProducer(AmqpSession session, JmsProducerInfo info) {
+        this.session = session;
+        this.info = info;
+    }
+
+    public void open(ProviderRequest<JmsResource> request) {
+//        this.protonSession = session.getProtonConnection().session();
+//        this.protonSession.setContext(this);
+//        this.protonSession.open();
+        this.openRequest = request;
+    }
+
+    public boolean isOpen() {
+        return this.protonSender.getRemoteState() == EndpointState.ACTIVE;
+    }
+
+    public void opened() {
+        if (openRequest != null) {
+            openRequest.onSuccess(info);
+            openRequest = null;
+        }
+    }
+
+    public void close(ProviderRequest<Void> request) {
+        this.protonSender.close();
+        this.closeRequest = request;
+    }
+
+    public boolean isClosed() {
+        return this.protonSender.getRemoteState() == EndpointState.CLOSED;
+    }
+
+    public void closed() {
+        if (closeRequest != null) {
+            closeRequest.onSuccess(null);
+            closeRequest = null;
+        }
+    }
+
+    public AmqpSession getSession() {
+        return this.session;
+    }
+
+    public Sender getProtonSender() {
+        return this.protonSender;
+    }
 }
