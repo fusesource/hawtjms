@@ -129,6 +129,10 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
         return lastDeliveredSequenceId;
     }
 
+    public JmsSessionId getParentId() {
+        return this.consumerId.getParentId();
+    }
+
     @Override
     public String toString() {
         return ToStringSupport.toString(this);

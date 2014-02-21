@@ -46,12 +46,14 @@ public final class JmsConsumerId implements JmsResourceId, Comparable<JmsConsume
         this.connectionId = sessionId.getConnectionId();
         this.sessionId = sessionId.getValue();
         this.value = consumerId;
+        this.parentId = sessionId;
     }
 
     public JmsConsumerId(JmsConsumerId id) {
         this.connectionId = id.getConnectionId();
         this.sessionId = id.getSessionId();
         this.value = id.getValue();
+        this.parentId = id.getParentId();
     }
 
     public JmsSessionId getParentId() {

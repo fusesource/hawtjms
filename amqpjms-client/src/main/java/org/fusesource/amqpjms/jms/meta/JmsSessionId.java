@@ -29,6 +29,7 @@ public final class JmsSessionId implements JmsResourceId, Comparable<JmsSessionI
     public JmsSessionId(JmsConnectionId connectionId, long sessionId) {
         this.connectionId = connectionId.getValue();
         this.value = sessionId;
+        this.parentId = connectionId;
     }
 
     public JmsSessionId(JmsSessionId id) {

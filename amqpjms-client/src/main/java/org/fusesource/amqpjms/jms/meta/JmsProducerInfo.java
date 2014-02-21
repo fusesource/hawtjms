@@ -46,6 +46,10 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
         return producerId;
     }
 
+    public JmsSessionId getParentId() {
+        return producerId.getParentId();
+    }
+
     public JmsDestination getDestination() {
         return destination;
     }

@@ -31,12 +31,14 @@ public final class JmsProducerId implements JmsResourceId, Comparable<JmsProduce
         this.connectionId = sessionId.getConnectionId();
         this.sessionId = sessionId.getValue();
         this.value = producerId;
+        this.parentId = sessionId;
     }
 
     public JmsProducerId(JmsProducerId id) {
         this.connectionId = id.getConnectionId();
         this.sessionId = id.getSessionId();
         this.value = id.getValue();
+        this.parentId = id.getParentId();
     }
 
     public JmsProducerId(String producerKey) {
