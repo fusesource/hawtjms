@@ -110,7 +110,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      * @see javax.jms.Connection#close()
      */
     @Override
-    public synchronized void close() throws JMSException {
+    public void close() throws JMSException {
         if (closed.compareAndSet(false, true)) {
             try {
                 for (Session s : this.sessions) {
@@ -168,9 +168,9 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      * @param maxMessages
      * @return ConnectionConsumer
      * @throws JMSException
+     *
      * @see javax.jms.Connection#createDurableConnectionConsumer(javax.jms.Topic,
-     *      java.lang.String, java.lang.String, javax.jms.ServerSessionPool,
-     *      int)
+     *      java.lang.String, java.lang.String, javax.jms.ServerSessionPool, int)
      */
     @Override
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName,
@@ -188,7 +188,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      * @see javax.jms.Connection#createSession(boolean, int)
      */
     @Override
-    public synchronized Session createSession(boolean transacted, int acknowledgeMode) throws JMSException {
+    public Session createSession(boolean transacted, int acknowledgeMode) throws JMSException {
         checkClosed();
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
@@ -423,7 +423,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
             // Provider delete if supported.
 
-            // TODO if we track temp destinations and this happens to be one
+            // TODO if we track temporary destinations and this happens to be one
             //      we need to clean up our internal state.
             if (destination.isTemporary()) {
             }
