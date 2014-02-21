@@ -31,7 +31,7 @@ import org.junit.Test;
  */
 public class JmsSessionTest extends AmqpTestSupport {
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testCreateSession() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         JmsConnection connection = (JmsConnection) factory.createConnection();
@@ -45,7 +45,7 @@ public class JmsSessionTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test(timeout = 30000)
+    @Test
     public void testSessionCreateProducer() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         JmsConnection connection = (JmsConnection) factory.createConnection();

@@ -16,10 +16,15 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
+import javax.jms.JMSException;
+
 import org.apache.qpid.proton.engine.EndpointState;
+import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Session;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
@@ -29,8 +34,12 @@ import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.provider.ProviderRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class AmqpSession {
+public class AmqpSession implements AmqpResource {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpSession.class);
 
     private final AmqpConnection connection;
     private final JmsSessionInfo info;
@@ -42,22 +51,29 @@ public class AmqpSession {
     private final Map<JmsConsumerId, AmqpConsumer> consumers = new HashMap<JmsConsumerId, AmqpConsumer>();
     private final Map<JmsProducerId, AmqpProducer> producers = new HashMap<JmsProducerId, AmqpProducer>();
 
+    private final ArrayList<AmqpLink> pendingOpenLinks = new ArrayList<AmqpLink>();
+    private final ArrayList<AmqpLink> pendingCloseLinks = new ArrayList<AmqpLink>();
+
     public AmqpSession(AmqpConnection connection, JmsSessionInfo info) {
         this.connection = connection;
         this.info = info;
     }
 
+    @Override
     public void open(ProviderRequest<JmsResource> request) {
+        this.connection.addToPendingOpenSessions(this);
         this.protonSession = connection.getProtonConnection().session();
         this.protonSession.setContext(this);
         this.protonSession.open();
         this.openRequest = request;
     }
 
+    @Override
     public boolean isOpen() {
         return this.protonSession.getRemoteState() == EndpointState.ACTIVE;
     }
 
+    @Override
     public void opened() {
         if (openRequest != null) {
             openRequest.onSuccess(info);
@@ -65,15 +81,19 @@ public class AmqpSession {
         }
     }
 
+    @Override
     public void close(ProviderRequest<Void> request) {
+        this.connection.addToPendingCloseSessions(this);
         this.protonSession.close();
         this.closeRequest = request;
     }
 
+    @Override
     public boolean isClosed() {
         return this.protonSession.getRemoteState() == EndpointState.CLOSED;
     }
 
+    @Override
     public void closed() {
         if (closeRequest != null) {
             closeRequest.onSuccess(null);
@@ -81,7 +101,21 @@ public class AmqpSession {
         }
     }
 
-    public AmqpProducer createProducer(JmsProducerInfo producerInfo, ProviderRequest<JmsResource> request) {
+    @Override
+    public void failed() {
+        // TODO - Figure out a real exception to throw.
+        if (openRequest != null) {
+            openRequest.onFailure(new JMSException("Failed to create Session"));
+            openRequest = null;
+        }
+
+        if (closeRequest != null) {
+            closeRequest.onFailure(new JMSException("Failed to create Session"));
+            closeRequest = null;
+        }
+    }
+
+    public AmqpProducer createProducer(JmsProducerInfo producerInfo) {
         return new AmqpProducer(this, producerInfo);
     }
 
@@ -90,7 +124,7 @@ public class AmqpSession {
         return this.producers.get(producerInfo.getProducerId());
     }
 
-    public AmqpConsumer createConsumer(JmsConsumerInfo consumerInfo, ProviderRequest<JmsResource> request) {
+    public AmqpConsumer createConsumer(JmsConsumerInfo consumerInfo) {
         return new AmqpConsumer(this, consumerInfo);
     }
 
@@ -105,7 +139,54 @@ public class AmqpSession {
      * has changed.
      */
     public void processUpdates() {
+        processPendingLinks();
+    }
 
+    private void processPendingLinks() {
+
+        if (pendingOpenLinks.isEmpty() && pendingCloseLinks.isEmpty()) {
+            return;
+        }
+
+        // TODO - revisit and clean this up, it's a bit ugly right now.
+
+        Iterator<AmqpLink> linkIterator = pendingOpenLinks.iterator();
+        while (linkIterator.hasNext()) {
+            AmqpLink candidate = linkIterator.next();
+            Link protonLink = candidate.getProtonLink();
+
+            LOG.info("Checking link {} for open status: ", candidate);
+
+            EndpointState linkRemoteState = protonLink.getRemoteState();
+            if (linkRemoteState == EndpointState.ACTIVE || linkRemoteState == EndpointState.CLOSED) {
+                if (linkRemoteState == EndpointState.ACTIVE && candidate.getRemoteTerminus() != null) {
+                    candidate.opened();
+
+                    if (candidate instanceof AmqpConsumer) {
+                        AmqpConsumer consumer = (AmqpConsumer) candidate;
+                        consumers.put(consumer.getConsumerId(), consumer);
+                    } else {
+                        AmqpProducer producer = (AmqpProducer) candidate;
+                        producers.put(producer.getProducerId(), producer);
+                    }
+
+                } else {
+                    // TODO - Can we derive an exception from here.
+                    candidate.failed();
+                }
+
+                linkIterator.remove();
+            }
+        }
+
+        linkIterator = pendingCloseLinks.iterator();
+        while (linkIterator.hasNext()) {
+            AmqpLink candidate = linkIterator.next();
+            if (candidate.isClosed()) {
+                candidate.closed();
+                linkIterator.remove();
+            }
+        }
     }
 
     public AmqpConnection getConnection() {
@@ -118,5 +199,13 @@ public class AmqpSession {
 
     public Session getProtonSession() {
         return this.protonSession;
+    }
+
+    void addPedingLinkOpen(AmqpLink link) {
+        this.pendingOpenLinks.add(link);
+    }
+
+    void addPedingLinkClose(AmqpLink link) {
+        this.pendingCloseLinks.add(link);
     }
 }

@@ -18,12 +18,16 @@ package org.fusesource.amqpjms.provider.amqp;
 
 import java.util.UUID;
 
+import javax.jms.JMSException;
+
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.EndpointState;
+import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Receiver;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.provider.ProviderRequest;
@@ -31,7 +35,7 @@ import org.fusesource.amqpjms.provider.ProviderRequest;
 /**
  * AMQP Consumer object that is used to manage JMS MessageConsumer semantics.
  */
-public class AmqpConsumer {
+public class AmqpConsumer implements AmqpLink {
 
     private final AmqpSession session;
     private final JmsConsumerInfo info;
@@ -45,6 +49,7 @@ public class AmqpConsumer {
         this.info = info;
     }
 
+    @Override
     public void open(ProviderRequest<JmsResource> request) {
 
         String subscription = info.getDestination().getName() + "->" + UUID.randomUUID().toString();
@@ -59,14 +64,18 @@ public class AmqpConsumer {
         protonReceiver.setContext(this);
         protonReceiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);
         protonReceiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+        protonReceiver.open();
 
         this.openRequest = request;
-    }
+        this.session.addPedingLinkOpen(this);
+}
 
+    @Override
     public boolean isOpen() {
         return this.protonReceiver.getRemoteState() == EndpointState.ACTIVE;
     }
 
+    @Override
     public void opened() {
         if (openRequest != null) {
             openRequest.onSuccess(info);
@@ -74,15 +83,19 @@ public class AmqpConsumer {
         }
     }
 
+    @Override
     public void close(ProviderRequest<Void> request) {
+        this.session.addPedingLinkClose(this);
         this.protonReceiver.close();
         this.closeRequest = request;
     }
 
+    @Override
     public boolean isClosed() {
         return this.protonReceiver.getRemoteState() == EndpointState.CLOSED;
     }
 
+    @Override
     public void closed() {
         if (closeRequest != null) {
             closeRequest.onSuccess(null);
@@ -90,8 +103,36 @@ public class AmqpConsumer {
         }
     }
 
+    @Override
+    public void failed() {
+        // TODO - Figure out a real exception to throw.
+        if (openRequest != null) {
+            openRequest.onFailure(new JMSException("Failed to create Session"));
+            openRequest = null;
+        }
+
+        if (closeRequest != null) {
+            closeRequest.onFailure(new JMSException("Failed to create Session"));
+            closeRequest = null;
+        }
+    }
+
+    @Override
+    public Link getProtonLink() {
+        return this.protonReceiver;
+    }
+
+    @Override
+    public Object getRemoteTerminus() {
+        return this.protonReceiver.getSource();
+    }
+
     public AmqpSession getSession() {
         return this.session;
+    }
+
+    public JmsConsumerId getConsumerId() {
+        return this.info.getConsumerId();
     }
 
     public Receiver getProtonReceiver() {

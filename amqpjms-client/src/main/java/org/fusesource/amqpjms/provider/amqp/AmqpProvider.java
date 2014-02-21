@@ -128,26 +128,41 @@ public class AmqpProvider implements Provider {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
+            final ProviderRequest<Void> request = new ProviderRequest<Void>();
+            serializer.execute(new Runnable() {
 
-                pumpToProtonTransport();
-            } catch (Exception e) {
-                LOG.debug("Caught exception while closing proton connection");
-            } finally {
-                if (transport != null) {
+                @Override
+                public void run() {
                     try {
-                        transport.close();
+                        if (connection != null) {
+                            connection.close();
+                        }
+
+                        pumpToProtonTransport();
                     } catch (Exception e) {
-                        LOG.debug("Cuaght exception while closing down Transport: {}", e.getMessage());
+                        LOG.debug("Caught exception while closing proton connection");
+                    } finally {
+                        if (transport != null) {
+                            try {
+                                transport.close();
+                            } catch (Exception e) {
+                                LOG.debug("Cuaght exception while closing down Transport: {}", e.getMessage());
+                            }
+                        }
+
+                        if (serializer != null) {
+                            serializer.shutdown();
+                        }
+
+                        request.onSuccess(null);
                     }
                 }
+            });
 
-                if (serializer != null) {
-                    serializer.shutdown();
-                }
+            try {
+                request.getResponse();
+            } catch (IOException e) {
+                LOG.warn("Error caught while closing Provider: ", e.getMessage());
             }
         }
     }
@@ -175,19 +190,22 @@ public class AmqpProvider implements Provider {
 
                         @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
-                            connection.createSession(sessionInfo, request);
+                            AmqpSession session = connection.createSession(sessionInfo);
+                            session.open(request);
                         }
 
                         @Override
                         public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
                             AmqpSession session = connection.getSession(producerInfo.getParentId());
-                            session.createProducer(producerInfo, request);
+                            AmqpProducer producer = session.createProducer(producerInfo);
+                            producer.open(request);
                         }
 
                         @Override
                         public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
                             AmqpSession session = connection.getSession(consumerInfo.getParentId());
-                            session.createConsumer(consumerInfo, request);
+                            AmqpConsumer consumer = session.createConsumer(consumerInfo);
+                            consumer.open(request);
                         }
 
                         @Override
@@ -226,7 +244,8 @@ public class AmqpProvider implements Provider {
 
                         @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
-                            connection.closeSession(sessionInfo, request);
+                            AmqpSession session = connection.getSession(sessionInfo.getSessionId());
+                            session.close(request);
                         }
 
                         @Override

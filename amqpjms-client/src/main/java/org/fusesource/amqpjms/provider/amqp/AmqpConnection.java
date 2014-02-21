@@ -27,7 +27,6 @@ import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Sasl;
-import org.apache.qpid.proton.engine.Session;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
@@ -45,7 +44,6 @@ public class AmqpConnection {
     private final URI remoteURI;
     private final Sasl sasl;
     private final Map<JmsSessionId, AmqpSession> sessions = new HashMap<JmsSessionId, AmqpSession>();
-    private final Map<JmsSessionId, Session> pendingSessions = new HashMap<JmsSessionId, Session>();
     private final AmqpProvider provider;
 
     private ProviderRequest<JmsResource> pendingConnect;
@@ -75,20 +73,9 @@ public class AmqpConnection {
         this.protonConnection.close();
     }
 
-    public void createSession(JmsSessionInfo sessionInfo, ProviderRequest<JmsResource> request) {
-        JmsSessionId sessionId = sessionInfo.getSessionId();
-        AmqpSession pendingSession = new AmqpSession(this, sessionInfo);
-        pendingSession.open(request);
-        pendingOpenSessions.put(sessionId, pendingSession);
-    }
-
-    public void closeSession(JmsSessionInfo sessionInfo, ProviderRequest<Void> request) {
-        JmsSessionId sessionId = sessionInfo.getSessionId();
-        AmqpSession session = sessions.remove(sessionInfo.getSessionId());
-        if (session != null) {
-            session.close(request);
-            pendingCloseSessions.put(sessionId, session);
-        }
+    public AmqpSession createSession(JmsSessionInfo sessionInfo) {
+        AmqpSession session = new AmqpSession(this, sessionInfo);
+        return session;
     }
 
     public void processUpdates() {
@@ -158,6 +145,7 @@ public class AmqpConnection {
         for (Entry<JmsSessionId, AmqpSession> entry : pendingCloseSessions.entrySet()) {
             if (entry.getValue().isClosed()) {
                 toRemove.add(entry.getKey());
+                sessions.remove(entry.getKey());
                 entry.getValue().closed();
             }
         }
@@ -177,6 +165,14 @@ public class AmqpConnection {
         }
 
         return null;
+    }
+
+    void addToPendingOpenSessions(AmqpSession session) {
+        this.pendingOpenSessions.put(session.getSessionId(), session);
+    }
+
+    void addToPendingCloseSessions(AmqpSession session) {
+        this.pendingCloseSessions.put(session.getSessionId(), session);
     }
 
     public JmsConnectionInfo getConnectionInfo() {
@@ -209,7 +205,6 @@ public class AmqpConnection {
      */
     public AmqpSession getSession(JmsSessionId sessionId) {
         // TODO - Hide a session reference in the sessionId hint field.
-
         return this.sessions.get(sessionId);
     }
 }
