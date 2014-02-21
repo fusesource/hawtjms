@@ -16,6 +16,12 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
+import java.util.UUID;
+
+import org.apache.qpid.proton.amqp.messaging.Source;
+import org.apache.qpid.proton.amqp.messaging.Target;
+import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
+import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Receiver;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
@@ -40,9 +46,20 @@ public class AmqpConsumer {
     }
 
     public void open(ProviderRequest<JmsResource> request) {
-//        this.protonSession = session.getProtonConnection().session();
-//        this.protonSession.setContext(this);
-//        this.protonSession.open();
+
+        String subscription = info.getDestination().getName() + "->" + UUID.randomUUID().toString();
+
+        Source source = new Source();
+        source.setAddress(subscription);
+        Target target = new Target();
+
+        protonReceiver = session.getProtonSession().receiver(subscription);
+        protonReceiver.setSource(source);
+        protonReceiver.setTarget(target);
+        protonReceiver.setContext(this);
+        protonReceiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+        protonReceiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+
         this.openRequest = request;
     }
 
