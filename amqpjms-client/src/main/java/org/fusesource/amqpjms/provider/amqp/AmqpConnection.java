@@ -97,15 +97,15 @@ public class AmqpConnection {
                  protonConnection.getLocalState(), protonConnection.getRemoteState());
 
         // We are waiting for the Broker to answer our Connection open request.
-        if (protonConnection.getLocalState() != EndpointState.CLOSED &&
-            protonConnection.getRemoteState() != EndpointState.ACTIVE) {
+        if (protonConnection.getLocalState() == EndpointState.ACTIVE &&
+            protonConnection.getRemoteState() == EndpointState.ACTIVE) {
 
             LOG.info("Connection opened on Broker:");
             pendingConnect.onSuccess(this.info);
         }
 
         // We are opened and something on the remote end has closed us, signal an error.
-        if (protonConnection.getLocalState() != EndpointState.ACTIVE &&
+        if (protonConnection.getLocalState() == EndpointState.ACTIVE &&
             protonConnection.getRemoteState() == EndpointState.CLOSED) {
             LOG.info("Connection remotely closed on Broker:");
 

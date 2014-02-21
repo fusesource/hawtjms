@@ -294,23 +294,26 @@ public class AmqpProvider implements Provider {
         }
     }
 
-    void onAmqpData(final Buffer input) {
+    void onAmqpData(Buffer input) {
+
+        // Create our own copy since we will process later.
+        final ByteBuffer source = ByteBuffer.wrap(input.getBytes());
+
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
-                LOG.info("Received from Broker {} bytes:", input.length());
-
-                int position = 0;
-                int limit = 0;
+                LOG.info("Received from Broker {} bytes:", source.remaining());
 
                 do {
                     ByteBuffer buffer = protonTransport.getInputBuffer();
-                    limit = Math.min(position + buffer.capacity(), input.length());
-                    buffer.put(input.getBytes(position, limit));
+                    int limit = Math.min(buffer.remaining(), source.remaining());
+                    ByteBuffer duplicate = source.duplicate();
+                    duplicate.limit(source.position() + limit);
+                    buffer.put(duplicate);
                     protonTransport.processInput();
-                    position += limit;
-                } while (limit < input.length());
+                    source.position(source.position() + limit);
+                } while (source.hasRemaining());
 
                 // Process the state changes from the latest data and then answer back
                 // any pending updates to the Broker.

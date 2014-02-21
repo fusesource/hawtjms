@@ -18,6 +18,8 @@ package org.fusesource.amqpjms;
 
 import static org.junit.Assert.assertNotNull;
 
+import javax.jms.JMSException;
+
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.junit.Test;
@@ -40,5 +42,17 @@ public class JmsConnectionTest extends AmqpTestSupport {
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
         connection.start();
+    }
+
+    @Test(expected = JMSException.class)
+    public void testCreateWithDuplicateClientIdFails() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        JmsConnection connection1 = (JmsConnection) factory.createConnection();
+        connection1.setClientID("Test");
+        assertNotNull(connection1);
+        connection1.start();
+        JmsConnection connection2 = (JmsConnection) factory.createConnection();
+        connection2.setClientID("Test");
+        connection2.start();
     }
 }
