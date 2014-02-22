@@ -24,7 +24,11 @@ import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.provider.ProviderRequest;
 
 /**
+ * Abstract base for all AmqpResource implementations to extend.
  *
+ * This abstract class wraps up the basic state management bits so that the concrete
+ * object don't have to reproduce it.  Provides hooks for the subclasses to initialize
+ * and shutdown.
  */
 public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endpoint> implements AmqpResource {
 
@@ -34,10 +38,26 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
     protected E endpoint;
     protected final R info;
 
+    /**
+     * Creates a new AbstractAmqpResource instance with the JmsResource provided, and
+     * sets the Endpoint to null.
+     *
+     * @param info
+     *        The JmsResource instance that this AmqpResource is managing.
+     */
     public AbstractAmqpResource(R info) {
         this(info, null);
     }
 
+    /**
+     * Creates a new AbstractAmqpResource instance with the JmsResource provided, and
+     * sets the Endpoint to the given value.
+     *
+     * @param info
+     *        The JmsResource instance that this AmqpResource is managing.
+     * @param endpoint
+     *        The Proton Endpoint instance that this object maps to.
+     */
     public AbstractAmqpResource(R info, E endpoint) {
         this.info = info;
         this.endpoint = endpoint;
