@@ -14,15 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.amqpjms.provider.amqp.sasl;
+package org.fusesource.amqpjms.sasl;
 
-import java.util.Map;
+public interface SaslEngine {
 
-public interface SaslEngineFactory {
+    String getMechanism();
 
-    public static final String USERNAME_PROPERTY = "username";
-    public static final String PASSWORD_PROPERTY = "password";
-    public static final String PREFERRED_MECHANISMS_PROPERTY = "preferredMechanisms";
-
-    SaslEngine createSaslEngine(Map<String, Object> properties, String... mechanisms);
+    byte[] getResponse(byte[] challenge);
 }

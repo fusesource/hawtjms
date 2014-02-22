@@ -14,11 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.amqpjms.provider.amqp.sasl;
+package org.fusesource.amqpjms.sasl;
 
-public interface SaslEngine {
+public class SaslFailureException extends RuntimeException {
 
-    String getMechanism();
+    private static final long serialVersionUID = 1L;
 
-    byte[] getResponse(byte[] challenge);
+    public SaslFailureException() {
+    }
+
+    public SaslFailureException(String message) {
+        super(message);
+    }
+
+    public SaslFailureException(Throwable cause) {
+        super(cause == null ? null : cause.getMessage(), cause);
+    }
+
+    public SaslFailureException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
