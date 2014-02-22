@@ -23,100 +23,46 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.jms.JMSException;
-
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Sasl;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
-import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
-import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AmqpConnection implements AmqpResource {
+public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Connection> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
-    private final Connection protonConnection;
-    private final JmsConnectionInfo info;
     private final URI remoteURI;
     private final Sasl sasl;
     private final Map<JmsSessionId, AmqpSession> sessions = new HashMap<JmsSessionId, AmqpSession>();
     private final AmqpProvider provider;
 
-    private ProviderRequest<JmsResource> openRequest;
-    private ProviderRequest<Void> closeRequest;
-
     private final Map<JmsSessionId, AmqpSession> pendingOpenSessions = new HashMap<JmsSessionId, AmqpSession>();
     private final Map<JmsSessionId, AmqpSession> pendingCloseSessions = new HashMap<JmsSessionId, AmqpSession>();
 
     public AmqpConnection(AmqpProvider provider, Connection protonConnection, Sasl sasl, JmsConnectionInfo info) {
+        super(info, protonConnection);
+
         this.provider = provider;
-        this.protonConnection = protonConnection;
         this.sasl = sasl;
-        this.info = info;
         this.remoteURI = provider.getRemoteURI();
 
-        this.protonConnection.setContainer(info.getClientId());
-        this.protonConnection.setContext(this);
-        this.protonConnection.setHostname(remoteURI.getHost());
-        this.protonConnection.open();
         // TODO check info to see if we can meet all the requested options.
     }
 
     @Override
-    public void open(ProviderRequest<JmsResource> openRequest) {
-        this.openRequest = openRequest;
+    protected void doOpen() {
+        this.endpoint.setContainer(info.getClientId());
+        this.endpoint.setHostname(remoteURI.getHost());
     }
 
     @Override
-    public boolean isOpen() {
-        return this.protonConnection.getRemoteState() == EndpointState.ACTIVE;
-    }
-
-    @Override
-    public void opened() {
-        if (this.openRequest != null) {
-            this.openRequest.onSuccess(info);
-            this.openRequest = null;
-        }
-    }
-
-    @Override
-    public void close(ProviderRequest<Void> request) {
-        this.protonConnection.close();
-        this.closeRequest = request;
-    }
-
-    @Override
-    public boolean isClosed() {
-        return this.protonConnection.getRemoteState() == EndpointState.CLOSED;
-    }
-
-    @Override
-    public void closed() {
-        if (this.closeRequest != null) {
-            this.closeRequest.onSuccess(null);
-            this.closeRequest = null;
-        }
-    }
-
-    @Override
-    public void failed() {
-        // TODO - Figure out a real exception to throw.
-        if (openRequest != null) {
-            openRequest.onFailure(new JMSException("Failed to create Session"));
-            openRequest = null;
-        }
-
-        if (closeRequest != null) {
-            closeRequest.onFailure(new JMSException("Failed to create Session"));
-            closeRequest = null;
-        }
+    protected void doClose() {
     }
 
     public AmqpSession createSession(JmsSessionInfo sessionInfo) {
@@ -133,11 +79,11 @@ public class AmqpConnection implements AmqpResource {
 
         // We are opened and something on the remote end has closed us, signal an error.
         // TODO - need to figure out exactly what the failure states are.
-        if (protonConnection.getLocalState() == EndpointState.ACTIVE &&
-            protonConnection.getRemoteState() != EndpointState.ACTIVE) {
+        if (endpoint.getLocalState() == EndpointState.ACTIVE &&
+            endpoint.getRemoteState() != EndpointState.ACTIVE) {
 
-            if (protonConnection.getRemoteCondition().getCondition() != null) {
-                LOG.info("Error condition detected on Connection open {}.", protonConnection.getRemoteCondition().getCondition());
+            if (endpoint.getRemoteCondition().getCondition() != null) {
+                LOG.info("Error condition detected on Connection open {}.", endpoint.getRemoteCondition().getCondition());
 
                 String message = getRemoteErrorMessage();
                 if (message == null) {
@@ -158,8 +104,8 @@ public class AmqpConnection implements AmqpResource {
             session.processUpdates();
         }
 
-        if (protonConnection.getLocalState() == EndpointState.CLOSED &&
-            protonConnection.getRemoteState() == EndpointState.CLOSED) {
+        if (endpoint.getLocalState() == EndpointState.CLOSED &&
+            endpoint.getRemoteState() == EndpointState.CLOSED) {
 
             closed();
         }
@@ -202,8 +148,8 @@ public class AmqpConnection implements AmqpResource {
     }
 
     private String getRemoteErrorMessage() {
-        if (protonConnection.getRemoteCondition() != null) {
-            ErrorCondition error = protonConnection.getRemoteCondition();
+        if (endpoint.getRemoteCondition() != null) {
+            ErrorCondition error = endpoint.getRemoteCondition();
             if (error.getDescription() != null && !error.getDescription().isEmpty()) {
                 return error.getDescription();
             }
@@ -225,7 +171,7 @@ public class AmqpConnection implements AmqpResource {
     }
 
     public Connection getProtonConnection() {
-        return this.protonConnection;
+        return this.endpoint;
     }
 
     public URI getRemoteURI() {

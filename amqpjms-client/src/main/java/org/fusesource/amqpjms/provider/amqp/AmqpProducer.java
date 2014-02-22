@@ -18,43 +18,33 @@ package org.fusesource.amqpjms.provider.amqp;
 
 import java.util.UUID;
 
-import javax.jms.JMSException;
-
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
-import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Sender;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
-import org.fusesource.amqpjms.jms.meta.JmsResource;
-import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * AMQP Producer object that is used to manage JMS MessageProducer semantics.
  */
-public class AmqpProducer implements AmqpLink {
+public class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo, Sender> implements AmqpLink {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpProducer.class);
 
     private final AmqpSession session;
-    private final JmsProducerInfo info;
-    private Sender protonSender;
-
-    private ProviderRequest<JmsResource> openRequest;
-    private ProviderRequest<Void> closeRequest;
 
     public AmqpProducer(AmqpSession session, JmsProducerInfo info) {
+        super(info);
         this.session = session;
-        this.info = info;
     }
 
     @Override
-    public void open(ProviderRequest<JmsResource> request) {
+    protected void doOpen() {
         String destnationName = info.getDestination().getName();
         String sourceAddress = UUID.randomUUID().toString();
         Source source = new Source();
@@ -63,73 +53,28 @@ public class AmqpProducer implements AmqpLink {
         target.setAddress(destnationName);
 
         String senderName = destnationName + "<-" + sourceAddress;
-        protonSender = session.getProtonSession().sender(senderName);
-        protonSender.setSource(source);
-        protonSender.setTarget(target);
-        protonSender.setSenderSettleMode(SenderSettleMode.UNSETTLED);
-        protonSender.setReceiverSettleMode(ReceiverSettleMode.FIRST);
-        protonSender.setContext(this);
-        protonSender.open();
+        endpoint = session.getProtonSession().sender(senderName);
+        endpoint.setSource(source);
+        endpoint.setTarget(target);
+        endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+        endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
-        this.openRequest = request;
         this.session.addPedingLinkOpen(this);
     }
 
     @Override
-    public boolean isOpen() {
-        return this.protonSender.getRemoteState() == EndpointState.ACTIVE;
-    }
-
-    @Override
-    public void opened() {
-        if (openRequest != null) {
-            openRequest.onSuccess(info);
-            openRequest = null;
-        }
-    }
-
-    @Override
-    public void close(ProviderRequest<Void> request) {
+    protected void doClose() {
         this.session.addPedingLinkClose(this);
-        this.protonSender.close();
-        this.closeRequest = request;
-    }
-
-    @Override
-    public boolean isClosed() {
-        return this.protonSender.getRemoteState() == EndpointState.CLOSED;
-    }
-
-    @Override
-    public void closed() {
-        if (closeRequest != null) {
-            closeRequest.onSuccess(null);
-            closeRequest = null;
-        }
-    }
-
-    @Override
-    public void failed() {
-        // TODO - Figure out a real exception to throw.
-        if (openRequest != null) {
-            openRequest.onFailure(new JMSException("Failed to create Session"));
-            openRequest = null;
-        }
-
-        if (closeRequest != null) {
-            closeRequest.onFailure(new JMSException("Failed to create Session"));
-            closeRequest = null;
-        }
     }
 
     @Override
     public Object getRemoteTerminus() {
-        return this.protonSender.getTarget();
+        return this.endpoint.getTarget();
     }
 
     @Override
     public Link getProtonLink() {
-        return this.protonSender;
+        return this.endpoint;
     }
 
     public AmqpSession getSession() {
@@ -137,7 +82,7 @@ public class AmqpProducer implements AmqpLink {
     }
 
     public Sender getProtonSender() {
-        return this.protonSender;
+        return this.endpoint;
     }
 
     public JmsProducerId getProducerId() {

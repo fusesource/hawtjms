@@ -21,7 +21,7 @@ import org.apache.qpid.proton.engine.Link;
 /**
  * Interface for the AmqpLink derivatives.
  */
-public interface AmqpLink extends AmqpResource{
+public interface AmqpLink extends AmqpResource {
 
     /**
      * @return the Proton Link instance this object wraps.

@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import javax.jms.JMSException;
-
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Session;
@@ -30,23 +28,16 @@ import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
-import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
-import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AmqpSession implements AmqpResource {
+public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpSession.class);
 
     private final AmqpConnection connection;
-    private final JmsSessionInfo info;
-    private Session protonSession;
-
-    private ProviderRequest<JmsResource> openRequest;
-    private ProviderRequest<Void> closeRequest;
 
     private final Map<JmsConsumerId, AmqpConsumer> consumers = new HashMap<JmsConsumerId, AmqpConsumer>();
     private final Map<JmsProducerId, AmqpProducer> producers = new HashMap<JmsProducerId, AmqpProducer>();
@@ -55,64 +46,18 @@ public class AmqpSession implements AmqpResource {
     private final ArrayList<AmqpLink> pendingCloseLinks = new ArrayList<AmqpLink>();
 
     public AmqpSession(AmqpConnection connection, JmsSessionInfo info) {
+        super(info, connection.getProtonConnection().session());
         this.connection = connection;
-        this.info = info;
     }
 
     @Override
-    public void open(ProviderRequest<JmsResource> request) {
+    protected void doOpen() {
         this.connection.addToPendingOpenSessions(this);
-        this.protonSession = connection.getProtonConnection().session();
-        this.protonSession.setContext(this);
-        this.protonSession.open();
-        this.openRequest = request;
     }
 
     @Override
-    public boolean isOpen() {
-        return this.protonSession.getRemoteState() == EndpointState.ACTIVE;
-    }
-
-    @Override
-    public void opened() {
-        if (openRequest != null) {
-            openRequest.onSuccess(info);
-            openRequest = null;
-        }
-    }
-
-    @Override
-    public void close(ProviderRequest<Void> request) {
+    protected void doClose() {
         this.connection.addToPendingCloseSessions(this);
-        this.protonSession.close();
-        this.closeRequest = request;
-    }
-
-    @Override
-    public boolean isClosed() {
-        return this.protonSession.getRemoteState() == EndpointState.CLOSED;
-    }
-
-    @Override
-    public void closed() {
-        if (closeRequest != null) {
-            closeRequest.onSuccess(null);
-            closeRequest = null;
-        }
-    }
-
-    @Override
-    public void failed() {
-        // TODO - Figure out a real exception to throw.
-        if (openRequest != null) {
-            openRequest.onFailure(new JMSException("Failed to create Session"));
-            openRequest = null;
-        }
-
-        if (closeRequest != null) {
-            closeRequest.onFailure(new JMSException("Failed to create Session"));
-            closeRequest = null;
-        }
     }
 
     public AmqpProducer createProducer(JmsProducerInfo producerInfo) {
@@ -198,7 +143,7 @@ public class AmqpSession implements AmqpResource {
     }
 
     public Session getProtonSession() {
-        return this.protonSession;
+        return this.endpoint;
     }
 
     void addPedingLinkOpen(AmqpLink link) {
