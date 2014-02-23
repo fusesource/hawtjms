@@ -19,6 +19,43 @@ package org.fusesource.amqpjms.sasl;
 /**
  * Interface for all SASL authentication mechanism implementations.
  */
-public interface Mechanism {
+public interface Mechanism extends Comparable<Mechanism> {
 
+    /**
+     * Relative priority values used to arrange the found SASL
+     * mechanisms in a preferred order where the level of security
+     * generally defines the preference.
+     */
+    public enum PRIORITY {
+        LOWEST(0),
+        LOW(1),
+        MEDIUM(2),
+        HIGH(3),
+        HIGHEST(4);
+
+        private final int value;
+
+        private PRIORITY(int value) {
+            this.value = value;
+        }
+
+        public int getValue(){
+            return value;
+       }
+    };
+
+    /**
+     * @return return the relative priority of this SASL mechanism.
+     */
+    int getPriority();
+
+    /**
+     * @return the well known name of this SASL mechanism.
+     */
+    String getName();
+
+    /**
+     * @return the response buffer used to answer the SASL challenge.
+     */
+    byte[] getResponse();
 }

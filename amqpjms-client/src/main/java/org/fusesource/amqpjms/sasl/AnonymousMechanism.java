@@ -17,8 +17,17 @@
 package org.fusesource.amqpjms.sasl;
 
 /**
- * 
+ * Implements the Anonymous SASL authentication mechanism.
  */
-public class AnonymousMechanism implements Mechanism {
+public class AnonymousMechanism extends AbstractMechanism {
 
+    @Override
+    public int getPriority() {
+        return PRIORITY.LOWEST.getValue();
+    }
+
+    @Override
+    public String getName() {
+        return "ANONYMOUS";
+    }
 }

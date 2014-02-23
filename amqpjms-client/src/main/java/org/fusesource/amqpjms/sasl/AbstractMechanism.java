@@ -17,24 +17,27 @@
 package org.fusesource.amqpjms.sasl;
 
 /**
- * Implements the SASL PLAIN authentication Mechanism.
- *
- * Username and Password values are sent unencrypted.
+ * Base class for SASL Authentication Mechanism that implements the basic
+ * methods of a Mechanism class.
  */
-public class PlainMechanism extends AbstractMechanism {
+public abstract class AbstractMechanism implements Mechanism {
+
+    private static final byte[] EMPTY = new byte[0];
 
     @Override
-    public int getPriority() {
-        return PRIORITY.MEDIUM.getValue();
-    }
+    public int compareTo(Mechanism other) {
 
-    @Override
-    public String getName() {
-        return "PLAIN";
+        if (getPriority() < other.getPriority()) {
+            return -1;
+        } else if (getPriority() > other.getPriority()) {
+            return 1;
+        }
+
+        return 0;
     }
 
     @Override
     public byte[] getResponse() {
-        return new byte[0];
+        return EMPTY;
     }
 }
