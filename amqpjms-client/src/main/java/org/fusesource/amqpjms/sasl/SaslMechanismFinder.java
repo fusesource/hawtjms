@@ -16,6 +16,14 @@
  */
 package org.fusesource.amqpjms.sasl;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Used to find a SASL Mechanism that most closely matches the preferred set
  * of Mechanisms supported by the remote peer.
@@ -27,7 +35,38 @@ package org.fusesource.amqpjms.sasl;
  */
 public class SaslMechanismFinder {
 
-    public static Mechanism findMatchingMechanism(String...remoteMechanisms) {
-        return null;
+    private static final Logger LOG = LoggerFactory.getLogger(SaslMechanismFinder.class);
+
+    /**
+     * Attempts to find a matching Mechanism implementation given a list of supported
+     * mechanisms from a remote peer.
+     *
+     * @param remoteMechanisms
+     *        list of mechanism names that are supported by the remote peer.
+     *
+     * @return the best matching Mechanism for the supported remote set.
+     *
+     * @throws IOException if an error occurs while locating supported mechanisms.
+     */
+    public static Mechanism findMatchingMechanism(String...remoteMechanisms) throws IOException {
+
+        Mechanism match = null;
+        List<Mechanism> found = new ArrayList<Mechanism>();
+
+        for (String remoteMechanism : remoteMechanisms) {
+            MechanismFactory factory = MechanismFactoryFinder.findMechanismFactory(remoteMechanism);
+            found.add(factory.createMechanism());
+        }
+
+        if (!found.isEmpty()) {
+            // Sorts by priority using Mechanism comparison and return the last value in
+            // list which is the Mechanism deemed to be the highest priority match.
+            Collections.sort(found);
+            match = found.get(found.size() - 1);
+        }
+
+        LOG.info("Best match for SASL auth was: {}", match);
+
+        return match;
     }
 }
