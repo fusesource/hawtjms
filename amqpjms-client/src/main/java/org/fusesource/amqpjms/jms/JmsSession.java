@@ -816,8 +816,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     private void dispatch(JmsMessage message) {
-        AsciiBuffer id = message.getConsumerId();
-        if (id == null || id.isEmpty()) {
+        JmsConsumerId id = message.getConsumerId();
+        if (id == null) {
             this.connection.onException(new JMSException("No ConsumerId set for " + message));
         }
         if (this.messageListener != null) {

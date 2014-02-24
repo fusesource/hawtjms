@@ -37,6 +37,7 @@ import javax.jms.MessageNotWriteableException;
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.jms.util.PropertyExpression;
 import org.fusesource.amqpjms.jms.util.TypeConversionSupport;
@@ -67,18 +68,25 @@ public class JmsMessage implements javax.jms.Message {
     protected transient Callable<Void> acknowledgeCallback;
     protected transient JmsConnection connection;
 
-    protected byte priority;
+    protected byte priority = javax.jms.Message.DEFAULT_PRIORITY;
     protected String groupID;
     protected int groupSequence;
     protected JmsMessageId messageId;
     protected long expiration;
     protected long timestamp;
+    protected String correlationId;
+    protected boolean persistent;
+    protected int redeliveryCount;
+    protected String type;
 
     protected boolean readOnlyBody;
     protected boolean readOnlyProperties;
     protected Map<String, Object> properties;
     protected JmsTransactionId transactionId;
     protected Buffer content;
+
+    // TODO - Remove
+    protected JmsConsumerId consumerId;
 
     public JmsMessage() {
     }
@@ -100,6 +108,11 @@ public class JmsMessage implements javax.jms.Message {
         this.messageId = other.messageId != null ? other.messageId.copy() : null;
         this.expiration = other.expiration;
         this.timestamp = other.timestamp;
+        this.correlationId = other.correlationId;
+        this.persistent = other.persistent;
+        this.redeliveryCount = other.redeliveryCount;
+        this.type = other.type;
+        this.consumerId = other.consumerId;
 
         this.readOnlyBody = other.readOnlyBody;
         this.readOnlyProperties = other.readOnlyBody;
@@ -226,13 +239,12 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public String getJMSCorrelationID() {
-//        return getStringHeader(CORRELATION_ID);
-        return null;
+        return getCorrelationId();
     }
 
     @Override
     public void setJMSCorrelationID(String correlationId) {
-//        setStringHeader(CORRELATION_ID, correlationId);
+        this.setCorrelationId(correlationId);
     }
 
     @Override
@@ -244,15 +256,6 @@ public class JmsMessage implements javax.jms.Message {
     @Override
     public void setJMSCorrelationIDAsBytes(byte[] correlationId) throws JMSException {
 //        setBytesHeader(CORRELATION_ID, correlationId);
-    }
-
-    public boolean isPersistent() {
-//        return or(getBooleanHeader(PERSISTENT), false);
-        return false;
-    }
-
-    public void setPersistent(boolean value) {
-//        setBooleanHeader(PERSISTENT, value ? true : null);
     }
 
     protected static String decodeString(byte[] data) throws JMSException {
@@ -288,12 +291,11 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     public void setJMSReplyTo(JmsDestination destination) {
-//        setDestinationHeader(REPLY_TO, destination);
+        // TODO
     }
 
     public JmsDestination getJmsReplyTo() throws JMSException {
-//        return getDestinationHeader(REPLY_TO);
-        return null;
+        return null;  // TODO
     }
 
     @Override
@@ -302,8 +304,7 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     public JmsDestination getJmsDestination() throws JMSException {
-//        return getDestinationHeader(DESTINATION);
-        return null;
+        return null;  // TODO
     }
 
     @Override
@@ -312,7 +313,7 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     public void setJMSDestination(JmsDestination destination) {
-//        setDestinationHeader(DESTINATION, destination);
+        // TODO
     }
 
     @Override
@@ -341,19 +342,6 @@ public class JmsMessage implements javax.jms.Message {
         }
     }
 
-    public int getRedeliveryCounter() {
-//        AsciiBuffer value = getHeaderMap().get(JMSX_DELIVERY_COUNT);
-//        if (value == null) {
-//            return 0;
-//        }
-//        return Integer.parseInt(value.toString());
-        return 0;
-    }
-
-    public void setRedeliveryCounter(int deliveryCounter) {
-//        getHeaderMap().put(JMSX_DELIVERY_COUNT, encodeHeader("" + deliveryCounter));
-    }
-
     @Override
     public boolean getJMSRedelivered() {
         return this.isRedelivered();
@@ -366,35 +354,32 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public String getJMSType() {
-//        return getStringHeader(TYPE);
-        return null;
+        return getType();
     }
 
     @Override
     public void setJMSType(String type) {
-//        setStringHeader(TYPE, type);
+        setType(type);
     }
 
     @Override
     public long getJMSExpiration() {
-//        return or(getLongHeader(EXPIRATION_TIME), 0L);
-        return 0L;
+        return getExpiration();
     }
 
     @Override
     public void setJMSExpiration(long expiration) {
-//        setLongHeader(EXPIRATION_TIME, expiration == 0 ? null : expiration);
+        setExpiration(expiration);
     }
 
     @Override
     public int getJMSPriority() {
-//        return or(getIntegerHeader(PRIORITY), 4);
-        return 0;
+        return getPriority();
     }
 
     @Override
     public void setJMSPriority(int priority) {
-//        setIntegerHeader(PRIORITY, priority == 4 ? null : priority);
+        this.setPriority((byte) priority);
     }
 
     public Map<String, Object> getProperties() throws IOException {
@@ -432,6 +417,7 @@ public class JmsMessage implements javax.jms.Message {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public Enumeration getPropertyNames() throws JMSException {
         try {
@@ -449,6 +435,7 @@ public class JmsMessage implements javax.jms.Message {
      * @return Enumeration of all property names on this message
      * @throws JMSException
      */
+    @SuppressWarnings("rawtypes")
     public Enumeration getAllPropertyNames() throws JMSException {
         try {
             Vector<String> result = new Vector<String>(this.getProperties().keySet());
@@ -807,19 +794,6 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     /**
-     * @return the consumerId
-     */
-    public AsciiBuffer getConsumerId() {
-        // return getHeaderMap().get(SUBSCRIPTION);
-        return null;
-    }
-
-    protected Map<AsciiBuffer, AsciiBuffer> getHeaderMap() {
-        // return this.frame.headerMap(REVERSED_HEADER_NAMES);
-        return null;
-    }
-
-    /**
      * @return the transactionId
      */
     public JmsTransactionId getTransactionId() {
@@ -848,5 +822,61 @@ public class JmsMessage implements javax.jms.Message {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getCorrelationId() {
+        return correlationId;
+    }
+
+    public void setCorrelationId(String correlationId) {
+        this.correlationId = correlationId;
+    }
+
+    public boolean isPersistent() {
+        return this.persistent;
+    }
+
+    public void setPersistent(boolean value) {
+        this.persistent = value;
+    }
+
+    public int getRedeliveryCounter() {
+        return this.redeliveryCount;
+    }
+
+    public void setRedeliveryCounter(int redeliveryCount) {
+        this.redeliveryCount = redeliveryCount;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public byte getPriority() {
+        return priority;
+    }
+
+    public void setPriority(byte priority) {
+        this.priority = priority;
+    }
+
+    public long getExpiration() {
+        return expiration;
+    }
+
+    public void setExpiration(long expiration) {
+        this.expiration = expiration;
+    }
+
+    public JmsConsumerId getConsumerId() {
+        return this.consumerId;
+    }
+
+    public void setConsumerId(JmsConsumerId consumerId) {
+        this.consumerId = consumerId;
     }
 }
