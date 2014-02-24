@@ -35,8 +35,20 @@ public class PlainMechanism extends AbstractMechanism {
 
     @Override
     public byte[] getInitialResponse() {
-        byte[] usernameBytes = getUsername().getBytes();
-        byte[] passwordBytes = getPassword().getBytes();
+
+        String username = getUsername();
+        String password = getPassword();
+
+        if (username == null) {
+            username = "";
+        }
+
+        if (password == null) {
+            password = "";
+        }
+
+        byte[] usernameBytes = username.getBytes();
+        byte[] passwordBytes = password.getBytes();
         byte[] data = new byte[usernameBytes.length + passwordBytes.length + 2];
         System.arraycopy(usernameBytes, 0, data, 1, usernameBytes.length);
         System.arraycopy(passwordBytes, 0, data, 2 + usernameBytes.length, passwordBytes.length);
