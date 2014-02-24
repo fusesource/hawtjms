@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.jms.JMSSecurityException;
+
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -38,9 +40,10 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
     private final URI remoteURI;
-    private final Sasl sasl;
     private final Map<JmsSessionId, AmqpSession> sessions = new HashMap<JmsSessionId, AmqpSession>();
     private final AmqpProvider provider;
+    private boolean connected;
+    private AmqpSaslAuthenticator authenticator;
 
     private final Map<JmsSessionId, AmqpSession> pendingOpenSessions = new HashMap<JmsSessionId, AmqpSession>();
     private final Map<JmsSessionId, AmqpSession> pendingCloseSessions = new HashMap<JmsSessionId, AmqpSession>();
@@ -49,8 +52,11 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         super(info, protonConnection);
 
         this.provider = provider;
-        this.sasl = sasl;
         this.remoteURI = provider.getRemoteURI();
+
+        if (sasl != null) {
+            this.authenticator = new AmqpSaslAuthenticator(sasl, info);
+        }
 
         // TODO check info to see if we can meet all the requested options.
     }
@@ -72,9 +78,11 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
 
     public void processUpdates() {
 
-        // TODO - maybe we can make this code smarter about opened vs pending opened state.
-        if (isOpen()) {
+        processSaslHandshake();
+
+        if (!connected && isOpen()) {
             opened();
+            connected = true;
         }
 
         // We are opened and something on the remote end has closed us, signal an error.
@@ -104,10 +112,24 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
             session.processUpdates();
         }
 
-        if (endpoint.getLocalState() == EndpointState.CLOSED &&
-            endpoint.getRemoteState() == EndpointState.CLOSED) {
-
+        // Transition cleanly to closed state.
+        if (connected && endpoint.getRemoteState() == EndpointState.CLOSED) {
             closed();
+        }
+    }
+
+    private void processSaslHandshake() {
+
+        if (connected || authenticator == null) {
+            return;
+        }
+
+        try {
+            if (authenticator.authenticate()) {
+                authenticator = null;
+            }
+        } catch (JMSSecurityException ex) {
+            failed(ex);
         }
     }
 

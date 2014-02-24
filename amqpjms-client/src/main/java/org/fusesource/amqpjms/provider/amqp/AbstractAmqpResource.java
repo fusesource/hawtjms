@@ -106,14 +106,18 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
 
     @Override
     public void failed() {
-        // TODO - Figure out a real exception to throw.
+        failed(new JMSException("Remote request failed."));
+    }
+
+    @Override
+    public void failed(Exception cause) {
         if (openRequest != null) {
-            openRequest.onFailure(new JMSException("Failed to create Session"));
+            openRequest.onFailure(cause);
             openRequest = null;
         }
 
         if (closeRequest != null) {
-            closeRequest.onFailure(new JMSException("Failed to create Session"));
+            closeRequest.onFailure(cause);
             closeRequest = null;
         }
     }
@@ -124,6 +128,20 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
 
     public R getJmsResource() {
         return this.info;
+    }
+
+    public EndpointState getLocalState() {
+        if (endpoint == null) {
+            return EndpointState.UNINITIALIZED;
+        }
+        return this.endpoint.getLocalState();
+    }
+
+    public EndpointState getRemoteState() {
+        if (endpoint == null) {
+            return EndpointState.UNINITIALIZED;
+        }
+        return this.endpoint.getRemoteState();
     }
 
     protected abstract void doOpen();

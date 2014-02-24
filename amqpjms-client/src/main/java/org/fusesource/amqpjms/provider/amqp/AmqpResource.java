@@ -72,4 +72,14 @@ public interface AmqpResource {
      * any pending ProduverRequest.
      */
     void failed();
+
+    /**
+     * Sets the failed state for this Resource and triggers a failure signal for
+     * any pending ProduverRequest.
+     *
+     * @param cause
+     *        The Exception that triggered the failure.
+     */
+    void failed(Exception cause);
+
 }
