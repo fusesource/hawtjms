@@ -47,7 +47,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
         return info;
     }
 
-    public void copy(JmsConsumerInfo info) {
+    private void copy(JmsConsumerInfo info) {
         info.destination = destination;
         info.prefetchSize = prefetchSize;
         info.browser = browser;
