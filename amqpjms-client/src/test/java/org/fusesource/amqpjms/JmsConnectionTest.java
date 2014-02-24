@@ -19,6 +19,7 @@ package org.fusesource.amqpjms;
 import static org.junit.Assert.assertNotNull;
 
 import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
@@ -54,5 +55,25 @@ public class JmsConnectionTest extends AmqpTestSupport {
         JmsConnection connection2 = (JmsConnection) factory.createConnection();
         connection2.setClientID("Test");
         connection2.start();
+    }
+
+    @Test
+    public void testCreateConnectionAsSystemAdmin() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        factory.setUsername("system");
+        factory.setPassword("manager");
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+        connection.start();
+    }
+
+    @Test(expected = JMSSecurityException.class)
+    public void testCreateConnectionAsUnknwonUser() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        factory.setUsername("unknown");
+        factory.setPassword("unknown");
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+        connection.start();
     }
 }

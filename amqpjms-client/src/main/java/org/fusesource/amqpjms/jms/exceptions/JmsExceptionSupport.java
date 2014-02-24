@@ -49,6 +49,10 @@ public final class JmsExceptionSupport {
         if (cause instanceof JMSException) {
             return (JMSException) cause;
         }
+        if (cause.getCause() instanceof JMSException) {
+            return (JMSException) cause.getCause();
+        }
+
         String msg = cause.getMessage();
         if (msg == null || msg.length() == 0) {
             msg = cause.toString();
@@ -62,6 +66,10 @@ public final class JmsExceptionSupport {
         if (cause instanceof JMSException) {
             return (JMSException) cause;
         }
+        if (cause.getCause() instanceof JMSException) {
+            return (JMSException) cause.getCause();
+        }
+
         String msg = cause.getMessage();
         if (msg == null || msg.length() == 0) {
             msg = cause.toString();

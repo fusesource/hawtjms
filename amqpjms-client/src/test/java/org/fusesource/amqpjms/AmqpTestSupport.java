@@ -18,6 +18,8 @@ package org.fusesource.amqpjms;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
@@ -30,11 +32,19 @@ import javax.jms.TextMessage;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
+import org.apache.activemq.broker.BrokerPlugin;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.TransportConnector;
 import org.apache.activemq.broker.jmx.BrokerViewMBean;
 import org.apache.activemq.broker.jmx.ConnectorViewMBean;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
+import org.apache.activemq.filter.DestinationMapEntry;
+import org.apache.activemq.security.AuthenticationUser;
+import org.apache.activemq.security.AuthorizationEntry;
+import org.apache.activemq.security.AuthorizationPlugin;
+import org.apache.activemq.security.DefaultAuthorizationMap;
+import org.apache.activemq.security.SimpleAuthenticationPlugin;
+import org.apache.activemq.security.TempDestinationAuthorizationEntry;
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.Logger;
@@ -71,7 +81,34 @@ public class AmqpTestSupport {
         brokerService.setDeleteAllMessagesOnStartup(deleteAllMessages);
         brokerService.setUseJmx(true);
 
+        ArrayList<BrokerPlugin> plugins = new ArrayList<BrokerPlugin>();
+        BrokerPlugin authenticationPlugin = configureAuthentication();
+        if (authenticationPlugin != null) {
+            plugins.add(configureAuthorization());
+        }
+
+        BrokerPlugin authorizationPlugin = configureAuthorization();
+        if (authorizationPlugin != null) {
+            plugins.add(configureAuthentication());
+        }
+
+        if (!plugins.isEmpty()) {
+            BrokerPlugin[] array = new BrokerPlugin[plugins.size()];
+            brokerService.setPlugins(plugins.toArray(array));
+        }
+
         addAMQPConnector();
+    }
+
+    protected BrokerPlugin configureAuthentication() throws Exception {
+        List<AuthenticationUser> users = new ArrayList<AuthenticationUser>();
+        users.add(new AuthenticationUser("system", "manager", "users,admins"));
+        users.add(new AuthenticationUser("user", "password", "users"));
+        users.add(new AuthenticationUser("guest", "password", "guests"));
+        SimpleAuthenticationPlugin authenticationPlugin = new SimpleAuthenticationPlugin(users);
+        authenticationPlugin.setAnonymousAccessAllowed(true);
+
+        return authenticationPlugin;
     }
 
     protected void addAMQPConnector() throws Exception {
@@ -166,5 +203,65 @@ public class AmqpTestSupport {
         QueueViewMBean proxy = (QueueViewMBean) brokerService.getManagementContext()
                 .newProxyInstance(queueViewMBeanName, QueueViewMBean.class, true);
         return proxy;
+    }
+
+    protected BrokerPlugin configureAuthorization() throws Exception {
+
+        @SuppressWarnings("rawtypes")
+        List<DestinationMapEntry> authorizationEntries = new ArrayList<DestinationMapEntry>();
+
+        AuthorizationEntry entry = new AuthorizationEntry();
+        entry.setQueue(">");
+        entry.setRead("admins,anonymous");
+        entry.setWrite("admins,anonymous");
+        entry.setAdmin("admins,anonymous");
+        authorizationEntries.add(entry);
+        entry = new AuthorizationEntry();
+        entry.setQueue("USERS.>");
+        entry.setRead("users,anonymous");
+        entry.setWrite("users,anonymous");
+        entry.setAdmin("users,anonymous");
+        authorizationEntries.add(entry);
+        entry = new AuthorizationEntry();
+        entry.setQueue("GUEST.>");
+        entry.setRead("guests,anonymous");
+        entry.setWrite("guests,users,anonymous");
+        entry.setAdmin("guests,users,anonymous");
+        authorizationEntries.add(entry);
+        entry = new AuthorizationEntry();
+        entry.setTopic(">");
+        entry.setRead("admins,anonymous");
+        entry.setWrite("admins,anonymous");
+        entry.setAdmin("admins,anonymous");
+        authorizationEntries.add(entry);
+        entry = new AuthorizationEntry();
+        entry.setTopic("USERS.>");
+        entry.setRead("users,anonymous");
+        entry.setWrite("users,anonymous");
+        entry.setAdmin("users,anonymous");
+        authorizationEntries.add(entry);
+        entry = new AuthorizationEntry();
+        entry.setTopic("GUEST.>");
+        entry.setRead("guests,anonymous");
+        entry.setWrite("guests,users,anonymous");
+        entry.setAdmin("guests,users,anonymous");
+        authorizationEntries.add(entry);
+        entry = new AuthorizationEntry();
+        entry.setTopic("ActiveMQ.Advisory.>");
+        entry.setRead("guests,users,anonymous");
+        entry.setWrite("guests,users,anonymous");
+        entry.setAdmin("guests,users,anonymous");
+        authorizationEntries.add(entry);
+
+        TempDestinationAuthorizationEntry tempEntry = new TempDestinationAuthorizationEntry();
+        tempEntry.setRead("admins");
+        tempEntry.setWrite("admins");
+        tempEntry.setAdmin("admins");
+
+        DefaultAuthorizationMap authorizationMap = new DefaultAuthorizationMap(authorizationEntries);
+        authorizationMap.setTempDestinationAuthorizationEntry(tempEntry);
+        AuthorizationPlugin authorizationPlugin = new AuthorizationPlugin(authorizationMap);
+
+        return authorizationPlugin;
     }
 }

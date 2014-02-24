@@ -455,8 +455,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             return (T) provider.create(resource).getResponse();
-        } catch (Exception ioe) {
-            throw JmsExceptionSupport.create(ioe);
+        } catch (Exception ex) {
+            throw JmsExceptionSupport.create(ex);
         }
     }
 
