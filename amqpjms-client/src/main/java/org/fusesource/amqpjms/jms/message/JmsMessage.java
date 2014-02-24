@@ -37,6 +37,7 @@ import javax.jms.MessageNotWriteableException;
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
+import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.jms.util.PropertyExpression;
 import org.fusesource.amqpjms.jms.util.TypeConversionSupport;
 import org.fusesource.hawtbuf.AsciiBuffer;
@@ -69,11 +70,14 @@ public class JmsMessage implements javax.jms.Message {
     protected byte priority;
     protected String groupID;
     protected int groupSequence;
+    protected JmsMessageId messageId;
+    protected long expiration;
+    protected long timestamp;
 
     protected boolean readOnlyBody;
     protected boolean readOnlyProperties;
     protected Map<String, Object> properties;
-    protected AsciiBuffer transactionId;
+    protected JmsTransactionId transactionId;
     protected Buffer content;
 
     public JmsMessage() {
@@ -93,6 +97,9 @@ public class JmsMessage implements javax.jms.Message {
         this.priority = other.priority;
         this.groupID = other.groupID;
         this.groupSequence = other.groupSequence;
+        this.messageId = other.messageId != null ? other.messageId.copy() : null;
+        this.expiration = other.expiration;
+        this.timestamp = other.timestamp;
 
         this.readOnlyBody = other.readOnlyBody;
         this.readOnlyProperties = other.readOnlyBody;
@@ -171,15 +178,13 @@ public class JmsMessage implements javax.jms.Message {
         this.readOnlyProperties = readOnlyProperties;
     }
 
-    public AsciiBuffer getMessageID() {
-        // return getHeaderMap().get(MESSAGE_ID);
-        return null;
+    public JmsMessageId getMessageID() {
+        return this.messageId;
     }
 
     @Override
     public String getJMSMessageID() {
-        // return getStringHeader(MESSAGE_ID);
-        return null;
+        return this.messageId.toString();
     }
 
     /**
@@ -191,30 +196,32 @@ public class JmsMessage implements javax.jms.Message {
      */
     @Override
     public void setJMSMessageID(String value) {
-        // setStringHeader(MESSAGE_ID, value);
-    }
-
-    public void setMessageID(AsciiBuffer value) {
-        // getHeaderMap().put(MESSAGE_ID, value);
-    }
-
-    private <T> T or(T value, T other) {
         if (value != null) {
-            return value;
+            try {
+                JmsMessageId id = new JmsMessageId(value);
+                this.setMessageId(id);
+            } catch (NumberFormatException e) {
+                // The Id is foreign so we just use it as a Text View.
+                JmsMessageId id = JmsMessageId.wrapForeignMessageId(value);
+                this.setMessageId(id);
+            }
         } else {
-            return other;
+            this.setMessageId(null);
         }
+    }
+
+    public void setMessageId(JmsMessageId value) {
+        this.messageId = value;
     }
 
     @Override
     public long getJMSTimestamp() {
-//        return or(getLongHeader(TIMESTAMP), 0L);
-        return 0L;
+        return this.getTimestamp();
     }
 
     @Override
     public void setJMSTimestamp(long timestamp) {
-//        setLongHeader(TIMESTAMP, timestamp == 0 ? null : timestamp);
+        this.setTimestamp(timestamp);
     }
 
     @Override
@@ -815,7 +822,7 @@ public class JmsMessage implements javax.jms.Message {
     /**
      * @return the transactionId
      */
-    public AsciiBuffer getTransactionId() {
+    public JmsTransactionId getTransactionId() {
         return this.transactionId;
     }
 
@@ -823,7 +830,7 @@ public class JmsMessage implements javax.jms.Message {
      * @param transactionId
      *        the transactionId to set
      */
-    public void setTransactionId(AsciiBuffer transactionId) {
+    public void setTransactionId(JmsTransactionId transactionId) {
         this.transactionId = transactionId;
     }
 
@@ -833,5 +840,13 @@ public class JmsMessage implements javax.jms.Message {
 
     public void setConnection(JmsConnection connection) {
         this.connection = connection;
+    }
+
+    public long getTimestamp() {
+        return this.timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 }

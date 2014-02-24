@@ -49,6 +49,15 @@ public class JmsMessageId implements Comparable<JmsMessageId> {
         this.producerSequenceId = producerSequenceId;
     }
 
+    private JmsMessageId() {
+    }
+
+    public static JmsMessageId wrapForeignMessageId(String view) {
+        JmsMessageId id = new JmsMessageId();
+        id.setTextView(view);
+        return id;
+    }
+
     /**
      * Sets the value as a String
      */
