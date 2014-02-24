@@ -16,8 +16,6 @@
  */
 package org.fusesource.amqpjms.sasl;
 
-import static org.fusesource.amqpjms.sasl.AbstractMechanism.EMPTY;
-
 /**
  * Implements the Anonymous SASL authentication mechanism.
  */
