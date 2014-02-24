@@ -16,10 +16,22 @@
  */
 package org.fusesource.amqpjms.sasl;
 
+import static org.fusesource.amqpjms.sasl.AbstractMechanism.EMPTY;
+
 /**
  * Implements the Anonymous SASL authentication mechanism.
  */
 public class AnonymousMechanism extends AbstractMechanism {
+
+    @Override
+    public byte[] getInitialResponse() {
+        return EMPTY;
+    }
+
+    @Override
+    public byte[] getChallengeResponse(byte[] challenge) {
+        return EMPTY;
+    }
 
     @Override
     public int getPriority() {

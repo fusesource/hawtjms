@@ -16,6 +16,8 @@
  */
 package org.fusesource.amqpjms.sasl;
 
+import java.util.Map;
+
 /**
  * Interface for all SASL authentication mechanism implementations.
  */
@@ -39,7 +41,7 @@ public interface Mechanism extends Comparable<Mechanism> {
             this.value = value;
         }
 
-        public int getValue(){
+        public int getValue() {
             return value;
        }
     };
@@ -55,7 +57,65 @@ public interface Mechanism extends Comparable<Mechanism> {
     String getName();
 
     /**
-     * @return the response buffer used to answer the SASL challenge.
+     * @return the response buffer used to answer the initial SASL cycle.
      */
-    byte[] getResponse();
+    byte[] getInitialResponse();
+
+    /**
+     * Create a response based on a given challenge from the remote peer.
+     *
+     * @param challenge
+     *        the challenge that this Mechanism should response to.
+     *
+     * @return the response that answers the given challenge.
+     */
+    byte[] getChallengeResponse(byte[] challenge);
+
+    /**
+     * Sets the user name value for this Mechanism.  The Mechanism can ignore this
+     * value if it does not utilize user name in it's authentication processing.
+     *
+     * @param username
+     *        The user name given.
+     */
+    void setUsername(String value);
+
+    /**
+     * Returns the configured user name value for this Mechanism.
+     *
+     * @return the currently set user name value for this Mechanism.
+     */
+    String getUsername();
+
+    /**
+     * Sets the password value for this Mechanism.  The Mechanism can ignore this
+     * value if it does not utilize a password in it's authentication processing.
+     *
+     * @param username
+     *        The user name given.
+     */
+    void setPassword(String value);
+
+    /**
+     * Returns the configured password value for this Mechanism.
+     *
+     * @return the currently set password value for this Mechanism.
+     */
+    String getPassword();
+
+    /**
+     * Sets any additional Mechanism specific properties using a Map<String, Object>
+     *
+     * @param options
+     *        the map of additional properties that this Mechanism should utilize.
+     */
+    void setProperties(Map<String, Object> options);
+
+    /**
+     * The currently set Properties for this Mechanism.
+     *
+     * @return the current set of configuration Properties for this Mechanism.
+     */
+    Map<String, Object> getProperties();
+
 }

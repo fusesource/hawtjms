@@ -34,7 +34,17 @@ public class PlainMechanism extends AbstractMechanism {
     }
 
     @Override
-    public byte[] getResponse() {
-        return new byte[0];
+    public byte[] getInitialResponse() {
+        byte[] usernameBytes = getUsername().getBytes();
+        byte[] passwordBytes = getPassword().getBytes();
+        byte[] data = new byte[usernameBytes.length + passwordBytes.length + 2];
+        System.arraycopy(usernameBytes, 0, data, 1, usernameBytes.length);
+        System.arraycopy(passwordBytes, 0, data, 2 + usernameBytes.length, passwordBytes.length);
+        return data;
+    }
+
+    @Override
+    public byte[] getChallengeResponse(byte[] challenge) {
+        return EMPTY;
     }
 }

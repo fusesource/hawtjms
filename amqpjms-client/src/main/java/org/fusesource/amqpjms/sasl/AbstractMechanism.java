@@ -16,13 +16,20 @@
  */
 package org.fusesource.amqpjms.sasl;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Base class for SASL Authentication Mechanism that implements the basic
  * methods of a Mechanism class.
  */
 public abstract class AbstractMechanism implements Mechanism {
 
-    private static final byte[] EMPTY = new byte[0];
+    protected static final byte[] EMPTY = new byte[0];
+
+    private String username;
+    private String password;
+    private Map<String, Object> properties = new HashMap<String, Object>();
 
     @Override
     public int compareTo(Mechanism other) {
@@ -37,7 +44,32 @@ public abstract class AbstractMechanism implements Mechanism {
     }
 
     @Override
-    public byte[] getResponse() {
-        return EMPTY;
+    public void setUsername(String value) {
+        this.username = value;
+    }
+
+    @Override
+    public String getUsername() {
+        return username;
+    }
+
+    @Override
+    public void setPassword(String value) {
+        this.password = value;
+    }
+
+    @Override
+    public String getPassword() {
+        return this.password;
+    }
+
+    @Override
+    public void setProperties(Map<String, Object> properties) {
+        this.properties = properties;
+    }
+
+    @Override
+    public Map<String, Object> getProperties() {
+        return this.properties;
     }
 }
