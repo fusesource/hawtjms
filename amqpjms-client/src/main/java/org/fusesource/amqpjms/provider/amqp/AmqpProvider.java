@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EngineFactory;
+import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Transport;
 import org.apache.qpid.proton.engine.impl.EngineFactoryImpl;
 import org.apache.qpid.proton.engine.impl.ProtocolTracer;
@@ -215,11 +216,11 @@ public class AmqpProvider implements Provider {
                         public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
                             Connection protonConnection = engineFactory.createConnection();
                             protonTransport.bind(protonConnection);
-//                            Sasl sasl = protonTransport.sasl();
-//                            if (sasl != null) {
-//                                sasl.client();
-//                            }
-                            connection = new AmqpConnection(AmqpProvider.this, protonConnection, null, connectionInfo);
+                            Sasl sasl = protonTransport.sasl();
+                            if (sasl != null) {
+                                sasl.client();
+                            }
+                            connection = new AmqpConnection(AmqpProvider.this, protonConnection, sasl, connectionInfo);
                             connection.open(request);
                         }
                     });
