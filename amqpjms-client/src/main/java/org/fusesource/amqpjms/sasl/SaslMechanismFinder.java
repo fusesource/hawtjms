@@ -39,23 +39,26 @@ public class SaslMechanismFinder {
 
     /**
      * Attempts to find a matching Mechanism implementation given a list of supported
-     * mechanisms from a remote peer.
+     * mechanisms from a remote peer.  Can return null if no matching Mechanisms are
+     * found.
      *
      * @param remoteMechanisms
      *        list of mechanism names that are supported by the remote peer.
      *
      * @return the best matching Mechanism for the supported remote set.
-     *
-     * @throws IOException if an error occurs while locating supported mechanisms.
      */
-    public static Mechanism findMatchingMechanism(String...remoteMechanisms) throws IOException {
+    public static Mechanism findMatchingMechanism(String...remoteMechanisms) {
 
         Mechanism match = null;
         List<Mechanism> found = new ArrayList<Mechanism>();
 
         for (String remoteMechanism : remoteMechanisms) {
-            MechanismFactory factory = MechanismFactoryFinder.findMechanismFactory(remoteMechanism);
-            found.add(factory.createMechanism());
+            try {
+                MechanismFactory factory = MechanismFactoryFinder.findMechanismFactory(remoteMechanism);
+                found.add(factory.createMechanism());
+            } catch (IOException e) {
+                LOG.warn("Caught exception while searching for SASL mechanisms: {}", e.getMessage());
+            }
         }
 
         if (!found.isEmpty()) {
