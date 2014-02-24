@@ -586,6 +586,22 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.sslContext = sslContext;
     }
 
+    public String getUsername() {
+        return this.connectionInfo.getUsername();
+    }
+
+    public void setUsername(String username) {
+        this.connectionInfo.setUsername(username);;
+    }
+
+    public String getPassword() {
+        return this.connectionInfo.getPassword();
+    }
+
+    public void setPassword(String password) {
+        this.connectionInfo.setPassword(password);
+    }
+
     Provider getProvider() {
         return provider;
     }
