@@ -17,14 +17,13 @@
 package org.fusesource.amqpjms.jms.util;
 
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.fusesource.hawtbuf.DataByteArrayOutputStream;
 
 /**
  * The fixed version of the UTF8 encoding function. Some older JVM's UTF8
@@ -52,13 +51,13 @@ public final class MarshallingSupport {
     private MarshallingSupport() {
     }
 
-    public static void marshalPrimitiveMap(Map map, DataByteArrayOutputStream out) throws IOException {
+    public static void marshalPrimitiveMap(Map<String, Object> map, DataOutput out) throws IOException {
         if (map == null) {
             out.writeInt(-1);
         } else {
             out.writeInt(map.size());
-            for (Iterator iter = map.keySet().iterator(); iter.hasNext();) {
-                String name = (String) iter.next();
+            for (Iterator<String> iter = map.keySet().iterator(); iter.hasNext();) {
+                String name = iter.next();
                 out.writeUTF(name);
                 Object value = map.get(name);
                 marshalPrimitive(out, value);
@@ -93,9 +92,9 @@ public final class MarshallingSupport {
         }
     }
 
-    public static void marshalPrimitiveList(List list, DataByteArrayOutputStream out) throws IOException {
+    public static void marshalPrimitiveList(List<Object> list, DataOutput out) throws IOException {
         out.writeInt(list.size());
-        for (Iterator iter = list.iterator(); iter.hasNext();) {
+        for (Iterator<Object> iter = list.iterator(); iter.hasNext();) {
             Object element = iter.next();
             marshalPrimitive(out, element);
         }
@@ -110,7 +109,8 @@ public final class MarshallingSupport {
         return answer;
     }
 
-    public static void marshalPrimitive(DataByteArrayOutputStream out, Object value) throws IOException {
+    @SuppressWarnings("unchecked")
+    public static void marshalPrimitive(DataOutput out, Object value) throws IOException {
         if (value == null) {
             marshalNull(out);
         } else if (value.getClass() == Boolean.class) {
@@ -135,10 +135,10 @@ public final class MarshallingSupport {
             marshalString(out, (String) value);
         } else if (value instanceof Map) {
             out.writeByte(MAP_TYPE);
-            marshalPrimitiveMap((Map) value, out);
+            marshalPrimitiveMap((Map<String, Object>) value, out);
         } else if (value instanceof List) {
             out.writeByte(LIST_TYPE);
-            marshalPrimitiveList((List) value, out);
+            marshalPrimitiveList((List<Object>) value, out);
         } else {
             throw new IOException("Object is not a primitive: " + value);
         }
@@ -197,61 +197,61 @@ public final class MarshallingSupport {
         return value;
     }
 
-    public static void marshalNull(DataByteArrayOutputStream out) throws IOException {
+    public static void marshalNull(DataOutput out) throws IOException {
         out.writeByte(NULL);
     }
 
-    public static void marshalBoolean(DataByteArrayOutputStream dataOut, boolean value) throws IOException {
+    public static void marshalBoolean(DataOutput dataOut, boolean value) throws IOException {
         dataOut.writeByte(BOOLEAN_TYPE);
         dataOut.writeBoolean(value);
     }
 
-    public static void marshalByte(DataByteArrayOutputStream out, byte value) throws IOException {
+    public static void marshalByte(DataOutput out, byte value) throws IOException {
         out.writeByte(BYTE_TYPE);
         out.writeByte(value);
     }
 
-    public static void marshalChar(DataByteArrayOutputStream out, char value) throws IOException {
+    public static void marshalChar(DataOutput out, char value) throws IOException {
         out.writeByte(CHAR_TYPE);
         out.writeChar(value);
     }
 
-    public static void marshalShort(DataByteArrayOutputStream out, short value) throws IOException {
+    public static void marshalShort(DataOutput out, short value) throws IOException {
         out.writeByte(SHORT_TYPE);
         out.writeShort(value);
     }
 
-    public static void marshalInt(DataByteArrayOutputStream out, int value) throws IOException {
+    public static void marshalInt(DataOutput out, int value) throws IOException {
         out.writeByte(INTEGER_TYPE);
         out.writeInt(value);
     }
 
-    public static void marshalLong(DataByteArrayOutputStream out, long value) throws IOException {
+    public static void marshalLong(DataOutput out, long value) throws IOException {
         out.writeByte(LONG_TYPE);
         out.writeLong(value);
     }
 
-    public static void marshalFloat(DataByteArrayOutputStream out, float value) throws IOException {
+    public static void marshalFloat(DataOutput out, float value) throws IOException {
         out.writeByte(FLOAT_TYPE);
         out.writeFloat(value);
     }
 
-    public static void marshalDouble(DataByteArrayOutputStream out, double value) throws IOException {
+    public static void marshalDouble(DataOutput out, double value) throws IOException {
         out.writeByte(DOUBLE_TYPE);
         out.writeDouble(value);
     }
 
-    public static void marshalByteArray(DataByteArrayOutputStream out, byte[] value) throws IOException {
+    public static void marshalByteArray(DataOutput out, byte[] value) throws IOException {
         marshalByteArray(out, value, 0, value.length);
     }
 
-    public static void marshalByteArray(DataByteArrayOutputStream out, byte[] value, int offset, int length) throws IOException {
+    public static void marshalByteArray(DataOutput out, byte[] value, int offset, int length) throws IOException {
         out.writeByte(BYTE_ARRAY_TYPE);
         out.writeInt(length);
         out.write(value, offset, length);
     }
 
-    public static void marshalString(DataByteArrayOutputStream out, String s) throws IOException {
+    public static void marshalString(DataOutput out, String s) throws IOException {
         // If it's too big, out.writeUTF may not able able to write it out.
         if (s.length() < Short.MAX_VALUE / 4) {
             out.writeByte(STRING_TYPE);

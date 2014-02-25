@@ -16,7 +16,13 @@
  */
 package org.fusesource.amqpjms.jms.message;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -27,6 +33,8 @@ import javax.jms.MapMessage;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
 
+import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
+import org.fusesource.amqpjms.jms.util.MarshallingSupport;
 import org.fusesource.hawtbuf.Buffer;
 
 /**
@@ -77,7 +85,6 @@ import org.fusesource.hawtbuf.Buffer;
  * <code>String</code> conversion, attempting to read a null value as a
  * <code>char</code> must throw a <code>NullPointerException</code>.
  *
- * @openwire:marshaller code="25"
  * @see javax.jms.Session#createMapMessage()
  * @see javax.jms.BytesMessage
  * @see javax.jms.Message
@@ -110,8 +117,16 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
     public void storeContent() throws JMSException {
         Buffer buffer = getContent();
         if (buffer == null && !this.map.isEmpty()) {
-            // buffer = StompTranslator.writeBufferFromObject(this.map);
-            // setContent(buffer);
+            ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
+            OutputStream os = bytesOut;
+            DataOutputStream dataOut = new DataOutputStream(os);
+            try {
+                MarshallingSupport.marshalPrimitiveMap(map, dataOut);
+                dataOut.close();
+            } catch (IOException e) {
+                throw JmsExceptionSupport.create(e);
+            }
+            setContent(new Buffer(bytesOut.toByteArray()));
         }
     }
 
@@ -124,8 +139,14 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
     private void loadContent() throws JMSException {
         Buffer buffer = getContent();
         if (buffer != null && this.map.isEmpty()) {
-            // TODO
-//            this.map = (Map<String, Object>) StompTranslator.readObjectFromBuffer(buffer);
+            InputStream is = new ByteArrayInputStream(content.toByteArray());
+            DataInputStream dataIn = new DataInputStream(is);
+            try {
+                map = MarshallingSupport.unmarshalPrimitiveMap(dataIn);
+                dataIn.close();
+            } catch (IOException e) {
+                throw JmsExceptionSupport.create(e);
+            }
         }
     }
 

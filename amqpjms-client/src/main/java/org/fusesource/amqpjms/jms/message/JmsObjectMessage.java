@@ -29,7 +29,7 @@ import java.io.Serializable;
 import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
 
-import org.apache.activemq.util.JMSExceptionSupport;
+import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.util.ClassLoadingAwareObjectInputStream;
 import org.fusesource.hawtbuf.Buffer;
 
@@ -156,13 +156,13 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
                 try {
                     object = (Serializable)objIn.readObject();
                 } catch (ClassNotFoundException ce) {
-                    throw JMSExceptionSupport.create("Failed to build body from content. Serializable class not available to broker. Reason: " + ce, ce);
+                    throw JmsExceptionSupport.create("Failed to build body from content. Serializable class not available to broker. Reason: " + ce, ce);
                 } finally {
                     objIn.close();
                     dataIn.close();
                 }
             } catch (IOException e) {
-                throw JMSExceptionSupport.create("Failed to build body from bytes. Reason: " + e, e);
+                throw JmsExceptionSupport.create("Failed to build body from bytes. Reason: " + e, e);
             }
         }
         return this.object;
