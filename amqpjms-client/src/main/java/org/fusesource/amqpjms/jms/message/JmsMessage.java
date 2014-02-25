@@ -201,6 +201,9 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public String getJMSMessageID() {
+        if (this.messageId == null) {
+            return null;
+        }
         return this.messageId.toString();
     }
 
