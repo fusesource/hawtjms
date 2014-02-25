@@ -16,16 +16,33 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
+import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
+import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Sender;
+import org.apache.qpid.proton.jms.AutoOutboundTransformer;
+import org.apache.qpid.proton.jms.EncodedMessage;
+import org.apache.qpid.proton.jms.OutboundTransformer;
+import org.fusesource.amqpjms.jms.message.JmsMessage;
+import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
+import org.fusesource.amqpjms.jms.util.IOExceptionSupport;
+import org.fusesource.amqpjms.provider.ProviderRequest;
+import org.fusesource.hawtbuf.Buffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,10 +54,95 @@ public class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo, Sender> 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpProducer.class);
 
     private final AmqpSession session;
+    private long nextTagId;
+    private final Set<byte[]> tagCache = new LinkedHashSet<byte[]>();
+    private final Set<Delivery> pending = new LinkedHashSet<Delivery>();
+
+    private final OutboundTransformer outboundTransformer = new AutoOutboundTransformer(AmqpJMSVendor.INSTANCE);
+    private final String MESSAGE_FORMAT_KEY = outboundTransformer.getPrefixVendor() + "MESSAGE_FORMAT";
 
     public AmqpProducer(AmqpSession session, JmsProducerInfo info) {
         super(info);
         this.session = session;
+    }
+
+    public void send(JmsOutboundMessageDispatch envelope, ProviderRequest<Void> request) throws IOException {
+        LOG.info("Producer sending message: {}", envelope.getMessage().getMessageId());
+
+        byte[] tag = borrowTag();
+        Delivery delivery = endpoint.delivery(tag);
+        delivery.setContext(request);
+
+        JmsMessage message = envelope.getMessage();
+        message.setReadOnlyBody(true);
+
+        if (!message.getProperties().containsKey(MESSAGE_FORMAT_KEY)) {
+            message.setProperty(MESSAGE_FORMAT_KEY, 0);
+        }
+
+        Buffer sendBuffer = null;
+        EncodedMessage amqp = null;
+
+        try {
+            amqp = outboundTransformer.transform(message);
+        } catch (Exception e) {
+            throw IOExceptionSupport.create(e);
+        }
+
+        if (amqp != null && amqp.getLength() > 0) {
+            sendBuffer = new Buffer(amqp.getArray(), amqp.getArrayOffset(), amqp.getLength());
+        }
+
+        while (sendBuffer != null) {
+            int sent = endpoint.send(sendBuffer.data, sendBuffer.offset, sendBuffer.length);
+            if (sent > 0) {
+                sendBuffer.moveHead(sent);
+                if (sendBuffer.length == 0) {
+                    endpoint.advance();
+                    pending.add(delivery);
+                    sendBuffer = null;
+                }
+            } else {
+                LOG.warn("{} failed to send any data from current Message.", this);
+            }
+        }
+    }
+
+    private byte[] borrowTag() throws IOException {
+        byte[] rc;
+        if (tagCache != null && !tagCache.isEmpty()) {
+            final Iterator<byte[]> iterator = tagCache.iterator();
+            rc = iterator.next();
+            iterator.remove();
+        } else {
+            rc = Long.toHexString(nextTagId++).getBytes("UTF-8");
+        }
+        return rc;
+    }
+
+    private void returnTag(byte[] data) {
+        if (tagCache.size() < 1024) {
+            tagCache.add(data);
+        }
+    }
+
+    @Override
+    public void processUpdates() {
+        List<Delivery> toRemove = new ArrayList<Delivery>();
+
+        for (Delivery delivery : pending) {
+            DeliveryState state = delivery.getRemoteState();
+            if (state != null && Accepted.getInstance().equals(state)) {
+                @SuppressWarnings("unchecked")
+                ProviderRequest<Void> request = (ProviderRequest<Void>) delivery.getContext();
+                request.onSuccess(null);
+                returnTag(delivery.getTag());
+            } else {
+                // TODO - figure out how to handle not accepted.
+            }
+        }
+
+        pending.removeAll(toRemove);
     }
 
     @Override

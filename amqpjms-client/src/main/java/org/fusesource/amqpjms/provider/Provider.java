@@ -19,6 +19,7 @@ package org.fusesource.amqpjms.provider;
 import java.io.IOException;
 import java.net.URI;
 
+import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 
 /**
@@ -94,6 +95,18 @@ public interface Provider {
      * @throws IOException if an error occurs or the Provider is already closed.
      */
     ProviderRequest<Void> destroy(JmsResource resource) throws IOException;
+
+    /**
+     * Sends the JmsMessage contained in the outbound dispatch envelope.
+     *
+     * @param envelope
+     *        the message envelope containing the JmsMessage to send.
+     *
+     * @return a response object that allows the caller to await the result.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    ProviderRequest<Void> send(JmsOutboundMessageDispatch envelope) throws IOException;
 
     /**
      * Sets the listener of events from this Provider instance.

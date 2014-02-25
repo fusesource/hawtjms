@@ -34,8 +34,10 @@ import org.apache.qpid.proton.engine.impl.EngineFactoryImpl;
 import org.apache.qpid.proton.engine.impl.ProtocolTracer;
 import org.apache.qpid.proton.engine.impl.TransportImpl;
 import org.apache.qpid.proton.framing.TransportFrame;
+import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
+import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsResourceVistor;
@@ -273,6 +275,31 @@ public class AmqpProvider implements Provider {
                         }
                     });
 
+                    pumpToProtonTransport();
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
+
+        return request;
+    }
+
+    @Override
+    public ProviderRequest<Void> send(final JmsOutboundMessageDispatch envelope) throws IOException {
+        checkClosed();
+        final ProviderRequest<Void> request = new ProviderRequest<Void>();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    // TODO - Hide the AmqpProducer in the JmsResource hint.
+                    JmsProducerId producerId = envelope.getProducerId();
+                    AmqpSession session = connection.getSession(producerId.getParentId());
+                    AmqpProducer producer = session.getProducer(producerId);
+                    producer.send(envelope, request);
                     pumpToProtonTransport();
                 } catch (Exception error) {
                     request.onFailure(error);

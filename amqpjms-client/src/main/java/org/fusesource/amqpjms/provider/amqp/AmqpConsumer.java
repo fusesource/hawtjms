@@ -40,6 +40,11 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     }
 
     @Override
+    public void processUpdates() {
+
+    }
+
+    @Override
     protected void doOpen() {
         String subscription = info.getDestination().getName() + "->" + UUID.randomUUID().toString();
 

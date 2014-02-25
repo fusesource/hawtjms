@@ -28,6 +28,10 @@ public class JmsTemporaryQueue extends JmsDestination implements TemporaryQueue 
         super(null, null);
     }
 
+    public JmsTemporaryQueue(String name) {
+        super(null, name);
+    }
+
     public JmsTemporaryQueue(String prefix, String name) {
         super(prefix, name);
     }

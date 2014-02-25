@@ -27,6 +27,10 @@ public class JmsTopic extends JmsDestination implements Topic {
         super(null, null);
     }
 
+    public JmsTopic(String name) {
+        super(null, name);
+    }
+
     public JmsTopic(JmsConnection connection, String name) {
         this(connection.getTopicPrefix(), name);
     }

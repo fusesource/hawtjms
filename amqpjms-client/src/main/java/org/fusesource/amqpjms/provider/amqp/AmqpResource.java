@@ -82,4 +82,11 @@ public interface AmqpResource {
      */
     void failed(Exception cause);
 
+    /**
+     * Called when data has been read from the remote peer.  The resource should
+     * check the status of any pending work and complete or update the state to
+     * match the new remote state.
+     */
+    void processUpdates();
+
 }

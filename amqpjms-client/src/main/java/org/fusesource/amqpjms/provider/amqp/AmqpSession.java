@@ -65,8 +65,12 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     }
 
     public AmqpProducer getProducer(JmsProducerInfo producerInfo) {
+        return getProducer(producerInfo.getProducerId());
+    }
+
+    public AmqpProducer getProducer(JmsProducerId producerId) {
         // TODO - Hide producer in the hint field in the Id.
-        return this.producers.get(producerInfo.getProducerId());
+        return this.producers.get(producerId);
     }
 
     public AmqpConsumer createConsumer(JmsConsumerInfo consumerInfo) {
@@ -74,8 +78,12 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     }
 
     public AmqpConsumer getConsumer(JmsConsumerInfo consumerInfo) {
+        return getConsumer(consumerInfo.getConsumerId());
+    }
+
+    public AmqpConsumer getConsumer(JmsConsumerId consumerId) {
         // TODO - Hide producer in the hint field in the Id.
-        return this.consumers.get(consumerInfo.getConsumerId());
+        return this.consumers.get(consumerId);
     }
 
     /**
@@ -83,8 +91,18 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
      * underlying Proton connection which might indicate a sender / receiver / link state
      * has changed.
      */
+    @Override
     public void processUpdates() {
         processPendingLinks();
+
+        // Settle any pending deliveries.
+        for (AmqpProducer producer : this.producers.values()) {
+            producer.processUpdates();
+        }
+
+        for (AmqpConsumer consumer : this.consumers.values()) {
+            consumer.processUpdates();
+        }
     }
 
     private void processPendingLinks() {

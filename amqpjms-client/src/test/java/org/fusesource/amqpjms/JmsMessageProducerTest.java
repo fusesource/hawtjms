@@ -19,6 +19,7 @@ package org.fusesource.amqpjms;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import javax.jms.BytesMessage;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
@@ -44,17 +45,49 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
         Queue queue = session.createQueue("test.queue");
-        MessageProducer producer = session.createProducer(queue);
+        session.createProducer(queue);
 
         QueueViewMBean proxy = getProxyToQueue("test.queue");
+        assertEquals(0, proxy.getQueueSize());
+        connection.close();
+    }
 
+    @Test(timeout = 60000)
+    public void testSendJMSMessage() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue("test.queue");
+        MessageProducer producer = session.createProducer(queue);
         Message message = session.createMessage();
         producer.send(message);
-
+        QueueViewMBean proxy = getProxyToQueue("test.queue");
         assertEquals(1, proxy.getQueueSize());
 
-        producer.close();
-        session.close();
+        connection.close();
+    }
+
+    @Test(timeout = 60000)
+    public void testSendJMSBytesMessage() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue("test.queue");
+        MessageProducer producer = session.createProducer(queue);
+        BytesMessage message = session.createBytesMessage();
+        message.writeUTF("TEST");
+        producer.send(message);
+        QueueViewMBean proxy = getProxyToQueue("test.queue");
+        assertEquals(1, proxy.getQueueSize());
+
         connection.close();
     }
 }

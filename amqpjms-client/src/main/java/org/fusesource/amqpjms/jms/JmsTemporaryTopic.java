@@ -28,6 +28,10 @@ public class JmsTemporaryTopic extends JmsDestination implements TemporaryTopic 
         this(null, null);
     }
 
+    public JmsTemporaryTopic(String name) {
+        super(null, name);
+    }
+
     public JmsTemporaryTopic(String prefix, String name) {
         super(prefix, name);
     }

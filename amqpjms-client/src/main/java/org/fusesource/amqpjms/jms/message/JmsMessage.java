@@ -69,7 +69,7 @@ public class JmsMessage implements javax.jms.Message {
     protected transient JmsConnection connection;
 
     protected byte priority = javax.jms.Message.DEFAULT_PRIORITY;
-    protected String groupID;
+    protected String groupId;
     protected int groupSequence;
     protected JmsMessageId messageId;
     protected long expiration;
@@ -80,6 +80,7 @@ public class JmsMessage implements javax.jms.Message {
     protected String type;
     protected JmsDestination destination;
     protected JmsDestination replyTo;
+    protected String userId;
 
     protected boolean readOnlyBody;
     protected boolean readOnlyProperties;
@@ -105,7 +106,8 @@ public class JmsMessage implements javax.jms.Message {
 
     protected void copy(JmsMessage other) {
         this.priority = other.priority;
-        this.groupID = other.groupID;
+        this.groupId = other.groupId;
+        this.userId = other.userId;
         this.groupSequence = other.groupSequence;
         this.messageId = other.messageId != null ? other.messageId.copy() : null;
         this.expiration = other.expiration;
@@ -153,8 +155,8 @@ public class JmsMessage implements javax.jms.Message {
         }
 
         JmsMessage msg = (JmsMessage) o;
-        JmsMessageId oMsg = msg.getMessageID();
-        JmsMessageId thisMsg = this.getMessageID();
+        JmsMessageId oMsg = msg.getMessageId();
+        JmsMessageId thisMsg = this.getMessageId();
         return thisMsg != null && oMsg != null && oMsg.equals(thisMsg);
     }
 
@@ -195,10 +197,6 @@ public class JmsMessage implements javax.jms.Message {
         this.readOnlyProperties = readOnlyProperties;
     }
 
-    public JmsMessageId getMessageID() {
-        return this.messageId;
-    }
-
     @Override
     public String getJMSMessageID() {
         if (this.messageId == null) {
@@ -228,10 +226,6 @@ public class JmsMessage implements javax.jms.Message {
         } else {
             this.setMessageId(null);
         }
-    }
-
-    public void setMessageId(JmsMessageId value) {
-        this.messageId = value;
     }
 
     @Override
@@ -807,6 +801,14 @@ public class JmsMessage implements javax.jms.Message {
         this.transactionId = transactionId;
     }
 
+    public JmsMessageId getMessageId() {
+        return this.messageId;
+    }
+
+    public void setMessageId(JmsMessageId messageId) {
+        this.messageId = messageId;
+    }
+
     public JmsConnection getConnection() {
         return connection;
     }
@@ -893,6 +895,30 @@ public class JmsMessage implements javax.jms.Message {
 
     public void setReplyTo(JmsDestination replyTo) {
         this.replyTo = replyTo;
+    }
+
+    public String getUserId() {
+        return this.userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getGroupId() {
+        return this.groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    public int getGroupSequence() {
+        return this.groupSequence;
+    }
+
+    public void setGroupSequence(int groupSequence) {
+        this.groupSequence = groupSequence;
     }
 
     public boolean isExpired() {

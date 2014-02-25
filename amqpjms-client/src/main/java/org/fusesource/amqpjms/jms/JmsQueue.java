@@ -27,6 +27,10 @@ public class JmsQueue extends JmsDestination implements Queue {
         super(null, null);
     }
 
+    public JmsQueue(String name) {
+        super(null, name);
+    }
+
     public JmsQueue(JmsConnection connection, String name) {
         this(connection.getQueuePrefix(), name);
     }

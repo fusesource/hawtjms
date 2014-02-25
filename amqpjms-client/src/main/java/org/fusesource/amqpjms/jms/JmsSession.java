@@ -62,8 +62,10 @@ import org.apache.activemq.apollo.selector.SelectorParser;
 import org.fusesource.amqpjms.jms.message.JmsBytesMessage;
 import org.fusesource.amqpjms.jms.message.JmsMapMessage;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
+import org.fusesource.amqpjms.jms.message.JmsMessageId;
 import org.fusesource.amqpjms.jms.message.JmsMessageTransformation;
 import org.fusesource.amqpjms.jms.message.JmsObjectMessage;
+import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsStreamMessage;
 import org.fusesource.amqpjms.jms.message.JmsTextMessage;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
@@ -659,12 +661,12 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         this.connection.onException(ex);
     }
 
-    protected void send(Destination dest, Message msg, int deliveryMode, int priority, long timeToLive, boolean disableMsgId) throws JMSException {
+    protected void send(JmsMessageProducer producer, Destination dest, Message msg, int deliveryMode, int priority, long timeToLive, boolean disableMsgId) throws JMSException {
         JmsDestination destination = JmsMessageTransformation.transformDestination(connection, dest);
-        send(destination, msg, deliveryMode, priority, timeToLive, disableMsgId);
+        send(producer, destination, msg, deliveryMode, priority, timeToLive, disableMsgId);
     }
 
-    private void send(JmsDestination destination, Message original, int deliveryMode, int priority, long timeToLive, boolean disableMsgId) throws JMSException {
+    private void send(JmsMessageProducer producer, JmsDestination destination, Message original, int deliveryMode, int priority, long timeToLive, boolean disableMsgId) throws JMSException {
 
         original.setJMSDeliveryMode(deliveryMode);
         original.setJMSPriority(priority);
@@ -674,22 +676,20 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             original.setJMSExpiration(System.currentTimeMillis() + timeToLive);
         }
 
-        String msgId = null;
+        JmsMessageId msgId = null;
         if (!disableMsgId) {
-            // TODO
-            // msgId = getNextMessageId(producer);
+            msgId = getNextMessageId(producer);
         }
         boolean nativeMessage = original instanceof JmsMessage;
         if (nativeMessage) {
             ((JmsMessage) original).setConnection(connection);
             if (!disableMsgId) {
-                // TODO
-                //((JmsMessage) original).setMessageID(msgId);
+                ((JmsMessage) original).setMessageId(msgId);
             }
             original.setJMSDestination(destination);
         } else {
             if (!disableMsgId) {
-                original.setJMSMessageID(msgId);
+                original.setJMSMessageID(msgId.toString());
             }
         }
 
@@ -701,7 +701,15 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
         boolean sync = !forceAsyncSend && deliveryMode == DeliveryMode.PERSISTENT && !getTransacted();
 
-        // TODO - Provider send either Sync or Async message.
+        JmsOutboundMessageDispatch envelope = new JmsOutboundMessageDispatch();
+        envelope.setMessage(copy);
+        envelope.setProducerId(producer.getProducerId());
+
+        if (sync) {
+            this.connection.send(envelope);
+        } else {
+            // TODO - Async sends
+        }
     }
 
     protected void checkClosed() throws IllegalStateException {
@@ -842,8 +850,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return new JmsProducerId(sessionInfo.getSessionId(), producerIdGenerator.incrementAndGet());
     }
 
-    private String getNextMessageId(JmsMessageProducer producer) {
-        return producer.getProducerId() + ":" + producer.getNextMessageSequence();
+    private JmsMessageId getNextMessageId(JmsMessageProducer producer) {
+        return new JmsMessageId(producer.getProducerId(), producer.getNextMessageSequence());
     }
 
     private <T extends JmsMessage> T init(T message) {

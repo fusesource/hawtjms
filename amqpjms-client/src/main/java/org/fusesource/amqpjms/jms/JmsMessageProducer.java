@@ -189,7 +189,8 @@ public class JmsMessageProducer implements MessageProducer {
         if (!this.flexibleDestination && !destination.equals(producerInfo.getDestination())) {
             throw new UnsupportedOperationException("This producer can only send messages to: " + producerInfo.getDestination().getName());
         }
-        this.session.send(destination, message, deliveryMode, priority, timeToLive, disableMessageId);
+
+        this.session.send(this, destination, message, deliveryMode, priority, timeToLive, disableMessageId);
     }
 
     /**

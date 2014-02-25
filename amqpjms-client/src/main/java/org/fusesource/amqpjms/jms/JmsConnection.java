@@ -46,6 +46,7 @@ import javax.net.ssl.SSLContext;
 
 import org.fusesource.amqpjms.jms.exceptions.JmsConnectionFailedException;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
+import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionId;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
@@ -461,7 +462,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void destroyResource(JmsResource resource) throws JMSException {
-        checkClosedOrFailed();
         connect();
 
         // TODO - We don't currently have a way to say that an operation
@@ -475,6 +475,23 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
             throw JmsExceptionSupport.create(ioe);
         }
     }
+
+    void send(JmsOutboundMessageDispatch envelope) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+
+        // TODO - We don't currently have a way to say that an operation
+        //        should be done asynchronously.  For a session dispose
+        //        we only care that the request hits the wire, not that
+        //        any response comes back.
+
+        try {
+            provider.send(envelope).getResponse();
+        } catch (Exception ioe) {
+            throw JmsExceptionSupport.create(ioe);
+        }
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////
     // Property setters and getters

@@ -33,4 +33,10 @@ public interface AmqpLink extends AmqpResource {
      */
     Object getRemoteTerminus();
 
+    /**
+     * Instructs the Link to process any state changes on the remote end in order
+     * to close out any pending work.
+     */
+    void processUpdates();
+
 }

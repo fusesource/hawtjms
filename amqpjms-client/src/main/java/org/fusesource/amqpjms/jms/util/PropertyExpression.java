@@ -135,6 +135,21 @@ public class PropertyExpression {
                 return Integer.valueOf(message.getRedeliveryCounter() + 1);
             }
         });
+        JMS_PROPERTY_EXPRESSIONS.put("JMSXUserID", new SubExpression() {
+
+            @Override
+            public Object evaluate(JmsMessage message) {
+                Object userId = message.getUserId();
+                if (userId == null) {
+                    try {
+                        userId = message.getProperties().get("JMSXUserID");
+                    } catch (IOException e) {
+                    }
+                }
+
+                return userId;
+            }
+        });
     }
 
     private final String name;
