@@ -16,8 +16,6 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
-import java.util.UUID;
-
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
@@ -46,7 +44,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     @Override
     protected void doOpen() {
-        String subscription = info.getDestination().getName() + "->" + UUID.randomUUID().toString();
+        String subscription = info.getDestination().getName();
 
         Source source = new Source();
         source.setAddress(subscription);
