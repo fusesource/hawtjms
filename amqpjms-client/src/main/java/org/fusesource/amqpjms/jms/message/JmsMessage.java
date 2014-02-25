@@ -182,6 +182,10 @@ public class JmsMessage implements javax.jms.Message {
         readOnlyBody = false;
     }
 
+    public boolean isReadOnlyBody() {
+        return this.readOnlyBody;
+    }
+
     public void setReadOnlyBody(boolean readOnlyBody) {
         this.readOnlyBody = readOnlyBody;
     }
