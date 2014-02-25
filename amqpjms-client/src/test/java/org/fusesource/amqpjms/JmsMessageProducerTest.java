@@ -16,12 +16,15 @@
  */
 package org.fusesource.amqpjms;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
+import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.junit.Test;
@@ -42,6 +45,13 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertNotNull(session);
         Queue queue = session.createQueue("test.queue");
         MessageProducer producer = session.createProducer(queue);
+
+        QueueViewMBean proxy = getProxyToQueue("test.queue");
+
+        Message message = session.createMessage();
+        producer.send(message);
+
+        assertEquals(1, proxy.getQueueSize());
 
         producer.close();
         session.close();
