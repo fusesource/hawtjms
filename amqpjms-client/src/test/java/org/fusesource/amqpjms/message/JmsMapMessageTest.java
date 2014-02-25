@@ -34,7 +34,6 @@ import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
 import org.fusesource.amqpjms.jms.message.JmsMapMessage;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -51,7 +50,6 @@ public class JmsMapMessageTest {
     @Rule public TestName name = new TestName();
 
     // TODO - Big String support.
-    @Ignore
     @Test
     public void testBytesConversion() throws JMSException, IOException {
         JmsMapMessage msg = new JmsMapMessage();

@@ -27,7 +27,6 @@ import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
 import org.fusesource.amqpjms.jms.message.JmsStreamMessage;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -584,7 +583,6 @@ public class JmsStreamMessageTest {
     }
 
     // TODO - Support Big Strings
-    @Ignore
     @Test
     public void testReadBigString() {
         JmsStreamMessage msg = new JmsStreamMessage();

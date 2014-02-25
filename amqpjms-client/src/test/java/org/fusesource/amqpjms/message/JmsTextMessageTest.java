@@ -33,7 +33,6 @@ import javax.jms.MessageNotWriteableException;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.message.JmsTextMessage;
 import org.fusesource.hawtbuf.Buffer;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -131,7 +130,7 @@ public class JmsTextMessageTest {
         }
     }
 
-    @Ignore // TODO - Fix toString and null body.
+    // TODO - Fix toString and null body.
     @Test
     public void testShortText() throws Exception {
         String shortText = "Content";
@@ -148,7 +147,7 @@ public class JmsTextMessageTest {
         assertTrue(longMessage.getText().equals(longText));
     }
 
-    @Ignore // TODO - Fix toString and null body.
+    // TODO - Fix toString and null body.
     @Test
     public void testNullText() throws Exception {
         JmsTextMessage nullMessage = new JmsTextMessage();
