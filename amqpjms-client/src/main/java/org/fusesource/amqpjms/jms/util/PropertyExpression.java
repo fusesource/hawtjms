@@ -44,7 +44,7 @@ public class PropertyExpression {
             @Override
             public Object evaluate(JmsMessage message) {
                 try {
-                    JmsDestination dest = message.getJmsDestination();
+                    JmsDestination dest = message.getDestination();
                     if (dest == null) {
                         return null;
                     }
@@ -59,7 +59,7 @@ public class PropertyExpression {
             @Override
             public Object evaluate(JmsMessage message) {
                 try {
-                    JmsDestination dest = message.getJmsReplyTo();
+                    JmsDestination dest = message.getReplyTo();
                     if (dest == null) {
                         return null;
                     }

@@ -152,8 +152,8 @@ public class JmsMessage implements javax.jms.Message {
         }
 
         JmsMessage msg = (JmsMessage) o;
-        String oMsg = msg.getJMSMessageID();
-        String thisMsg = this.getJMSMessageID();
+        JmsMessageId oMsg = msg.getMessageID();
+        JmsMessageId thisMsg = this.getMessageID();
         return thisMsg != null && oMsg != null && oMsg.equals(thisMsg);
     }
 
@@ -169,12 +169,7 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     public Buffer getContent() {
-        Buffer content = this.content;
-        if (content.isEmpty()) {
-            return null;
-        } else {
-            return content;
-        }
+        return content;
     }
 
     public void setContent(Buffer content) {
@@ -216,11 +211,11 @@ public class JmsMessage implements javax.jms.Message {
         if (value != null) {
             try {
                 JmsMessageId id = new JmsMessageId(value);
-                this.setMessageId(id);
+                setMessageId(id);
             } catch (NumberFormatException e) {
                 // The Id is foreign so we just use it as a Text View.
                 JmsMessageId id = JmsMessageId.wrapForeignMessageId(value);
-                this.setMessageId(id);
+                setMessageId(id);
             }
         } else {
             this.setMessageId(null);
@@ -344,7 +339,17 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSPriority(int priority) {
-        this.setPriority((byte) priority);
+        byte scaled = 0;
+
+        if (priority < 0) {
+            scaled = 0;
+        } else if (priority > 9) {
+            scaled = 9;
+        } else {
+            scaled = (byte) priority;
+        }
+
+        setPriority(scaled);
     }
 
     public Map<String, Object> getProperties() throws IOException {
@@ -874,11 +879,16 @@ public class JmsMessage implements javax.jms.Message {
         this.destination = destination;
     }
 
-    public JmsDestination getReplyTo() {
+    public JmsDestination getReplyTo() throws JMSException {
         return this.replyTo;
     }
 
     public void setReplyTo(JmsDestination replyTo) {
         this.replyTo = replyTo;
+    }
+
+    public boolean isExpired() {
+        long expireTime = getExpiration();
+        return expireTime > 0 && System.currentTimeMillis() > expireTime;
     }
 }

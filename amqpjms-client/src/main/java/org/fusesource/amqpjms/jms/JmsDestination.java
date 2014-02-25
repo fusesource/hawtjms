@@ -69,14 +69,6 @@ public class JmsDestination extends JNDIStorable implements Externalizable, java
         return toString;
     }
 
-    public AsciiBuffer toBuffer() {
-        if (buffer == null) {
-            // TODO
-            // buffer = StompFrame.encodeHeader(toString());
-        }
-        return buffer;
-    }
-
     public String getPrefix() {
         return prefix;
     }
