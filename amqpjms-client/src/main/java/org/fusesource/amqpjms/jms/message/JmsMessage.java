@@ -78,6 +78,8 @@ public class JmsMessage implements javax.jms.Message {
     protected boolean persistent;
     protected int redeliveryCount;
     protected String type;
+    protected JmsDestination destination;
+    protected JmsDestination replyTo;
 
     protected boolean readOnlyBody;
     protected boolean readOnlyProperties;
@@ -113,6 +115,8 @@ public class JmsMessage implements javax.jms.Message {
         this.redeliveryCount = other.redeliveryCount;
         this.type = other.type;
         this.consumerId = other.consumerId;
+        this.destination = other.destination;
+        this.replyTo = other.replyTo;
 
         this.readOnlyBody = other.readOnlyBody;
         this.readOnlyProperties = other.readOnlyBody;
@@ -249,71 +253,32 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public byte[] getJMSCorrelationIDAsBytes() throws JMSException {
-//        return getBytesHeader(CORRELATION_ID);
-        return null;
+        return encodeString(this.getCorrelationId());
     }
 
     @Override
     public void setJMSCorrelationIDAsBytes(byte[] correlationId) throws JMSException {
-//        setBytesHeader(CORRELATION_ID, correlationId);
-    }
-
-    protected static String decodeString(byte[] data) throws JMSException {
-        try {
-            if (data == null) {
-                return null;
-            }
-            return new String(data, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new JMSException("Invalid UTF-8 encoding: " + e.getMessage());
-        }
-    }
-
-    protected static byte[] encodeString(String data) throws JMSException {
-        try {
-            if (data == null) {
-                return null;
-            }
-            return data.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new JMSException("Invalid UTF-8 encoding: " + e.getMessage());
-        }
+        this.setCorrelationId(decodeString(correlationId));
     }
 
     @Override
     public Destination getJMSReplyTo() throws JMSException {
-        return getJmsReplyTo();
+        return getReplyTo();
     }
 
     @Override
     public void setJMSReplyTo(Destination destination) throws JMSException {
-        setJMSReplyTo(JmsMessageTransformation.transformDestination(connection, destination));
-    }
-
-    public void setJMSReplyTo(JmsDestination destination) {
-        // TODO
-    }
-
-    public JmsDestination getJmsReplyTo() throws JMSException {
-        return null;  // TODO
+        setReplyTo(JmsMessageTransformation.transformDestination(connection, destination));
     }
 
     @Override
     public Destination getJMSDestination() throws JMSException {
-        return getJmsDestination();
-    }
-
-    public JmsDestination getJmsDestination() throws JMSException {
-        return null;  // TODO
+        return getDestination();
     }
 
     @Override
     public void setJMSDestination(Destination destination) throws JMSException {
-        setJMSDestination(JmsMessageTransformation.transformDestination(connection, destination));
-    }
-
-    public void setJMSDestination(JmsDestination destination) {
-        // TODO
+        setDestination(JmsMessageTransformation.transformDestination(connection, destination));
     }
 
     @Override
@@ -447,7 +412,6 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     interface PropertySetter {
-
         void set(JmsConnection connection, JmsMessage message, Object value) throws MessageFormatException;
     }
 
@@ -525,7 +489,7 @@ public class JmsMessage implements javax.jms.Message {
                 if (rc == null) {
                     throw new MessageFormatException("Property JMSReplyTo cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setJMSReplyTo(rc);
+                message.setReplyTo(rc);
             }
         });
         JMS_PROPERTY_SETERS.put("JMSTimestamp", new PropertySetter() {
@@ -793,6 +757,28 @@ public class JmsMessage implements javax.jms.Message {
     public void storeContent() throws JMSException {
     }
 
+    protected static String decodeString(byte[] data) throws JMSException {
+        try {
+            if (data == null) {
+                return null;
+            }
+            return new String(data, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new JMSException("Invalid UTF-8 encoding: " + e.getMessage());
+        }
+    }
+
+    protected static byte[] encodeString(String data) throws JMSException {
+        try {
+            if (data == null) {
+                return null;
+            }
+            return data.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new JMSException("Invalid UTF-8 encoding: " + e.getMessage());
+        }
+    }
+
     /**
      * @return the transactionId
      */
@@ -878,5 +864,21 @@ public class JmsMessage implements javax.jms.Message {
 
     public void setConsumerId(JmsConsumerId consumerId) {
         this.consumerId = consumerId;
+    }
+
+    public JmsDestination getDestination() throws JMSException {
+        return this.destination;
+    }
+
+    public void setDestination(JmsDestination destination) {
+        this.destination = destination;
+    }
+
+    public JmsDestination getReplyTo() {
+        return this.replyTo;
+    }
+
+    public void setReplyTo(JmsDestination replyTo) {
+        this.replyTo = replyTo;
     }
 }
