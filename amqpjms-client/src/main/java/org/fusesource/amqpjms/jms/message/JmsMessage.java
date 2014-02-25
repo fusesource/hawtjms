@@ -117,6 +117,7 @@ public class JmsMessage implements javax.jms.Message {
         this.consumerId = other.consumerId;
         this.destination = other.destination;
         this.replyTo = other.replyTo;
+        this.content = other.content;
 
         this.readOnlyBody = other.readOnlyBody;
         this.readOnlyProperties = other.readOnlyBody;

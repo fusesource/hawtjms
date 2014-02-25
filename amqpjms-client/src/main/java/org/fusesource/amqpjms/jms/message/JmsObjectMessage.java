@@ -16,29 +16,37 @@
  */
 package org.fusesource.amqpjms.jms.message;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 
 import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
 
+import org.apache.activemq.util.JMSExceptionSupport;
+import org.fusesource.amqpjms.jms.util.ClassLoadingAwareObjectInputStream;
 import org.fusesource.hawtbuf.Buffer;
 
 /**
- * An <CODE>ObjectMessage</CODE> object is used to send a message that contains
- * a serializable object in the Java programming language ("Java object"). It
- * inherits from the <CODE>Message</CODE> interface and adds a body containing a
- * single reference to an object. Only <CODE>Serializable</CODE> Java objects
- * can be used.
+ * An <CODE>ObjectMessage</CODE> object is used to send a message that contains a serializable
+ * object in the Java programming language ("Java object"). It inherits from the
+ * <CODE>Message</CODE> interface and adds a body containing a single reference to an object.
+ * Only <CODE>Serializable</CODE> Java objects can be used.
  * <p/>
  * <p/>
- * If a collection of Java objects must be sent, one of the
- * <CODE>Collection</CODE> classes provided since JDK 1.2 can be used.
+ * If a collection of Java objects must be sent, one of the <CODE>Collection</CODE> classes
+ * provided since JDK 1.2 can be used.
  * <p/>
  * <p/>
- * When a client receives an <CODE>ObjectMessage</CODE>, it is in read-only
- * mode. If a client attempts to write to the message at this point, a
- * <CODE>MessageNotWriteableException</CODE> is thrown. If
- * <CODE>clearBody</CODE> is called, the message can now be both read from and
+ * When a client receives an <CODE>ObjectMessage</CODE>, it is in read-only mode. If a client
+ * attempts to write to the message at this point, a <CODE>MessageNotWriteableException</CODE>
+ * is thrown. If <CODE>clearBody</CODE> is called, the message can now be both read from and
  * written to.
  *
  * @see javax.jms.Session#createObjectMessage()
@@ -74,24 +82,33 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
     public void storeContent() throws JMSException {
         Buffer buffer = getContent();
         if (buffer == null && object != null) {
-// TODO            setContent(StompTranslator.writeBufferFromObject(object));
+            try {
+                ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
+                OutputStream os = bytesOut;
+                DataOutputStream dataOut = new DataOutputStream(os);
+                ObjectOutputStream objOut = new ObjectOutputStream(dataOut);
+                objOut.writeObject(object);
+                objOut.flush();
+                objOut.reset();
+                objOut.close();
+                setContent(new Buffer(bytesOut.toByteArray()));
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe.getMessage(), ioe);
+            }
         }
     }
 
     /**
-     * Clears out the message body. Clearing a message's body does not clear its
-     * header values or property entries.
+     * Clears out the message body. Clearing a message's body does not clear its header values
+     * or property entries.
      * <p/>
      * <p/>
-     * If this message body was read-only, calling this method leaves the
-     * message body in the same state as an empty body in a newly created
-     * message.
+     * If this message body was read-only, calling this method leaves the message body in the
+     * same state as an empty body in a newly created message.
      *
      * @throws JMSException
-     *         if the JMS provider fails to clear the message body due to some
-     *         internal error.
+     *         if the JMS provider fails to clear the message body due to some internal error.
      */
-
     @Override
     public void clearBody() throws JMSException {
         super.clearBody();
@@ -99,23 +116,20 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
     }
 
     /**
-     * Sets the serializable object containing this message's data. It is
-     * important to note that an <CODE>ObjectMessage</CODE> contains a snapshot
-     * of the object at the time <CODE>setObject()</CODE> is called; subsequent
-     * modifications of the object will have no effect on the
-     * <CODE>ObjectMessage</CODE> body.
+     * Sets the serializable object containing this message's data. It is important to note that
+     * an <CODE>ObjectMessage</CODE> contains a snapshot of the object at the time
+     * <CODE>setObject()</CODE> is called; subsequent modifications of the object will have no
+     * effect on the <CODE>ObjectMessage</CODE> body.
      *
      * @param newObject
      *        the message's data
      * @throws JMSException
-     *         if the JMS provider fails to set the object due to some internal
-     *         error.
+     *         if the JMS provider fails to set the object due to some internal error.
      * @throws javax.jms.MessageFormatException
      *         if object serialization fails.
      * @throws javax.jms.MessageNotWriteableException
      *         if the message is in read-only mode.
      */
-
     @Override
     public void setObject(Serializable newObject) throws JMSException {
         checkReadOnlyBody();
@@ -125,8 +139,7 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
     }
 
     /**
-     * Gets the serializable object containing this message's data. The default
-     * value is null.
+     * Gets the serializable object containing this message's data. The default value is null.
      *
      * @return the serializable object containing this message's data
      * @throws JMSException
@@ -135,7 +148,22 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
     public Serializable getObject() throws JMSException {
         Buffer buffer = getContent();
         if (this.object == null && buffer != null) {
-// TODO            this.object = (Serializable) StompTranslator.readObjectFromBuffer(buffer);
+            try {
+                Buffer content = getContent();
+                InputStream is = new ByteArrayInputStream(content.toByteArray());
+                DataInputStream dataIn = new DataInputStream(is);
+                ClassLoadingAwareObjectInputStream objIn = new ClassLoadingAwareObjectInputStream(dataIn);
+                try {
+                    object = (Serializable)objIn.readObject();
+                } catch (ClassNotFoundException ce) {
+                    throw JMSExceptionSupport.create("Failed to build body from content. Serializable class not available to broker. Reason: " + ce, ce);
+                } finally {
+                    objIn.close();
+                    dataIn.close();
+                }
+            } catch (IOException e) {
+                throw JMSExceptionSupport.create("Failed to build body from bytes. Reason: " + e, e);
+            }
         }
         return this.object;
     }
