@@ -29,6 +29,7 @@ import javax.jms.MessageProducer;
 import org.fusesource.amqpjms.jms.message.JmsMessageTransformation;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
+import org.fusesource.amqpjms.provider.Provider;
 
 /**
  * Implementation of a Jms MessageProducer
@@ -282,5 +283,10 @@ public class JmsMessageProducer implements MessageProducer {
         if (this.closed) {
             throw new IllegalStateException("The MessageProducer is closed");
         }
+    }
+
+    public void onConnectionRecovery(Provider provider) {
+        // TODO - Attempt to create this Producer again using this
+        //        consumer's JmsProducerInfo
     }
 }

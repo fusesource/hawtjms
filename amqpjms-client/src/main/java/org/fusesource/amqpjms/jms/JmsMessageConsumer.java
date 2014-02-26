@@ -35,6 +35,7 @@ import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
 import org.fusesource.amqpjms.jms.util.MessageQueue;
+import org.fusesource.amqpjms.provider.Provider;
 
 /**
  * implementation of a JMS Message Consumer
@@ -375,5 +376,10 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
 
     public boolean getNoLocal() throws IllegalStateException {
         return false;
+    }
+
+    public void onConnectionRecovery(Provider provider) {
+        // TODO - Attempt to create this Consumer again using this
+        //        consumer's JmsConsumerInfo
     }
 }

@@ -688,16 +688,26 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     @Override
     public void onConnectionInterrupted() {
         // TODO Auto-generated method stub
+        for (JmsConnectionListener listener : connectionListeners) {
+            listener.onConnectionInterrupted();
+        }
     }
 
     @Override
     public void onConnectionRecovery(Provider provider) {
-        // TODO Auto-generated method stub
+        // TODO - Recover Advisory Consumer ?
+        //        Recover Temporary Destinations ?
+        for (JmsSession session : sessions) {
+            session.onConnectionRecovery(provider);
+        }
     }
 
     @Override
     public void onConnectionRestored() {
         // TODO Auto-generated method stub
+        for (JmsConnectionListener listener : connectionListeners) {
+            listener.onConnectionRestored();
+        }
     }
 
     @Override

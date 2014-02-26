@@ -74,6 +74,7 @@ import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.provider.Provider;
 import org.fusesource.hawtbuf.AsciiBuffer;
 
 /**
@@ -874,6 +875,19 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             deliver(envelope);
         } else {
             this.stoppedMessages.add(envelope);
+        }
+    }
+
+    public void onConnectionRecovery(Provider provider) {
+
+        // TODO - Recover or Rollback TX ?
+
+        for (JmsMessageProducer producer : producers) {
+            producer.onConnectionRecovery(provider);
+        }
+
+        for (JmsMessageConsumer consumer : consumers.values()) {
+            consumer.onConnectionRecovery(provider);
         }
     }
 
