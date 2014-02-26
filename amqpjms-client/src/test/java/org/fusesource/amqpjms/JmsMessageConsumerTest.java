@@ -48,6 +48,4 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
         connection.close();
     }
-
-
 }

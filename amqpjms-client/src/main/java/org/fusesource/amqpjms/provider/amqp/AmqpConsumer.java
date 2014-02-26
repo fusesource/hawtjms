@@ -16,21 +16,34 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
+import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Receiver;
+import org.apache.qpid.proton.jms.InboundTransformer;
+import org.apache.qpid.proton.jms.JMSMappingInboundTransformer;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * AMQP Consumer object that is used to manage JMS MessageConsumer semantics.
  */
 public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver> implements AmqpLink {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpConsumer.class);
+
     private final AmqpSession session;
+    private final InboundTransformer inboundTransformernew =
+        new JMSMappingInboundTransformer(AmqpJMSVendor.INSTANCE);;
+    private final List<Delivery> pending = new LinkedList<Delivery>();
 
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
         super(info);
@@ -40,6 +53,11 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     @Override
     public void processUpdates() {
 
+        Delivery incoming = endpoint.current();
+        if (incoming != null && incoming.isReadable() && !incoming.isPartial()) {
+            LOG.info("{} has incoming Message(s).", this);
+
+        }
     }
 
     @Override
