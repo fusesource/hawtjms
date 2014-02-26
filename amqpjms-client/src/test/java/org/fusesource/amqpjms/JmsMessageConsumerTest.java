@@ -19,12 +19,12 @@ package org.fusesource.amqpjms;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import javax.jms.Connection;
+import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
-import org.fusesource.amqpjms.jms.JmsConnection;
-import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.junit.Test;
 
 /**
@@ -34,9 +34,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)
     public void testCreateMessageConsumer() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
-        assertNotNull(connection);
+        Connection connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -47,5 +45,33 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         QueueViewMBean proxy = getProxyToQueue("test.queue");
         assertEquals(0, proxy.getQueueSize());
         connection.close();
+    }
+
+    @Test(timeout = 60000)
+    public void testSyncConsumeFromQueue() throws Exception {
+        Connection connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue("test.queue");
+        MessageConsumer consumer = session.createConsumer(queue);
+
+        sendToAmqQueue(1);
+
+        QueueViewMBean proxy = getProxyToQueue("test.queue");
+        assertEquals(1, proxy.getQueueSize());
+
+        assertNotNull("Failed to receive any message.", consumer.receive(2000));
+
+        assertEquals("Queued message not consumed.", 0, proxy.getQueueSize());
+        connection.close();
+    }
+
+    private void sendToAmqQueue(int count) throws Exception {
+        Connection activemqConnection = createActiveMQConnection();
+        Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue amqTestQueue = amqSession.createQueue("test.queue");
+        sendMessages(activemqConnection, amqTestQueue, 1);
     }
 }

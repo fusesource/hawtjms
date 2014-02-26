@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageProducer;
@@ -32,6 +33,7 @@ import javax.jms.TextMessage;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
+import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerPlugin;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.TransportConnector;
@@ -45,6 +47,7 @@ import org.apache.activemq.security.AuthorizationPlugin;
 import org.apache.activemq.security.DefaultAuthorizationMap;
 import org.apache.activemq.security.SimpleAuthenticationPlugin;
 import org.apache.activemq.security.TempDestinationAuthorizationEntry;
+import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.Logger;
@@ -56,16 +59,8 @@ public class AmqpTestSupport {
     protected BrokerService brokerService;
     protected Vector<Throwable> exceptions = new Vector<Throwable>();
     protected int numberOfMessages;
-    protected int port;
-
-    public static void main(String[] args) throws Exception {
-        final AmqpTestSupport s = new AmqpTestSupport();
-        s.port = 5672;
-        s.startBroker();
-        while (true) {
-            Thread.sleep(100000);
-        }
-    }
+    protected int amqpPort;
+    protected int openwirePort;
 
     @Before
     public void setUp() throws Exception {
@@ -98,6 +93,7 @@ public class AmqpTestSupport {
         }
 
         addAMQPConnector();
+        addOpenWireConnector();
     }
 
     protected BrokerPlugin configureAuthentication() throws Exception {
@@ -112,9 +108,15 @@ public class AmqpTestSupport {
     }
 
     protected void addAMQPConnector() throws Exception {
-        TransportConnector connector = brokerService.addConnector("amqp://0.0.0.0:" + port);
-        port = connector.getConnectUri().getPort();
-        LOG.debug("Using amqp port " + port);
+        TransportConnector connector = brokerService.addConnector("amqp://0.0.0.0:" + amqpPort);
+        amqpPort = connector.getConnectUri().getPort();
+        LOG.debug("Using amqp port " + amqpPort);
+    }
+
+    protected void addOpenWireConnector() throws Exception {
+        TransportConnector connector = brokerService.addConnector("tcp://0.0.0.0:" + openwirePort);
+        openwirePort = connector.getConnectUri().getPort();
+        LOG.debug("Using amqp port " + openwirePort);
     }
 
     public void startBroker() throws Exception {
@@ -149,10 +151,28 @@ public class AmqpTestSupport {
 
     public URI getBrokerAmqpConnectionURI() {
         try {
-            return new URI("amqp://127.0.0.1:" + port);
+            return new URI("amqp://127.0.0.1:" + amqpPort);
         } catch (URISyntaxException e) {
             throw new RuntimeException();
         }
+    }
+
+    public URI getBrokerOpenWireConnectionURI() {
+        try {
+            return new URI("tcp://127.0.0.1:" + openwirePort);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException();
+        }
+    }
+
+    public Connection createAmqpConnection() throws Exception {
+        ConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        return factory.createConnection();
+    }
+
+    public Connection createActiveMQConnection() throws Exception {
+        ConnectionFactory factory = new ActiveMQConnectionFactory(getBrokerOpenWireConnectionURI());
+        return factory.createConnection();
     }
 
     public void sendMessages(Connection connection, Destination destination, int count) throws Exception {
