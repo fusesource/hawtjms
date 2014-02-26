@@ -33,15 +33,16 @@ public class DefaultProviderListener implements ProviderListener {
     public void onConnectionInterrupted() {
     }
 
-    @Override
-    public void onConnectionRecoverStarted() {
-    }
-
-    @Override
-    public void onConnectionResumed() {
-    }
 
     @Override
     public void onConnectionFailure(IOException ex) {
+    }
+
+    @Override
+    public void onConnectionRecovery(Provider provider) {
+    }
+
+    @Override
+    public void onConnectionRestored() {
     }
 }

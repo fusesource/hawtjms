@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -93,6 +95,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private URI localURI;
     private SSLContext sslContext;
     private Provider provider;
+    private final Set<JmsConnectionListener> connectionListeners =
+        new CopyOnWriteArraySet<JmsConnectionListener>();
 
     private final AtomicLong sessionIdGenerator = new AtomicLong();
 
@@ -533,6 +537,27 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.exceptionListener = listener;
     }
 
+    /**
+     * Adds a JmsConnectionListener so that a client can be notified of events in
+     * the underlying protocol provider.
+     *
+     * @param listener
+     *        the new listener to add to the collection.
+     */
+    public void addConnectionListener(JmsConnectionListener listener) {
+        this.connectionListeners.add(listener);
+    }
+
+    /**
+     * Removes a JmsConnectionListener that was previously registered.
+     *
+     * @param listener
+     *        the listener to remove from the collection.
+     */
+    public void removeTransportListener(JmsConnectionListener listener) {
+        this.connectionListeners.remove(listener);
+    }
+
     public boolean isForceAsyncSend() {
         return connectionInfo.isForceAsyncSend();
     }
@@ -655,6 +680,9 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         if (dispatcher != null) {
             dispatcher.onMessage(envelope);
         }
+        for (JmsConnectionListener listener : connectionListeners) {
+            listener.onMessage(envelope);
+        }
     }
 
     @Override
@@ -663,34 +691,34 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     @Override
-    public void onConnectionRecoverStarted() {
+    public void onConnectionRecovery(Provider provider) {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void onConnectionResumed() {
+    public void onConnectionRestored() {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void onConnectionFailure(IOException ex) {
+    public void onConnectionFailure(final IOException ex) {
         onAsyncException(ex);
         if (!closing.get() && !closed.get()) {
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    // TODO
-                    // transportFailed(error);
-                    // ServiceSupport.dispose(ActiveMQConnection.this.transport);
-                    // try {
-                    //    cleanup();
-                    // } catch (JMSException e) {
-                    //    LOG.warn("Exception during connection cleanup, " + e, e);
-                    // }
-                    // for (Iterator<TransportListener> iter = transportListeners.iterator(); iter.hasNext();) {
-                    //    TransportListener listener = iter.next();
-                    //    listener.onException(error);
-                    // }
+                    providerFailed(ex);
+                    if (provider != null) {
+                        try {
+                            provider.close();
+                        } catch (Throwable error) {
+                            LOG.debug("Error while closing failed Provider: {}", error.getMessage());
+                        }
+                    }
+
+                    for (JmsConnectionListener listener : connectionListeners) {
+                        listener.onConnectionFailure(ex);
+                    }
                 }
             });
         }
@@ -712,18 +740,24 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                 if (!(error instanceof JMSException)) {
                     error = JMSExceptionSupport.create(error);
                 }
-                final JMSException e = (JMSException)error;
+                final JMSException jmsError = (JMSException)error;
 
                 executor.execute(new Runnable() {
                     @Override
                     public void run() {
-                        JmsConnection.this.exceptionListener.onException(e);
+                        JmsConnection.this.exceptionListener.onException(jmsError);
                     }
                 });
-
             } else {
                 LOG.debug("Async exception with no exception listener: " + error, error);
             }
+        }
+    }
+
+    protected void providerFailed(IOException error) {
+        failed.set(true);
+        if (firstFailureError == null) {
+            firstFailureError = error;
         }
     }
 }

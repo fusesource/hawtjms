@@ -45,14 +45,18 @@ public interface ProviderListener {
      * that notified listener should start to recover it's state.  The provider will
      * not transition to the recovered state until the listener notifies the provider
      * that recovery is complete.
+     *
+     * @param provider
+     *        The new Provider instance that will become active after the state
+     *        has been recovered.
      */
-    void onConnectionRecoverStarted();
+    void onConnectionRecovery(Provider provider);
 
     /**
      * Called to signal that all recovery operations are now complete and the Provider
      * is again in a normal connected state.
      */
-    void onConnectionResumed();
+    void onConnectionRestored();
 
     /**
      * Called to indicate that the underlying connection to the Broker has been lost and
