@@ -82,8 +82,6 @@ public class AmqpProvider implements Provider {
     private final ExecutorService serializer;
     private final AtomicBoolean closed = new AtomicBoolean();
 
-    private ProviderRequest<JmsResource> pendingConnect;
-
     /**
      * Create a new instance of an AmqpProvider bonded to the given remote URI.
      *
@@ -409,6 +407,7 @@ public class AmqpProvider implements Provider {
 
     private void processUpdates() {
         connection.processUpdates();
+        // TODO - Handle exceptions and fire back to the client when they happen.
     }
 
     private void pumpToProtonTransport() {

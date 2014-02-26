@@ -30,6 +30,7 @@ import javax.jms.MessageListener;
 import javax.jms.Session;
 
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
+import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
@@ -38,7 +39,7 @@ import org.fusesource.amqpjms.jms.util.MessageQueue;
 /**
  * implementation of a JMS Message Consumer
  */
-public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
+public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, JmsMessageDispatcher {
 
     protected final JmsSession session;
     protected final JmsConnection connection;
@@ -66,7 +67,16 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
         this.consumerInfo = new JmsConsumerInfo(consumerId);
         this.consumerInfo.setSelector(selector);
         this.consumerInfo.setDestination(destination);
-        this.consumerInfo = session.getConnection().createResource(consumerInfo);
+
+        // We are ready for dispatching
+        this.session.add(this);
+
+        try {
+            this.consumerInfo = session.getConnection().createResource(consumerInfo);
+        } catch (JMSException ex) {
+            this.session.remove(this);
+            throw ex;
+        }
     }
 
     public void init() throws JMSException {
@@ -177,15 +187,16 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
         }
     }
 
-    JmsMessage copy(final JmsMessage message) throws JMSException {
-        if (message == null) {
+    JmsMessage copy(final JmsInboundMessageDispatch envelope) throws JMSException {
+        if (envelope == null) {
             return null;
         }
-        return message.copy();
+        return envelope.getMessage().copy();
     }
 
-    JmsMessage ack(final JmsMessage message) {
-        if (message != null) {
+    JmsInboundMessageDispatch ack(final JmsInboundMessageDispatch envelope) {
+        if (envelope != null) {
+            JmsMessage message = envelope.getMessage();
             if (message.getAcknowledgeCallback() != null) {
                 // Message has been received by the app.. expand the credit
                 // window so that we receive more messages.
@@ -197,11 +208,11 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
 //                    }
 //                }
                 // don't actually ack yet.. client code does it.
-                return message;
+                return envelope;
             }
             doAck(message);
         }
-        return message;
+        return envelope;
     }
 
     private void doAck(final JmsMessage message) {
@@ -244,41 +255,35 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
     /**
      * @param message
      */
-    public void onMessage(final JmsMessage message) {
+    @Override
+    public void onMessage(final JmsInboundMessageDispatch envelope) {
         lock.lock();
         try {
             if (acknowledgementMode == Session.CLIENT_ACKNOWLEDGE) {
-                message.setAcknowledgeCallback(new Callable<Void>() {
+                envelope.getMessage().setAcknowledgeCallback(new Callable<Void>() {
                     @Override
                     public Void call() throws Exception {
-//                        if (session.channel == null) {
-//                            throw new javax.jms.IllegalStateException("Session closed.");
-//                        }
-                        doAck(message);
+                        if (session.isClosed()) {
+                            throw new javax.jms.IllegalStateException("Session closed.");
+                        }
+                        doAck(envelope.getMessage());
                         return null;
                     }
                 });
             }
-            // System.out.println(""+session.channel.getSocket().getLocalAddress()
-            // +" recv "+ message.getMessageID());
-            this.messageQueue.enqueue(message);
-            // We may need to suspend the message flow.
-//            if (tcpFlowControl() && this.messageQueue.isFull()) {
-//                if (suspendedConnection.compareAndSet(false, true)) {
-//                    session.channel.connection().suspend();
-//                }
-//            }
+            this.messageQueue.enqueue(envelope);
         } finally {
             lock.unlock();
         }
+
         if (this.messageListener != null && this.started) {
             session.getExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
-                    JmsMessage message;
-                    while (session.isStarted() && (message = messageQueue.dequeueNoWait()) != null) {
+                    JmsInboundMessageDispatch envelope;
+                    while (session.isStarted() && (envelope = messageQueue.dequeueNoWait()) != null) {
                         try {
-                            messageListener.onMessage(copy(ack(message)));
+                            messageListener.onMessage(copy(ack(envelope)));
                         } catch (Exception e) {
                             session.getConnection().onException(e);
                         }
@@ -339,11 +344,10 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener {
         MessageListener listener = this.messageListener;
         if (listener != null) {
             if (!this.messageQueue.isEmpty()) {
-                List<JmsMessage> drain = this.messageQueue.removeAll();
-                for (JmsMessage m : drain) {
-                    final JmsMessage copy;
+                List<JmsInboundMessageDispatch> drain = this.messageQueue.removeAll();
+                for (JmsInboundMessageDispatch envelope : drain) {
                     try {
-                        listener.onMessage(copy(ack(m)));
+                        listener.onMessage(copy(ack(envelope)));
                     } catch (Exception e) {
                         session.getConnection().onException(e);
                     }

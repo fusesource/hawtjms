@@ -220,6 +220,10 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         return this.info.getPassword();
     }
 
+    public AmqpProvider getProvider() {
+        return this.provider;
+    }
+
     /**
      * Retrieve the indicated Session instance from the list of active sessions.
      *
@@ -229,7 +233,9 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
      * @return the AmqpSession associated with the given id.
      */
     public AmqpSession getSession(JmsSessionId sessionId) {
-        // TODO - Hide a session reference in the sessionId hint field.
+        if (sessionId.getProviderHint() instanceof AmqpSession) {
+            return (AmqpSession) sessionId.getProviderHint();
+        }
         return this.sessions.get(sessionId);
     }
 }

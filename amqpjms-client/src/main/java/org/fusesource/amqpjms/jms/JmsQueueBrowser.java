@@ -25,7 +25,7 @@ import javax.jms.Message;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 
-import org.fusesource.amqpjms.jms.message.JmsMessage;
+import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 
 /**
@@ -91,8 +91,8 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
             }
 
             @Override
-            public void onMessage(JmsMessage message) {
-                if (message == null) {
+            public void onMessage(JmsInboundMessageDispatch envelope) {
+                if (envelope.getMessage() == null) {
                     browseDone.set(true);
                 } else {
                     // TODO

@@ -18,10 +18,20 @@ package org.fusesource.amqpjms.provider;
 
 import java.io.IOException;
 
+import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
+
 /**
  * Events interface used to update the listener with changes in provider state.
  */
 public interface ProviderListener {
+
+    /**
+     * Called when a new Message has arrived for a registered consumer.
+     *
+     * @param envelope
+     *        The dispatch object containing the message and delivery information.
+     */
+    void onMessage(JmsInboundMessageDispatch envelope);
 
     /**
      * Called from a fault tolerant Provider instance to signal that the underlying

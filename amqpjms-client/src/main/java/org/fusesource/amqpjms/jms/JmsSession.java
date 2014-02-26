@@ -26,6 +26,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -60,6 +61,7 @@ import javax.jms.TopicSubscriber;
 import org.apache.activemq.apollo.filter.FilterException;
 import org.apache.activemq.apollo.selector.SelectorParser;
 import org.fusesource.amqpjms.jms.message.JmsBytesMessage;
+import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsMapMessage;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.message.JmsMessageId;
@@ -78,7 +80,7 @@ import org.fusesource.hawtbuf.AsciiBuffer;
  * JMS Session implementation
  */
 @SuppressWarnings("static-access")
-public class JmsSession implements Session, QueueSession, TopicSession, JmsMessageListener {
+public class JmsSession implements Session, QueueSession, TopicSession, JmsMessageListener, JmsMessageDispatcher {
 
     private final JmsConnection connection;
     private final int acknowledgementMode;
@@ -90,9 +92,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private volatile AsciiBuffer currentTransactionId;
     private boolean forceAsyncSend;
     private final long consumerMessageBufferSize = 1024 * 64;
-    private final LinkedBlockingQueue<JmsMessage> stoppedMessages = new LinkedBlockingQueue<JmsMessage>(10000);
+    private final LinkedBlockingQueue<JmsInboundMessageDispatch> stoppedMessages =
+        new LinkedBlockingQueue<JmsInboundMessageDispatch>(10000);
     private JmsPrefetchPolicy prefetchPolicy;
     private JmsSessionInfo sessionInfo;
+    private ExecutorService executor;
 
     private final AtomicLong consumerIdGenerator = new AtomicLong();
     private final AtomicLong producerIdGenerator = new AtomicLong();
@@ -619,30 +623,16 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     protected void add(JmsMessageConsumer consumer) throws JMSException {
         this.consumers.put(consumer.getConsumerId(), consumer);
+        this.connection.addDispatcher(consumer.getConsumerId(), this);
 
-        AsciiBuffer mode;
-//        if (this.acknowledgementMode == JmsSession.SERVER_AUTO_ACKNOWLEDGE) {
-//            mode = AUTO;
-//        } else {
-//            mode = CLIENT;
-//        }
-//
-//        getChannel().subscribe(consumer.getDestination(), consumer.getId(), StompFrame.encodeHeader(consumer.getMessageSelector()), mode,
-//            consumer.getNoLocal(), consumer.isDurableSubscription(), consumer.isBrowser(), prefetch,
-//            StompFrame.encodeHeaders(consumer.getDestination().getSubscribeHeaders()));
         if (started.get()) {
             consumer.start();
         }
     }
 
     protected void remove(JmsMessageConsumer consumer) throws JMSException {
-//        if (getChannel().isStarted()) {
-//            getChannel().unsubscribe(consumer.getId(), false);
-//        }
-//        this.consumers.remove(consumer.getId());
-//        if (consumer.tcpFlowControl()) {
-//            getChannel().serverAckSubs.decrementAndGet();
-//        }
+        this.connection.removeDispatcher(consumer.getConsumerId());
+        this.consumers.remove(consumer.getConsumerId());
     }
 
     protected void add(JmsMessageProducer producer) {
@@ -712,6 +702,10 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         }
     }
 
+    public boolean isClosed() {
+        return this.closed.get();
+    }
+
     protected void checkClosed() throws IllegalStateException {
         if (this.closed.get()) {
             throw new IllegalStateException("The MessageProducer is closed");
@@ -761,20 +755,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         }
     }
 
-    public void onMessage(JmsMessage message) {
-        message.setConnection(connection);
-        if (started.get()) {
-            dispatch(message);
-        } else {
-            this.stoppedMessages.add(message);
-        }
-    }
-
     protected void start() throws JMSException {
         if (started.compareAndSet(false, true)) {
-            JmsMessage message = null;
+            JmsInboundMessageDispatch message = null;
             while ((message = this.stoppedMessages.poll()) != null) {
-                dispatch(message);
+                deliver(message);
             }
             if (getTransacted() && this.currentTransactionId == null) {
                 // TODO
@@ -814,28 +799,20 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return this.connection;
     }
 
-    ExecutorService executor;
-
     Executor getExecutor() {
         if (executor == null) {
-            executor = Executors.newSingleThreadExecutor();
+            executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+
+                @Override
+                public Thread newThread(Runnable runner) {
+                    Thread executor = new Thread(runner);
+                    executor.setName("JmsSession ["+ sessionInfo.getSessionId() + "] dispatcher");
+                    executor.setDaemon(true);
+                    return executor;
+                }
+            });
         }
         return executor;
-    }
-
-    private void dispatch(JmsMessage message) {
-        JmsConsumerId id = message.getConsumerId();
-        if (id == null) {
-            this.connection.onException(new JMSException("No ConsumerId set for " + message));
-        }
-        if (this.messageListener != null) {
-            this.messageListener.onMessage(message);
-        } else {
-            JmsMessageConsumer consumer = this.consumers.get(id);
-            if (consumer != null) {
-                consumer.onMessage(message);
-            }
-        }
     }
 
     protected JmsSessionInfo getSessionInfo() {
@@ -889,5 +866,29 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     public long getConsumerMessageBufferSize() {
         return consumerMessageBufferSize;
+    }
+
+    @Override
+    public void onMessage(JmsInboundMessageDispatch envelope) {
+        if (started.get()) {
+            deliver(envelope);
+        } else {
+            this.stoppedMessages.add(envelope);
+        }
+    }
+
+    private void deliver(JmsInboundMessageDispatch envelope) {
+        JmsConsumerId id = envelope.getConsumerId();
+        if (id == null) {
+            this.connection.onException(new JMSException("No ConsumerId set for " + envelope.getMessage()));
+        }
+        if (this.messageListener != null) {
+            this.messageListener.onMessage(envelope.getMessage());
+        } else {
+            JmsMessageConsumer consumer = this.consumers.get(id);
+            if (consumer != null) {
+                consumer.onMessage(envelope);
+            }
+        }
     }
 }

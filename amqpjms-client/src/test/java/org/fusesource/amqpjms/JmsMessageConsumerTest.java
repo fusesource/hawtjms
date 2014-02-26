@@ -18,6 +18,7 @@ package org.fusesource.amqpjms;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import javax.jms.Connection;
 import javax.jms.MessageConsumer;
@@ -25,6 +26,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
+import org.fusesource.amqpjms.util.Wait;
 import org.junit.Test;
 
 /**
@@ -59,12 +61,18 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         sendToAmqQueue(1);
 
-        QueueViewMBean proxy = getProxyToQueue("test.queue");
+        final QueueViewMBean proxy = getProxyToQueue("test.queue");
         assertEquals(1, proxy.getQueueSize());
 
         assertNotNull("Failed to receive any message.", consumer.receive(2000));
 
-        assertEquals("Queued message not consumed.", 0, proxy.getQueueSize());
+        assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return proxy.getQueueSize() == 0;
+            }
+        }));
         connection.close();
     }
 

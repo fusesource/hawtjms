@@ -158,6 +158,10 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
         }
     }
 
+    public AmqpProvider getProvider() {
+        return this.connection.getProvider();
+    }
+
     public AmqpConnection getConnection() {
         return this.connection;
     }

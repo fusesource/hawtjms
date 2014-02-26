@@ -19,6 +19,8 @@ package org.fusesource.amqpjms.jms;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -44,23 +46,27 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicSession;
 import javax.net.ssl.SSLContext;
 
+import org.apache.activemq.util.JMSExceptionSupport;
 import org.fusesource.amqpjms.jms.exceptions.JmsConnectionFailedException;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
+import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionId;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.util.IdGenerator;
 import org.fusesource.amqpjms.jms.util.ThreadPoolUtils;
 import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.ProviderListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of a JMS Connection
  */
-public class JmsConnection implements Connection, TopicConnection, QueueConnection {
+public class JmsConnection implements Connection, TopicConnection, QueueConnection, ProviderListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnection.class);
 
@@ -70,8 +76,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private boolean clientIdSet;
     private ExceptionListener exceptionListener;
     private final List<JmsSession> sessions = new CopyOnWriteArrayList<JmsSession>();
+    private final Map<JmsConsumerId, JmsMessageDispatcher> dispatchers =
+        new ConcurrentHashMap<JmsConsumerId, JmsMessageDispatcher>();
     private final AtomicBoolean connected = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final AtomicBoolean closing = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean failed = new AtomicBoolean();
     private final Object connectLock = new Object();
@@ -102,6 +111,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         });
 
         this.provider = provider;
+        this.provider.setProviderListener(this);
         this.clientIdGenerator = clientIdGenerator;
         this.connectionInfo = new JmsConnectionInfo(new JmsConnectionId(connectionId));
     }
@@ -389,6 +399,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.sessions.add(s);
     }
 
+    protected void addDispatcher(JmsConsumerId consumerId, JmsMessageDispatcher dispatcher) {
+        dispatchers.put(consumerId, dispatcher);
+    }
+
+    protected void removeDispatcher(JmsConsumerId consumerId) {
+        dispatchers.remove(consumerId);
+    }
+
     private void connect() throws JMSException {
         synchronized(this.connectLock) {
             if (isConnected() || closed.get()) {
@@ -629,5 +647,83 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     boolean isConnected() {
         return this.connected.get();
+    }
+
+    @Override
+    public void onMessage(JmsInboundMessageDispatch envelope) {
+        JmsMessageDispatcher dispatcher = dispatchers.get(envelope.getConsumerId());
+        if (dispatcher != null) {
+            dispatcher.onMessage(envelope);
+        }
+    }
+
+    @Override
+    public void onConnectionInterrupted() {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void onConnectionRecoverStarted() {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void onConnectionResumed() {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void onConnectionFailure(IOException ex) {
+        onAsyncException(ex);
+        if (!closing.get() && !closed.get()) {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    // TODO
+                    // transportFailed(error);
+                    // ServiceSupport.dispose(ActiveMQConnection.this.transport);
+                    // try {
+                    //    cleanup();
+                    // } catch (JMSException e) {
+                    //    LOG.warn("Exception during connection cleanup, " + e, e);
+                    // }
+                    // for (Iterator<TransportListener> iter = transportListeners.iterator(); iter.hasNext();) {
+                    //    TransportListener listener = iter.next();
+                    //    listener.onException(error);
+                    // }
+                }
+            });
+        }
+    }
+
+    /**
+     * Handles any asynchronous errors that occur from the JMS framework classes.
+     *
+     * If any listeners are registered they will be notified of the error from a thread
+     * in the Connection's Executor service.
+     *
+     * @param error
+     *        The exception that triggered this error.
+     */
+    public void onAsyncException(Throwable error) {
+        if (!closed.get() && !closing.get()) {
+            if (this.exceptionListener != null) {
+
+                if (!(error instanceof JMSException)) {
+                    error = JMSExceptionSupport.create(error);
+                }
+                final JMSException e = (JMSException)error;
+
+                executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        JmsConnection.this.exceptionListener.onException(e);
+                    }
+                });
+
+            } else {
+                LOG.debug("Async exception with no exception listener: " + error, error);
+            }
+        }
     }
 }

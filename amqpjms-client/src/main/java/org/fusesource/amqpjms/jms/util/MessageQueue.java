@@ -20,15 +20,15 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.fusesource.amqpjms.jms.message.JmsMessage;
+import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 
 public class MessageQueue {
 
     protected static class QueueEntry {
-        final JmsMessage message;
+        final JmsInboundMessageDispatch message;
         final int size;
 
-        QueueEntry(JmsMessage message, int size) {
+        QueueEntry(JmsInboundMessageDispatch message, int size) {
             this.message = message;
             this.size = size;
         }
@@ -44,14 +44,13 @@ public class MessageQueue {
         this.maxSize = maxSize;
     }
 
-    public void enqueue(JmsMessage message) {
-// TODO
-        //        QueueEntry entry = new QueueEntry(message, message.getFrame().size());
-//        synchronized (this) {
-//            list.addLast(entry);
-//            size += entry.size;
-//            this.notify();
-//        }
+    public void enqueue(JmsInboundMessageDispatch message) {
+        QueueEntry entry = new QueueEntry(message, 1);
+        synchronized (this) {
+            list.addLast(entry);
+            size += entry.size;
+            this.notify();
+        }
     }
 
     public boolean isEmpty() {
@@ -60,7 +59,7 @@ public class MessageQueue {
         }
     }
 
-    public JmsMessage dequeue(long timeout) throws InterruptedException {
+    public JmsInboundMessageDispatch dequeue(long timeout) throws InterruptedException {
         synchronized (this) {
             // Wait until the consumer is ready to deliver messages.
             while (timeout != 0 && !closed && (list.isEmpty() || !running)) {
@@ -81,7 +80,7 @@ public class MessageQueue {
         }
     }
 
-    public JmsMessage dequeueNoWait() {
+    public JmsInboundMessageDispatch dequeueNoWait() {
         synchronized (this) {
             if (closed || !running || list.isEmpty()) {
                 return null;
@@ -140,9 +139,9 @@ public class MessageQueue {
         }
     }
 
-    public List<JmsMessage> removeAll() {
+    public List<JmsInboundMessageDispatch> removeAll() {
         synchronized (this) {
-            ArrayList<JmsMessage> rc = new ArrayList<JmsMessage>(list.size());
+            ArrayList<JmsInboundMessageDispatch> rc = new ArrayList<JmsInboundMessageDispatch>(list.size());
             for (QueueEntry entry : list) {
                 rc.add(entry.message);
             }

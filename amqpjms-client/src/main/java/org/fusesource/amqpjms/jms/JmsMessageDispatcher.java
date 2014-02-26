@@ -14,34 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.amqpjms.provider;
-
-import java.io.IOException;
+package org.fusesource.amqpjms.jms;
 
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 
-/**
- * Default implementation that does nothing for all callbacks.
- */
-public class DefaultProviderListener implements ProviderListener {
+public interface JmsMessageDispatcher {
 
-    @Override
-    public void onMessage(JmsInboundMessageDispatch envelope) {
-    }
+    /**
+     * Called when a new Message delivery is in progress.
+     *
+     * @param envelope
+     *        the incoming message dispatch information.
+     */
+    void onMessage(JmsInboundMessageDispatch envelope);
 
-    @Override
-    public void onConnectionInterrupted() {
-    }
-
-    @Override
-    public void onConnectionRecoverStarted() {
-    }
-
-    @Override
-    public void onConnectionResumed() {
-    }
-
-    @Override
-    public void onConnectionFailure(IOException ex) {
-    }
 }

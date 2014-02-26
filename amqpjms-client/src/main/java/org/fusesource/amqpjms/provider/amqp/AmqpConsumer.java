@@ -32,9 +32,11 @@ import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.jms.EncodedMessage;
 import org.apache.qpid.proton.jms.InboundTransformer;
 import org.apache.qpid.proton.jms.JMSMappingInboundTransformer;
+import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
+import org.fusesource.amqpjms.provider.ProviderListener;
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.ByteArrayOutputStream;
 import org.slf4j.Logger;
@@ -96,6 +98,14 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
                 LOG.warn("Error on transform: {}", e.getMessage());
             }
 
+            JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch();
+            envelope.setMessage(message);
+            envelope.setConsumerId(info.getConsumerId());
+
+            ProviderListener listener = session.getProvider().getProviderListener();
+            if (listener != null) {
+                listener.onMessage(envelope);
+            }
 
             // TODO - For now we are just acking right away.  Later we need to track
             //        pending acks and wait for the JMS consumer to ack.
