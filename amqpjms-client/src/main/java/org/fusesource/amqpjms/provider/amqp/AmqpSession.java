@@ -48,6 +48,8 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     public AmqpSession(AmqpConnection connection, JmsSessionInfo info) {
         super(info, connection.getProtonConnection().session());
         this.connection = connection;
+
+        this.info.getSessionId().setProviderHint(this);
     }
 
     @Override
@@ -69,7 +71,9 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     }
 
     public AmqpProducer getProducer(JmsProducerId producerId) {
-        // TODO - Hide producer in the hint field in the Id.
+        if (producerId.getProviderHint() instanceof AmqpProducer) {
+            return (AmqpProducer) producerId.getProviderHint();
+        }
         return this.producers.get(producerId);
     }
 
@@ -82,7 +86,9 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     }
 
     public AmqpConsumer getConsumer(JmsConsumerId consumerId) {
-        // TODO - Hide producer in the hint field in the Id.
+        if (consumerId.getProviderHint() instanceof AmqpConsumer) {
+            return (AmqpConsumer) consumerId.getProviderHint();
+        }
         return this.consumers.get(consumerId);
     }
 

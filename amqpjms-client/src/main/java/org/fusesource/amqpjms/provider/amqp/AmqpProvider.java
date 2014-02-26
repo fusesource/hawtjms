@@ -295,10 +295,17 @@ public class AmqpProvider implements Provider {
             public void run() {
                 try {
                     checkClosed();
-                    // TODO - Hide the AmqpProducer in the JmsResource hint.
+
                     JmsProducerId producerId = envelope.getProducerId();
-                    AmqpSession session = connection.getSession(producerId.getParentId());
-                    AmqpProducer producer = session.getProducer(producerId);
+                    AmqpProducer producer = null;
+
+                    if (producerId.getProviderHint() instanceof AmqpProducer) {
+                        producer = (AmqpProducer) producerId.getProviderHint();
+                    } else {
+                        AmqpSession session = connection.getSession(producerId.getParentId());
+                        producer = session.getProducer(producerId);
+                    }
+
                     producer.send(envelope, request);
                     pumpToProtonTransport();
                 } catch (Exception error) {

@@ -60,6 +60,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
             this.authenticator = new AmqpSaslAuthenticator(sasl, info);
         }
 
+        this.info.getConnectionId().setProviderHint(this);
         // TODO check info to see if we can meet all the requested options.
     }
 
@@ -78,6 +79,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         return session;
     }
 
+    @Override
     public void processUpdates() {
 
         processSaslHandshake();

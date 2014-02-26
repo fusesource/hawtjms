@@ -48,6 +48,9 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
         super(info);
         this.session = session;
+
+        // Add a shortcut back to this Consumer for quicker lookups
+        this.info.getConsumerId().setProviderHint(this);
     }
 
     @Override

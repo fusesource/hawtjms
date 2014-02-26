@@ -64,6 +64,9 @@ public class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo, Sender> 
     public AmqpProducer(AmqpSession session, JmsProducerInfo info) {
         super(info);
         this.session = session;
+
+        // Add a shortcut back to this Producer for quicker lookup.
+        this.info.getProducerId().setProviderHint(this);
     }
 
     public void send(JmsOutboundMessageDispatch envelope, ProviderRequest<Void> request) throws IOException {
@@ -132,13 +135,18 @@ public class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo, Sender> 
 
         for (Delivery delivery : pending) {
             DeliveryState state = delivery.getRemoteState();
-            if (state != null && Accepted.getInstance().equals(state)) {
+            if (state == null) {
+                continue;
+            }
+
+            if (Accepted.getInstance().equals(state)) {
                 @SuppressWarnings("unchecked")
                 ProviderRequest<Void> request = (ProviderRequest<Void>) delivery.getContext();
                 request.onSuccess(null);
                 returnTag(delivery.getTag());
             } else {
                 // TODO - figure out how to handle not accepted.
+                LOG.info("Message send failed: {}", state);
             }
         }
 
