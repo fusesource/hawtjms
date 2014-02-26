@@ -17,9 +17,16 @@
 package org.fusesource.amqpjms;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import javax.jms.Connection;
+import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
+import javax.jms.Session;
 
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
@@ -30,14 +37,14 @@ import org.junit.Test;
  */
 public class JmsConnectionTest extends AmqpTestSupport {
 
-    @Test
+    @Test(timeout=30000)
     public void testCreateConnection() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testCreateConnectionAndStart() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         JmsConnection connection = (JmsConnection) factory.createConnection();
@@ -57,7 +64,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
         connection2.start();
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testCreateConnectionAsSystemAdmin() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         factory.setUsername("system");
@@ -67,7 +74,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
         connection.start();
     }
 
-    @Test(expected = JMSSecurityException.class)
+    @Test(timeout=30000, expected = JMSSecurityException.class)
     public void testCreateConnectionAsUnknwonUser() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         factory.setUsername("unknown");
@@ -76,4 +83,25 @@ public class JmsConnectionTest extends AmqpTestSupport {
         assertNotNull(connection);
         connection.start();
     }
+
+    @Test
+    public void testConnectionExceptionBrokerStop() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        Connection connection = createAmqpConnection();
+        connection.setExceptionListener(new ExceptionListener() {
+
+            @Override
+            public void onException(JMSException exception) {
+                latch.countDown();
+            }
+        });
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+
+        stopBroker();
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
 }

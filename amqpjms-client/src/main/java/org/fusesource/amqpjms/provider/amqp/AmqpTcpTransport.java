@@ -87,6 +87,13 @@ public class AmqpTcpTransport implements AmqpTransport {
                             }
                         });
 
+                        socket.closeHandler(new Handler<Void>() {
+                            @Override
+                            public void handle(Void event) {
+                                parent.onTransportClosed();
+                            }
+                        });
+
                         socket.exceptionHandler(new Handler<Throwable>() {
                             @Override
                             public void handle(Throwable event) {

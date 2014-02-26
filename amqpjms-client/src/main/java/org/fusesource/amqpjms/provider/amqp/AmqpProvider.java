@@ -398,6 +398,24 @@ public class AmqpProvider implements Provider {
         });
     }
 
+    /**
+     * Callback method for the AmqpTransport to report that the underlying connection
+     * has closed.  When called this method will queue a new task that will check for
+     * the closed state on this transport and if not closed then an exception is raied
+     * to the registered ProviderListener to indicate connection loss.
+     */
+    void onTransportClosed() {
+        serializer.execute(new Runnable() {
+            @Override
+            public void run() {
+                LOG.info("Transport connection remotely closed:");
+                if (!closed.get()) {
+                    fireProviderException(new IOException("Connection remotely closed."));
+                }
+            }
+        });
+    }
+
     void fireProviderException(Throwable ex) {
         ProviderListener listener = this.listener;
         if (listener != null) {
