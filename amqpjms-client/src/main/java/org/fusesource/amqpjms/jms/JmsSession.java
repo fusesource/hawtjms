@@ -202,18 +202,48 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     @Override
     public void close() throws JMSException {
+        if (!closed.get()) {
+            doClose();
+        }
+    }
+
+    /**
+     * Shutdown the Session and release all resources.  Once completed the Session can
+     * request that the Provider destroy the Session and it's child resources.
+     *
+     * @throws JMSException
+     */
+    protected void doClose() throws JMSException {
+        boolean interrupted = Thread.interrupted();
+        shutdown();
+        this.connection.removeSession(this);
+        this.connection.destroyResource(sessionInfo);
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * This method should terminate all Session resources and prepare for disposal of the
+     * Session.  It is called either from the Session close method or from the Connection
+     * when a close request is made and the Connection wants to cleanup all Session resources.
+     *
+     * This method should not attempt to send a destroy request to the Provider as that
+     * will either be done by another session method or is not needed when done by the parent
+     * Connection.
+     *
+     * @throws JMSException
+     */
+    protected void shutdown() throws JMSException {
         if (closed.compareAndSet(false, true)) {
             stop();
             for (JmsMessageConsumer consumer : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
-                consumer.close();
+                consumer.shutdown();
             }
 
             for (JmsMessageProducer producer : this.producers) {
-                producer.close();
+                producer.shutdown();
             }
-
-            this.connection.removeSession(this);
-            this.connection.destroyResource(sessionInfo);
         }
     }
 

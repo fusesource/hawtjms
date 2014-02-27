@@ -127,8 +127,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     public void close() throws JMSException {
         if (closed.compareAndSet(false, true)) {
             try {
-                for (Session s : this.sessions) {
-                    s.close();
+                for (JmsSession session : this.sessions) {
+                    session.shutdown();
                 }
                 this.sessions.clear();
 

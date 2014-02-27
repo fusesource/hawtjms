@@ -98,9 +98,32 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
      */
     @Override
     public void close() throws JMSException {
+        if (!closed.get()) {
+            doClose();
+        }
+    }
+
+    /**
+     * Called to initiate shutdown of Producer resources and request that the remote
+     * peer remove the registered producer.
+     *
+     * @throws JMSException
+     */
+    protected void doClose() throws JMSException {
+        shutdown();
+        this.connection.destroyResource(consumerInfo);
+    }
+
+    /**
+     * Called to release all producer resources without requiring a destroy request
+     * to be sent to the remote peer.  This is most commonly needed when the parent
+     * Session is closing.
+     *
+     * @throws JMSException
+     */
+    protected void shutdown() throws JMSException {
         if (closed.compareAndSet(false, true)) {
             this.session.remove(this);
-            this.connection.destroyResource(consumerInfo);
         }
     }
 

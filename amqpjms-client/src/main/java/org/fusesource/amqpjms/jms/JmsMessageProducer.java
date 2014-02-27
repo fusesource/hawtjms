@@ -16,6 +16,7 @@
  */
 package org.fusesource.amqpjms.jms;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.jms.DeliveryMode;
@@ -43,7 +44,7 @@ public class JmsMessageProducer implements MessageProducer {
     protected int deliveryMode = DeliveryMode.PERSISTENT;
     protected int priority = Message.DEFAULT_PRIORITY;
     protected long timeToLive = Message.DEFAULT_TIME_TO_LIVE;
-    protected boolean closed;
+    protected final AtomicBoolean closed = new AtomicBoolean();
     protected boolean disableMessageId;
     protected boolean disableTimestamp;
     protected final AtomicLong messageSequence = new AtomicLong();
@@ -66,9 +67,33 @@ public class JmsMessageProducer implements MessageProducer {
      */
     @Override
     public void close() throws JMSException {
-        this.closed = true;
-        this.session.remove(this);
+        if (!closed.get()) {
+            doClose();
+        }
+    }
+
+    /**
+     * Called to initiate shutdown of Producer resources and request that the remote
+     * peer remove the registered producer.
+     *
+     * @throws JMSException
+     */
+    protected void doClose() throws JMSException {
+        shutdown();
         this.connection.destroyResource(producerInfo);
+    }
+
+    /**
+     * Called to release all producer resources without requiring a destroy request
+     * to be sent to the remote peer.  This is most commonly needed when the parent
+     * Session is closing.
+     *
+     * @throws JMSException
+     */
+    protected void shutdown() throws JMSException {
+        if (closed.compareAndSet(false, true)) {
+            this.session.remove(this);
+        }
     }
 
     /**
@@ -280,7 +305,7 @@ public class JmsMessageProducer implements MessageProducer {
     }
 
     protected void checkClosed() throws IllegalStateException {
-        if (this.closed) {
+        if (closed.get()) {
             throw new IllegalStateException("The MessageProducer is closed");
         }
     }
