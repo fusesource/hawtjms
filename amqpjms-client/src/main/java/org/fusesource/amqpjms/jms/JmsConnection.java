@@ -157,6 +157,32 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     /**
+     * Called to free all Connection resources.
+     */
+    protected void shutdown() throws JMSException {
+
+        // TODO - Once ConnectionConsumer is added we must shutdown those as well.
+
+        for (JmsSession session : this.sessions) {
+            session.shutdown();
+        }
+
+        if (isConnected()) {
+            if (!failed.get() && !closing.get()) {
+                destroyResource(connectionInfo);
+            }
+            connected.set(false);
+        }
+
+        if (clientIdSet) {
+            connectionInfo.setClientId(null);
+            clientIdSet = false;
+        }
+
+        started.set(false);
+    }
+
+    /**
      * @param destination
      * @param messageSelector
      * @param sessionPool
@@ -723,6 +749,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                         } catch (Throwable error) {
                             LOG.debug("Error while closing failed Provider: {}", error.getMessage());
                         }
+                    }
+
+                    try {
+                        shutdown();
+                    } catch (JMSException e) {
+                        LOG.warn("Exception during connection cleanup, " + e, e);
                     }
 
                     for (JmsConnectionListener listener : connectionListeners) {

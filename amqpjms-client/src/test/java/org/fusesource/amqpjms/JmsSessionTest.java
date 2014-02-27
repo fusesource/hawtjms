@@ -34,7 +34,6 @@ import javax.jms.Session;
 
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -60,7 +59,7 @@ public class JmsSessionTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testSessionCreateProducer() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         JmsConnection connection = (JmsConnection) factory.createConnection();
@@ -76,7 +75,7 @@ public class JmsSessionTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testSessionCreateConsumer() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         JmsConnection connection = (JmsConnection) factory.createConnection();
@@ -92,7 +91,38 @@ public class JmsSessionTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test
+    @Test(timeout=30000)
+    public void testSessionDoubleCloseWithoutException() throws Exception {
+        Connection connection = createAmqpConnection();
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.close();
+        session.close();
+        connection.close();
+    }
+
+    @Test(timeout=30000)
+    public void testSessionCloseWontThrowWhenNotConnected() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        Connection connection = createAmqpConnection();
+        connection.setExceptionListener(new ExceptionListener() {
+
+            @Override
+            public void onException(JMSException exception) {
+                latch.countDown();
+            }
+        });
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        stopBroker();
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+        session.close();
+        connection.close();
+    }
+
+    @Test(timeout=30000)
     public void testCreateConsumerThrowsWhenNotConnected() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         Connection connection = createAmqpConnection();
@@ -120,7 +150,7 @@ public class JmsSessionTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testCreateProducerThrowsWhenNotConnected() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         Connection connection = createAmqpConnection();
@@ -148,8 +178,7 @@ public class JmsSessionTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Ignore
-    @Test
+    @Test(timeout=30000)
     public void testCreateTextMessageThrowsWhenNotConnected() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         Connection connection = createAmqpConnection();
