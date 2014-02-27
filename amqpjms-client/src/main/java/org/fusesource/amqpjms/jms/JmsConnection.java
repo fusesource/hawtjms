@@ -195,7 +195,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     @Override
     public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector,
                                                        ServerSessionPool sessionPool, int maxMessages) throws JMSException {
-        checkClosed();
+        checkClosedOrFailed();
         connect();
         throw new JMSException("Not supported");
     }
@@ -215,7 +215,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     @Override
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName,
                                                               String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
-        checkClosed();
+        checkClosedOrFailed();
         connect();
         throw new JMSException("Not supported");
     }
@@ -229,7 +229,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      */
     @Override
     public Session createSession(boolean transacted, int acknowledgeMode) throws JMSException {
-        checkClosed();
+        checkClosedOrFailed();
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
         JmsSession result = new JmsSession(this, getNextSessionId(), ackMode);
@@ -245,7 +245,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      * @see javax.jms.Connection#getClientID()
      */
     @Override
-    public String getClientID() {
+    public String getClientID() throws JMSException {
+        checkClosedOrFailed();
         return this.connectionInfo.getClientId();
     }
 
@@ -254,7 +255,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      * @see javax.jms.Connection#getMetaData()
      */
     @Override
-    public ConnectionMetaData getMetaData() {
+    public ConnectionMetaData getMetaData() throws JMSException {
+        checkClosedOrFailed();
         return JmsConnectionMetaData.INSTANCE;
     }
 
@@ -265,6 +267,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      */
     @Override
     public synchronized void setClientID(String clientID) throws JMSException {
+        checkClosedOrFailed();
+
         if (this.clientIdSet) {
             throw new IllegalStateException("The clientID has already been set");
         }
@@ -274,6 +278,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         if (connected.get()) {
             throw new IllegalStateException("Cannot set the client id once connected.");
         }
+
         this.connectionInfo.setClientId(clientID);
         this.clientIdSet = true;
     }
@@ -284,7 +289,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      */
     @Override
     public void start() throws JMSException {
-        checkClosed();
+        checkClosedOrFailed();
         connect();
         if (this.started.compareAndSet(false, true)) {
             try {
@@ -303,7 +308,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      */
     @Override
     public void stop() throws JMSException {
-        checkClosed();
+        checkClosedOrFailed();
         connect();
         if (this.started.compareAndSet(true, false)) {
             try {
@@ -329,7 +334,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     @Override
     public ConnectionConsumer createConnectionConsumer(Topic topic, String messageSelector,
                                                        ServerSessionPool sessionPool, int maxMessages) throws JMSException {
-        checkClosed();
+        checkClosedOrFailed();
         connect();
         return null;
     }
@@ -343,7 +348,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      */
     @Override
     public TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException {
-        checkClosed();
+        checkClosedOrFailed();
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
         JmsTopicSession result = new JmsTopicSession(this, getNextSessionId(), ackMode);
@@ -367,7 +372,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     @Override
     public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector,
                                                        ServerSessionPool sessionPool, int maxMessages) throws JMSException {
-        checkClosed();
+        checkClosedOrFailed();
         connect();
         return null;
     }
@@ -381,7 +386,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      */
     @Override
     public QueueSession createQueueSession(boolean transacted, int acknowledgeMode) throws JMSException {
-        checkClosed();
+        checkClosedOrFailed();
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
         JmsQueueSession result = new JmsQueueSession(this, getNextSessionId(), ackMode);
@@ -489,7 +494,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     protected void checkClosed() throws IllegalStateException {
         if (this.closed.get()) {
-            throw new IllegalStateException("The MessageProducer is closed");
+            throw new IllegalStateException("The Connection is closed");
         }
     }
 
@@ -539,7 +544,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
-
     ////////////////////////////////////////////////////////////////////////////
     // Property setters and getters
     ////////////////////////////////////////////////////////////////////////////
@@ -549,7 +553,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      * @see javax.jms.Connection#getExceptionListener()
      */
     @Override
-    public ExceptionListener getExceptionListener() {
+    public ExceptionListener getExceptionListener() throws JMSException {
+        checkClosedOrFailed();
         return this.exceptionListener;
     }
 
@@ -558,7 +563,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      * @see javax.jms.Connection#setExceptionListener(javax.jms.ExceptionListener)
      */
     @Override
-    public void setExceptionListener(ExceptionListener listener) {
+    public void setExceptionListener(ExceptionListener listener) throws JMSException {
+        checkClosedOrFailed();
         this.exceptionListener = listener;
     }
 

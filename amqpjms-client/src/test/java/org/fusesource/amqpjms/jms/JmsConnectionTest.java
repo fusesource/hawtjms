@@ -18,7 +18,6 @@ package org.fusesource.amqpjms.jms;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -29,8 +28,6 @@ import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.Session;
 
-import org.fusesource.amqpjms.jms.JmsConnection;
-import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.junit.Test;
 
@@ -113,30 +110,4 @@ public class JmsConnectionTest extends AmqpTestSupport {
 
         connection.close();
     }
-
-    @Test
-    public void testCreateSessionThrowsWhenNotConnected() throws Exception {
-        final CountDownLatch latch = new CountDownLatch(1);
-        Connection connection = createAmqpConnection();
-        connection.setExceptionListener(new ExceptionListener() {
-
-            @Override
-            public void onException(JMSException exception) {
-                latch.countDown();
-            }
-        });
-        connection.start();
-        stopBroker();
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-
-        try {
-            connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            fail("Should have thrown once connection failed.");
-        } catch (JMSException ex) {
-            // Expected
-        }
-
-        connection.close();
-    }
-
 }
