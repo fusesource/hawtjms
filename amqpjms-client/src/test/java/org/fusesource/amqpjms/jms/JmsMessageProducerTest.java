@@ -32,6 +32,7 @@ import javax.jms.TextMessage;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
+import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 /**

@@ -197,6 +197,12 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     @Override
     public void run() {
+        try {
+            checkClosed();
+        } catch (IllegalStateException e) {
+            throw new RuntimeException(e);
+        }
+
         // TODO
     }
 

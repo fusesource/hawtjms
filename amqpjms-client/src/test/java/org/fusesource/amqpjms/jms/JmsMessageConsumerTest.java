@@ -26,6 +26,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
+import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.fusesource.amqpjms.util.Wait;
 import org.junit.Test;
 

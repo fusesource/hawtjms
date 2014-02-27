@@ -26,6 +26,7 @@ import java.net.URISyntaxException;
 import javax.jms.JMSException;
 
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
+import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 public class JmsConnectionFactoryTest extends AmqpTestSupport {

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.amqpjms.jms;
+package org.fusesource.amqpjms.util;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -69,10 +69,18 @@ public class AmqpTestSupport {
         this.numberOfMessages = 2000;
     }
 
+    protected boolean isPersistent() {
+        return false;
+    }
+
+    protected boolean isAdvisorySupport() {
+        return false;
+    }
+
     protected void createBroker(boolean deleteAllMessages) throws Exception {
         brokerService = new BrokerService();
-        brokerService.setPersistent(false);
-        brokerService.setAdvisorySupport(false);
+        brokerService.setPersistent(isPersistent());
+        brokerService.setAdvisorySupport(isAdvisorySupport());
         brokerService.setDeleteAllMessagesOnStartup(deleteAllMessages);
         brokerService.setUseJmx(true);
 

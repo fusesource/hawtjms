@@ -31,6 +31,7 @@ import javax.jms.Session;
 
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
+import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 /**
