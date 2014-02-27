@@ -29,7 +29,7 @@ import org.junit.Test;
 /**
  * Test Connection methods contracts when state is closed.
  */
-public class JmsClosedConnectionTest extends AmqpTestSupport {
+public class JmsConnectionClosedTest extends AmqpTestSupport {
 
     protected Connection connection;
     protected Destination destination;

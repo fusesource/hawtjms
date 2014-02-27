@@ -23,19 +23,22 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.Queue;
 import javax.jms.Session;
 
-
 /**
- * Tests the Session method contracts when the underlying connection is lost.
+ * Tests MessageConsumer method contracts after the MessageConsumer connection fails.
  */
-public class JmsFailedConnectionSessionTest extends JmsClosedSessionTest {
+public class JmsMessageConsumerFailedTest extends JmsMessageConsumerClosedTest {
 
     @Override
-    protected Session createSession() throws Exception {
+    protected MessageConsumer createConsumer() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue destination = session.createQueue("test");
+        MessageConsumer consumer = session.createConsumer(destination);
         connection.setExceptionListener(new ExceptionListener() {
 
             @Override
@@ -46,6 +49,6 @@ public class JmsFailedConnectionSessionTest extends JmsClosedSessionTest {
         connection.start();
         stopBroker();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-        return session;
+        return consumer;
     }
 }

@@ -1,13 +1,3 @@
-package org.fusesource.amqpjms.jms;
-import static org.junit.Assert.assertTrue;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import javax.jms.Connection;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -24,11 +14,21 @@ import javax.jms.JMSException;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.fusesource.amqpjms.jms;
+
+import static org.junit.Assert.assertTrue;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import javax.jms.Connection;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
 
 /**
  * Test Connection methods contracts when connection has failed.
  */
-public class JmsFailedConnectionTest extends JmsClosedConnectionTest {
+public class JmsConnectionFailedTest extends JmsConnectionClosedTest {
 
     @Override
     protected Connection createConnection() throws Exception {

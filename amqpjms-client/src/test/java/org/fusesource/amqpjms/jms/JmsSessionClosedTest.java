@@ -31,7 +31,7 @@ import org.junit.Test;
 /**
  * Validates all Session contracts following a close() call.
  */
-public class JmsClosedSessionTest extends AmqpTestSupport {
+public class JmsSessionClosedTest extends AmqpTestSupport {
 
     protected Connection connection;
 
