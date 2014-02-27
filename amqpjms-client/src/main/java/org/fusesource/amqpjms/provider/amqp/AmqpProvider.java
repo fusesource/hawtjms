@@ -387,15 +387,17 @@ public class AmqpProvider implements Provider {
      *        the error that causes the transport to fail.
      */
     void onTransportError(final Throwable error) {
-        serializer.execute(new Runnable() {
-            @Override
-            public void run() {
-                LOG.info("Transport failed: {}", error.getMessage());
-                if (!closed.get()) {
-                    fireProviderException(error);
+        if (!closed.get()) {
+            serializer.execute(new Runnable() {
+                @Override
+                public void run() {
+                    LOG.info("Transport failed: {}", error.getMessage());
+                    if (!closed.get()) {
+                        fireProviderException(error);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     /**
@@ -405,15 +407,17 @@ public class AmqpProvider implements Provider {
      * to the registered ProviderListener to indicate connection loss.
      */
     void onTransportClosed() {
-        serializer.execute(new Runnable() {
-            @Override
-            public void run() {
-                LOG.info("Transport connection remotely closed:");
-                if (!closed.get()) {
-                    fireProviderException(new IOException("Connection remotely closed."));
+        if (!closed.get()) {
+            serializer.execute(new Runnable() {
+                @Override
+                public void run() {
+                    LOG.info("Transport connection remotely closed:");
+                    if (!closed.get()) {
+                        fireProviderException(new IOException("Connection remotely closed."));
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     void fireProviderException(Throwable ex) {

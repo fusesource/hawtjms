@@ -51,6 +51,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
         connection.start();
+        connection.close();
     }
 
     @Test(expected = JMSException.class)
@@ -63,6 +64,9 @@ public class JmsConnectionTest extends AmqpTestSupport {
         JmsConnection connection2 = (JmsConnection) factory.createConnection();
         connection2.setClientID("Test");
         connection2.start();
+
+        connection1.close();
+        connection2.close();
     }
 
     @Test(timeout=30000)
@@ -73,6 +77,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
         connection.start();
+        connection.close();
     }
 
     @Test(timeout=30000, expected = JMSSecurityException.class)
@@ -83,6 +88,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
         connection.start();
+        connection.close();
     }
 
     @Test
@@ -103,6 +109,8 @@ public class JmsConnectionTest extends AmqpTestSupport {
         stopBroker();
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+        connection.close();
     }
 
     @Test
@@ -126,6 +134,8 @@ public class JmsConnectionTest extends AmqpTestSupport {
         } catch (JMSException ex) {
             // Expected
         }
+
+        connection.close();
     }
 
 }
