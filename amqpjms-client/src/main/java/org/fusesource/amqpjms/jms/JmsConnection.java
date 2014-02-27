@@ -48,7 +48,6 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicSession;
 import javax.net.ssl.SSLContext;
 
-import org.apache.activemq.util.JMSExceptionSupport;
 import org.fusesource.amqpjms.jms.exceptions.JmsConnectionFailedException;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
@@ -748,7 +747,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
             if (this.exceptionListener != null) {
 
                 if (!(error instanceof JMSException)) {
-                    error = JMSExceptionSupport.create(error);
+                    error = JmsExceptionSupport.create(error);
                 }
                 final JMSException jmsError = (JMSException)error;
 
