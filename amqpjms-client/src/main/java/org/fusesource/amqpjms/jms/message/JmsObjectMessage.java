@@ -58,7 +58,9 @@ import org.fusesource.hawtbuf.Buffer;
  * @see javax.jms.TextMessage
  */
 public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
+
     protected transient Serializable object;
+    protected Buffer content;
 
     @Override
     public JmsMsgType getMsgType() {
@@ -76,6 +78,15 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
         other.storeContent();
         super.copy(other);
         this.object = null;
+        this.content = other.content.deepCopy();
+    }
+
+    public Buffer getContent() {
+        return content;
+    }
+
+    public void setContent(Buffer content) {
+        this.content = content;
     }
 
     @Override
@@ -113,6 +124,7 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
     public void clearBody() throws JMSException {
         super.clearBody();
         this.object = null;
+        this.content = null;
     }
 
     /**

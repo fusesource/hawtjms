@@ -36,7 +36,6 @@ import org.apache.activemq.command.ActiveMQBytesMessage;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.JmsTopic;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
-import org.fusesource.hawtbuf.Buffer;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -266,12 +265,10 @@ public class JmsMessageTest {
     public void testClearProperties() throws JMSException {
         JmsMessage msg = new JmsMessage();
         msg.setStringProperty("test", "test");
-        msg.setContent(new Buffer(new byte[1], 0, 0));
         msg.setJMSMessageID(this.jmsMessageID);
         msg.clearProperties();
         assertNull(msg.getStringProperty("test"));
         assertNotNull(msg.getJMSMessageID());
-        assertNotNull(msg.getContent());
     }
 
     @Test

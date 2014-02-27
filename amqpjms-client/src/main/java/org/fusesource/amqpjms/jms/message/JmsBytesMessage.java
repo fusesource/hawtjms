@@ -75,7 +75,6 @@ import org.fusesource.hawtbuf.DataByteArrayOutputStream;
  * If a client attempts to write a message in read-only mode, a
  * <CODE>MessageNotWriteableException</CODE> is thrown.
  *
- * @openwire:marshaller code=24
  * @see javax.jms.Session#createBytesMessage()
  * @see javax.jms.MapMessage
  * @see javax.jms.Message
@@ -87,6 +86,8 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     protected transient DataByteArrayOutputStream bytesOut;
     protected transient DataInputStream dataIn;
     protected transient int length;
+
+    protected Buffer content;
 
     @Override
     public JmsMsgType getMsgType() {
@@ -103,10 +104,18 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     private void copy(JmsBytesMessage other) throws JMSException {
         other.storeContent();
         super.copy(other);
+        this.content = other.content.deepCopy();
         this.bytesOut = null;
         this.dataIn = null;
     }
 
+    public Buffer getContent() {
+        return content;
+    }
+
+    public void setContent(Buffer content) {
+        this.content = content;
+    }
 
     @Override
     public void storeContent() throws JMSException {

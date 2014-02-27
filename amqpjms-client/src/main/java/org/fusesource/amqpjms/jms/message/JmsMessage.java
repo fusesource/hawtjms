@@ -42,7 +42,6 @@ import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.jms.util.PropertyExpression;
 import org.fusesource.amqpjms.jms.util.TypeConversionSupport;
 import org.fusesource.hawtbuf.AsciiBuffer;
-import org.fusesource.hawtbuf.Buffer;
 
 public class JmsMessage implements javax.jms.Message {
 
@@ -86,7 +85,6 @@ public class JmsMessage implements javax.jms.Message {
     protected boolean readOnlyProperties;
     protected Map<String, Object> properties;
     protected JmsTransactionId transactionId;
-    protected Buffer content;
 
     // TODO - Remove
     protected JmsConsumerId consumerId;
@@ -119,7 +117,6 @@ public class JmsMessage implements javax.jms.Message {
         this.consumerId = other.consumerId;
         this.destination = other.destination;
         this.replyTo = other.replyTo;
-        this.content = other.content;
 
         this.readOnlyBody = other.readOnlyBody;
         this.readOnlyProperties = other.readOnlyBody;
@@ -171,17 +168,8 @@ public class JmsMessage implements javax.jms.Message {
         }
     }
 
-    public Buffer getContent() {
-        return content;
-    }
-
-    public void setContent(Buffer content) {
-        this.content = content;
-    }
-
     @Override
     public void clearBody() throws JMSException {
-        setContent(null);
         readOnlyBody = false;
     }
 
@@ -557,7 +545,6 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     protected void checkValidObject(Object value) throws MessageFormatException {
-
         boolean valid = value instanceof Boolean || value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long;
         valid = valid || value instanceof Float || value instanceof Double || value instanceof Character || value instanceof String || value == null;
 

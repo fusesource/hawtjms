@@ -349,15 +349,11 @@ public class JmsMapMessageTest {
         mapMessage.setString("String", "String");
         mapMessage.clearBody();
         assertFalse(mapMessage.isReadOnlyBody());
-
         mapMessage.onSend();
-        mapMessage.setContent(mapMessage.getContent());
         assertNull(mapMessage.getString("String"));
         mapMessage.clearBody();
         mapMessage.setString("String", "String");
-
         mapMessage = (JmsMapMessage) mapMessage.copy();
-
         mapMessage.getString("String");
     }
 

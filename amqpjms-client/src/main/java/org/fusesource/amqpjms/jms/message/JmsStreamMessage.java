@@ -115,6 +115,16 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     protected transient DataInputStream dataIn;
     protected transient int remainingBytes = -1;
 
+    protected Buffer content;
+
+    public Buffer getContent() {
+        return content;
+    }
+
+    public void setContent(Buffer content) {
+        this.content = content;
+    }
+
     @Override
     public JmsMsgType getMsgType() {
         return JmsMsgType.STREAM;
@@ -132,6 +142,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
         super.copy(other);
         this.dataOut = null;
         this.dataIn = null;
+        this.content = other.content.deepCopy();
     }
 
     @Override
@@ -1032,6 +1043,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     public void writeString(String value) throws JMSException {
         initializeWriting();
         try {
+            // TODO - Support strings larger than short.MAX_VALUE
             if (value == null) {
                 MarshallingSupport.marshalNull(dataOut);
             } else {

@@ -16,13 +16,6 @@
  */
 package org.fusesource.amqpjms.jms.message;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -32,10 +25,6 @@ import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
-
-import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
-import org.fusesource.amqpjms.jms.util.MarshallingSupport;
-import org.fusesource.hawtbuf.Buffer;
 
 /**
  * A <CODE>MapMessage</CODE> object is used to send a set of name-value pairs.
@@ -111,44 +100,45 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
     public void copy(JmsMapMessage other) throws JMSException {
         other.storeContent();
         super.copy(other);
+        this.map = other.map;
     }
 
-    @Override
-    public void storeContent() throws JMSException {
-        Buffer buffer = getContent();
-        if (buffer == null && !this.map.isEmpty()) {
-            ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
-            OutputStream os = bytesOut;
-            DataOutputStream dataOut = new DataOutputStream(os);
-            try {
-                MarshallingSupport.marshalPrimitiveMap(map, dataOut);
-                dataOut.close();
-            } catch (IOException e) {
-                throw JmsExceptionSupport.create(e);
-            }
-            setContent(new Buffer(bytesOut.toByteArray()));
-        }
-    }
-
-    /**
-     * Builds the message body from data
-     *
-     * @throws JMSException
-     * @throws IOException
-     */
-    private void loadContent() throws JMSException {
-        Buffer buffer = getContent();
-        if (buffer != null && this.map.isEmpty()) {
-            InputStream is = new ByteArrayInputStream(content.toByteArray());
-            DataInputStream dataIn = new DataInputStream(is);
-            try {
-                map = MarshallingSupport.unmarshalPrimitiveMap(dataIn);
-                dataIn.close();
-            } catch (IOException e) {
-                throw JmsExceptionSupport.create(e);
-            }
-        }
-    }
+//    @Override
+//    public void storeContent() throws JMSException {
+//        Buffer buffer = getContent();
+//        if (buffer == null && !this.map.isEmpty()) {
+//            ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
+//            OutputStream os = bytesOut;
+//            DataOutputStream dataOut = new DataOutputStream(os);
+//            try {
+//                MarshallingSupport.marshalPrimitiveMap(map, dataOut);
+//                dataOut.close();
+//            } catch (IOException e) {
+//                throw JmsExceptionSupport.create(e);
+//            }
+//            setContent(new Buffer(bytesOut.toByteArray()));
+//        }
+//    }
+//
+//    /**
+//     * Builds the message body from data
+//     *
+//     * @throws JMSException
+//     * @throws IOException
+//     */
+//    private void loadContent() throws JMSException {
+//        Buffer buffer = getContent();
+//        if (buffer != null && this.map.isEmpty()) {
+//            InputStream is = new ByteArrayInputStream(content.toByteArray());
+//            DataInputStream dataIn = new DataInputStream(is);
+//            try {
+//                map = MarshallingSupport.unmarshalPrimitiveMap(dataIn);
+//                dataIn.close();
+//            } catch (IOException e) {
+//                throw JmsExceptionSupport.create(e);
+//            }
+//        }
+//    }
 
     /**
      * Clears out the message body. Clearing a message's body does not clear its
@@ -811,12 +801,12 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
     }
 
     private void initializeReading() throws JMSException {
-        loadContent();
+        //loadContent();
     }
 
     private void initializeWriting() throws MessageNotWriteableException {
         checkReadOnlyBody();
-        setContent(null);
+        //setContent(null);
     }
 
     @Override
