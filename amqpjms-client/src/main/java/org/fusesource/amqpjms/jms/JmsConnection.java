@@ -51,6 +51,7 @@ import javax.net.ssl.SSLContext;
 import org.fusesource.amqpjms.jms.exceptions.JmsConnectionFailedException;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
+import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionId;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
@@ -707,6 +708,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onMessage(JmsInboundMessageDispatch envelope) {
+
+        JmsMessage incoming = envelope.getMessage();
+        // Ensure incoming Messages are in readonly mode.
+        if (incoming != null) {
+            incoming.setReadOnlyBody(true);
+            incoming.setReadOnlyProperties(true);
+        }
+
         JmsMessageDispatcher dispatcher = dispatchers.get(envelope.getConsumerId());
         if (dispatcher != null) {
             dispatcher.onMessage(envelope);
