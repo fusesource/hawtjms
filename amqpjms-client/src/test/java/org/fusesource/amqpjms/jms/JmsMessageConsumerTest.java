@@ -18,6 +18,7 @@ package org.fusesource.amqpjms.jms;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
@@ -176,6 +177,17 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
         TimeUnit.SECONDS.sleep(1);
         assertEquals(msgCount, counter.get());
+        connection.close();
+    }
+
+    @Test
+    public void testNoReceivedMessagesWhenConnectionNotStarted() throws Exception {
+        Connection connection = createAmqpConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue destination = session.createQueue(name.toString());
+        MessageConsumer consumer = session.createConsumer(destination);
+        sendToAmqQueue(1);
+        assertNull(consumer.receive(2000));
         connection.close();
     }
 
