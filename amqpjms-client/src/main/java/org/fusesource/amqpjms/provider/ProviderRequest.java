@@ -30,17 +30,32 @@ public class ProviderRequest<T> implements AsyncResult<T> {
     protected final CountDownLatch latch = new CountDownLatch(1);
     protected Throwable error;
     protected T result;
+    protected final AsyncResult<T> watcher;
+
+    public ProviderRequest() {
+        this.watcher = null;
+    }
+
+    public ProviderRequest(AsyncResult<T> watcher) {
+        this.watcher = watcher;
+    }
 
     @Override
     public void onFailure(Throwable result) {
         error = result;
         latch.countDown();
+        if (watcher != null) {
+            watcher.onFailure(error);
+        }
     }
 
     @Override
     public void onSuccess(T result) {
         this.result = result;
         latch.countDown();
+        if (watcher != null) {
+            watcher.onSuccess(result);
+        }
     }
 
     /**
