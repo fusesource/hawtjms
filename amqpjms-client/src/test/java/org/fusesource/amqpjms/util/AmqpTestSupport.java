@@ -50,10 +50,14 @@ import org.apache.activemq.security.TempDestinationAuthorizationEntry;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AmqpTestSupport {
+
+    @Rule public TestName name = new TestName();
 
     protected static final Logger LOG = LoggerFactory.getLogger(AmqpTestSupport.class);
     protected BrokerService brokerService;

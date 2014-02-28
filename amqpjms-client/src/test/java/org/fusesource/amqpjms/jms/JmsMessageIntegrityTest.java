@@ -42,9 +42,7 @@ import javax.jms.TextMessage;
 
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 
 /**
  * Tests that messages sent and received don't lose data and have expected
@@ -53,8 +51,6 @@ import org.junit.rules.TestName;
 public class JmsMessageIntegrityTest extends AmqpTestSupport {
 
     private Connection connection;
-
-    @Rule public TestName name = new TestName();
 
     @Override
     public void setUp() throws Exception {

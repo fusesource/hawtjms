@@ -20,8 +20,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.TimeUnit;
+
 import javax.jms.Connection;
+import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
@@ -74,6 +78,39 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
+        connection.close();
+    }
+
+    /**
+     * Test to check if consumer thread wakes up inside a receive(timeout) after
+     * a message is dispatched to the consumer
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testConsumerReceiveBeforeMessageDispatched() throws Exception {
+        final Connection connection = createAmqpConnection();
+        connection.start();
+
+        final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        final Queue queue = session.createQueue("test");
+
+        Thread t = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    TimeUnit.SECONDS.sleep(10);
+                    MessageProducer producer = session.createProducer(queue);
+                    producer.send(session.createTextMessage("Hello"));
+                } catch (Exception e) {
+                    LOG.warn("Caught during message send: {}", e.getMessage());
+                }
+            }
+        };
+        t.start();
+        MessageConsumer consumer = session.createConsumer(queue);
+        Message msg = consumer.receive(60000);
+        assertNotNull(msg);
         connection.close();
     }
 
