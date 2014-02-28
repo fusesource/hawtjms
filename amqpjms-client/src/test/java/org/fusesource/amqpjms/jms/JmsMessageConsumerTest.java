@@ -87,7 +87,10 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
     /**
      * Test to check if consumer thread wakes up inside a receive(timeout) after
-     * a message is dispatched to the consumer
+     * a message is dispatched to the consumer.  We do a long poll here to ensure
+     * that a blocked receive with timeout does eventually get a Message.  We don't
+     * want to test the short poll and retry case here since that's not what we are
+     * testing.
      *
      * @throws Exception
      */
@@ -121,6 +124,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
     @Test
     public void testAsynchronousMessageConsumption() throws Exception {
 
+        // TODO - Increase
         final int msgCount = 1;
 
         final Connection connection = createAmqpConnection();
@@ -135,6 +139,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         consumer.setMessageListener(new MessageListener() {
             @Override
             public void onMessage(Message m) {
+                LOG.debug("Async consumer got Message: {}", m);
                 counter.incrementAndGet();
                 if (counter.get() == msgCount) {
                     done.countDown();
@@ -152,6 +157,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
     @Test
     public void testSetMessageListenerAfterStartAndSend() throws Exception {
 
+        // TODO - Increase
         final int msgCount = 1;
 
         final Connection connection = createAmqpConnection();
@@ -167,6 +173,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         consumer.setMessageListener(new MessageListener() {
             @Override
             public void onMessage(Message m) {
+                LOG.debug("Async consumer got Message: {}", m);
                 counter.incrementAndGet();
                 if (counter.get() == msgCount) {
                     done.countDown();
@@ -186,7 +193,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue destination = session.createQueue(name.toString());
         MessageConsumer consumer = session.createConsumer(destination);
-        sendToAmqQueue(1);
+        sendToAmqQueue(3);
         assertNull(consumer.receive(2000));
         connection.close();
     }
