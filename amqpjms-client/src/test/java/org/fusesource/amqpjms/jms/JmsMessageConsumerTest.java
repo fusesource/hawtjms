@@ -20,11 +20,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -35,7 +38,7 @@ import org.fusesource.amqpjms.util.Wait;
 import org.junit.Test;
 
 /**
- *
+ * Test for basic JMS MessageConsumer functionality.
  */
 public class JmsMessageConsumerTest extends AmqpTestSupport {
 
@@ -46,10 +49,10 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue("test.queue");
+        Queue queue = session.createQueue(name.toString());
         session.createConsumer(queue);
 
-        QueueViewMBean proxy = getProxyToQueue("test.queue");
+        QueueViewMBean proxy = getProxyToQueue(name.toString());
         assertEquals(0, proxy.getQueueSize());
         connection.close();
     }
@@ -61,12 +64,12 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue("test.queue");
+        Queue queue = session.createQueue(name.toString());
         MessageConsumer consumer = session.createConsumer(queue);
 
         sendToAmqQueue(1);
 
-        final QueueViewMBean proxy = getProxyToQueue("test.queue");
+        final QueueViewMBean proxy = getProxyToQueue(name.toString());
         assertEquals(1, proxy.getQueueSize());
 
         assertNotNull("Failed to receive any message.", consumer.receive(2000));
@@ -93,7 +96,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         connection.start();
 
         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        final Queue queue = session.createQueue("test");
+        final Queue queue = session.createQueue(name.toString());
 
         Thread t = new Thread() {
             @Override
@@ -114,10 +117,72 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         connection.close();
     }
 
+    @Test
+    public void testAsynchronousMessageConsumption() throws Exception {
+
+        final int msgCount = 1;
+
+        final Connection connection = createAmqpConnection();
+        final AtomicInteger counter = new AtomicInteger(0);
+        final CountDownLatch done = new CountDownLatch(1);
+
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue destination = session.createQueue(name.toString());
+        MessageConsumer consumer = session.createConsumer(destination);
+
+        consumer.setMessageListener(new MessageListener() {
+            @Override
+            public void onMessage(Message m) {
+                counter.incrementAndGet();
+                if (counter.get() == msgCount) {
+                    done.countDown();
+                }
+            }
+        });
+
+        sendToAmqQueue(msgCount);
+        assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
+        TimeUnit.SECONDS.sleep(1);
+        assertEquals(msgCount, counter.get());
+        connection.close();
+    }
+
+    @Test
+    public void testSetMessageListenerAfterStartAndSend() throws Exception {
+
+        final int msgCount = 1;
+
+        final Connection connection = createAmqpConnection();
+        final AtomicInteger counter = new AtomicInteger(0);
+        final CountDownLatch done = new CountDownLatch(1);
+
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue destination = session.createQueue(name.toString());
+        MessageConsumer consumer = session.createConsumer(destination);
+        sendToAmqQueue(msgCount);
+
+        consumer.setMessageListener(new MessageListener() {
+            @Override
+            public void onMessage(Message m) {
+                counter.incrementAndGet();
+                if (counter.get() == msgCount) {
+                    done.countDown();
+                }
+            }
+        });
+
+        assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
+        TimeUnit.SECONDS.sleep(1);
+        assertEquals(msgCount, counter.get());
+        connection.close();
+    }
+
     private void sendToAmqQueue(int count) throws Exception {
         Connection activemqConnection = createActiveMQConnection();
         Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue amqTestQueue = amqSession.createQueue("test.queue");
+        Queue amqTestQueue = amqSession.createQueue(name.toString());
         sendMessages(activemqConnection, amqTestQueue, 1);
     }
 }
