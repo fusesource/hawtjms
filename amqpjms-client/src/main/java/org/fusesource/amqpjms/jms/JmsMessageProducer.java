@@ -209,6 +209,8 @@ public class JmsMessageProducer implements MessageProducer {
      */
     @Override
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
+        checkClosed();
+
         if (destination == null) {
             throw new InvalidDestinationException("Don't understand null destinations");
         }
