@@ -104,6 +104,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
             ProviderListener listener = session.getProvider().getProviderListener();
             if (listener != null) {
+                LOG.trace("Dispatching received message: {}", message.getMessageId());
                 listener.onMessage(envelope);
             }
 

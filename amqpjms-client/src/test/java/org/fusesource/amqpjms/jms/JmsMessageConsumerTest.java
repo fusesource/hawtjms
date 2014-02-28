@@ -124,8 +124,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
     @Test
     public void testAsynchronousMessageConsumption() throws Exception {
 
-        // TODO - Increase
-        final int msgCount = 1;
+        final int msgCount = 4;
 
         final Connection connection = createAmqpConnection();
         final AtomicInteger counter = new AtomicInteger(0);
@@ -157,8 +156,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
     @Test
     public void testSetMessageListenerAfterStartAndSend() throws Exception {
 
-        // TODO - Increase
-        final int msgCount = 1;
+        final int msgCount = 4;
 
         final Connection connection = createAmqpConnection();
         final AtomicInteger counter = new AtomicInteger(0);
@@ -202,6 +200,6 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         Connection activemqConnection = createActiveMQConnection();
         Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue amqTestQueue = amqSession.createQueue(name.toString());
-        sendMessages(activemqConnection, amqTestQueue, 1);
+        sendMessages(activemqConnection, amqTestQueue, count);
     }
 }

@@ -359,7 +359,7 @@ public class AmqpProvider implements Provider {
 
             @Override
             public void run() {
-                LOG.info("Received from Broker {} bytes:", source.remaining());
+                LOG.trace("Received from Broker {} bytes:", source.remaining());
 
                 do {
                     ByteBuffer buffer = protonTransport.getInputBuffer();
@@ -439,7 +439,9 @@ public class AmqpProvider implements Provider {
                 ByteBuffer toWrite = protonTransport.getOutputBuffer();
                 if (toWrite != null && toWrite.hasRemaining()) {
                     // TODO - Get Bytes in a readable form
-                    TRACE_BYTES.info("Sending: {}", toWrite.toString());
+                    if (isTraceBytes()) {
+                        TRACE_BYTES.info("Sending: {}", toWrite.toString());
+                    }
                     transport.send(toWrite);
                     protonTransport.outputConsumed();
                 } else {
