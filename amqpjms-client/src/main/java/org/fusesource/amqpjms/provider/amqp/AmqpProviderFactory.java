@@ -26,7 +26,7 @@ import org.fusesource.amqpjms.provider.ProviderFactory;
 /**
  * Factory for creating the AMQP over TCP provider.
  */
-public class AmqpProviderFactory implements ProviderFactory {
+public class AmqpProviderFactory extends ProviderFactory {
 
     @Override
     public BlockingProvider createProvider(URI remoteURI) {
@@ -34,12 +34,12 @@ public class AmqpProviderFactory implements ProviderFactory {
     }
 
     @Override
-    public String getName() {
-        return "AMQP";
+    public AsyncProvider createAsyncProvider(URI remoteURI) throws Exception {
+        return new AmqpProvider(remoteURI);
     }
 
     @Override
-    public AsyncProvider createAsyncProvider(URI remoteURI) throws Exception {
-        return new AmqpProvider(remoteURI);
+    public String getName() {
+        return "AMQP";
     }
 }

@@ -25,7 +25,7 @@ import org.fusesource.amqpjms.provider.ProviderFactory;
 /**
  * Factory for creating instances of the Failover Provider type.
  */
-public class FailoverProviderFactory implements ProviderFactory {
+public class FailoverProviderFactory extends ProviderFactory {
 
     @Override
     public BlockingProvider createProvider(URI remoteURI) throws Exception {
@@ -34,12 +34,12 @@ public class FailoverProviderFactory implements ProviderFactory {
     }
 
     @Override
-    public String getName() {
-        return "Failover";
+    public AsyncProvider createAsyncProvider(URI remoteURO) throws Exception {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public AsyncProvider createAsyncProvider(URI remoteURO) throws Exception {
-        throw new UnsupportedOperationException();
+    public String getName() {
+        return "Failover";
     }
 }

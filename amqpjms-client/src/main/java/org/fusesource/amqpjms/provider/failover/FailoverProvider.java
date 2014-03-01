@@ -37,7 +37,6 @@ import org.fusesource.amqpjms.provider.DefaultBlockingProvider;
 import org.fusesource.amqpjms.provider.DefaultProviderListener;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderFactory;
-import org.fusesource.amqpjms.provider.ProviderFactoryFinder;
 import org.fusesource.amqpjms.provider.ProviderListener;
 import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.fusesource.amqpjms.provider.amqp.AmqpConnection;
@@ -257,8 +256,7 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
                 public void run() {
                     if (provider == null) {
                         try {
-                            ProviderFactory factory = ProviderFactoryFinder.findProviderFactory(originalURI);
-                            AsyncProvider provider = factory.createAsyncProvider(originalURI);
+                            AsyncProvider provider = ProviderFactory.createAsync(originalURI);
                             provider.connect();
                             handleNewConnection(provider);
                         } catch (Throwable e) {

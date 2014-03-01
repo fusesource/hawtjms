@@ -38,7 +38,6 @@ import org.fusesource.amqpjms.jms.util.IdGenerator;
 import org.fusesource.amqpjms.jms.util.PropertyUtil;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderFactory;
-import org.fusesource.amqpjms.provider.ProviderFactoryFinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -232,9 +231,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         BlockingProvider result = null;
 
         try {
-            ProviderFactory factory = ProviderFactoryFinder.findProviderFactory(brokerURI);
-            result = factory.createProvider(brokerURI);
-            result.connect();
+            result = ProviderFactory.createBlocking(brokerURI);
         } catch (Exception ex) {
             LOG.error("Failed to create JMS Provider instance for: {}", brokerURI.getScheme());
             LOG.trace("Error: ", ex);

@@ -21,6 +21,7 @@ import java.net.URI;
 import javax.jms.Connection;
 
 import org.fusesource.amqpjms.util.AmqpTestSupport;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -28,6 +29,7 @@ import org.junit.Test;
  */
 public class JmsFailoverTest extends AmqpTestSupport {
 
+    @Ignore
     @Test
     public void testFailoverConnects() throws Exception {
         URI brokerURI = new URI("failover:" + getBrokerAmqpConnectionURI());
