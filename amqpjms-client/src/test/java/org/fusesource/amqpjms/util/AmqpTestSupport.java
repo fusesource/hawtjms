@@ -178,12 +178,20 @@ public class AmqpTestSupport {
     }
 
     public Connection createAmqpConnection() throws Exception {
-        ConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        return createAmqpConnection(getBrokerAmqpConnectionURI());
+    }
+
+    public Connection createAmqpConnection(URI brokerURI) throws Exception {
+        ConnectionFactory factory = new JmsConnectionFactory(brokerURI);
         return factory.createConnection();
     }
 
     public Connection createActiveMQConnection() throws Exception {
-        ConnectionFactory factory = new ActiveMQConnectionFactory(getBrokerOpenWireConnectionURI());
+        return createActiveMQConnection(getBrokerOpenWireConnectionURI());
+    }
+
+    public Connection createActiveMQConnection(URI brokerURI) throws Exception {
+        ConnectionFactory factory = new ActiveMQConnectionFactory(brokerURI);
         return factory.createConnection();
     }
 

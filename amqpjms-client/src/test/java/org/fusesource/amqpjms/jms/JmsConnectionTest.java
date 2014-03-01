@@ -41,6 +41,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
+        connection.close();
     }
 
     @Test(timeout=30000)

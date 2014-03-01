@@ -18,6 +18,7 @@ package org.fusesource.amqpjms.provider.amqp;
 
 import java.net.URI;
 
+import org.fusesource.amqpjms.provider.DefaultProvider;
 import org.fusesource.amqpjms.provider.Provider;
 import org.fusesource.amqpjms.provider.ProviderFactory;
 
@@ -28,7 +29,7 @@ public class AmqpProviderFactory implements ProviderFactory {
 
     @Override
     public Provider createProvider(URI remoteURI) {
-        return new AmqpProvider(remoteURI);
+        return new DefaultProvider(new AmqpProvider(remoteURI));
     }
 
     @Override

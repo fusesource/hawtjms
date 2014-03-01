@@ -33,7 +33,6 @@ public class DefaultProviderListener implements ProviderListener {
     public void onConnectionInterrupted() {
     }
 
-
     @Override
     public void onConnectionFailure(IOException ex) {
     }

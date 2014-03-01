@@ -135,7 +135,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
                 if (provider != null) {
                     try {
-                        provider.destroy(connectionInfo).getResponse();
+                        provider.destroy(connectionInfo);
                     } catch (IOException e) {
                         LOG.trace("Cuaght exception while closing remote connection: {}", e.getMessage());
                     }
@@ -508,7 +508,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         checkClosedOrFailed();
 
         try {
-            return (T) provider.create(resource).getResponse();
+            return (T) provider.create(resource);
         } catch (Exception ex) {
             throw JmsExceptionSupport.create(ex);
         }
@@ -523,7 +523,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         //        any response comes back.
 
         try {
-            provider.destroy(resource).getResponse();
+            provider.destroy(resource);
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
@@ -539,7 +539,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         //        any response comes back.
 
         try {
-            provider.send(envelope).getResponse();
+            provider.send(envelope);
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }

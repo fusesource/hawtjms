@@ -16,29 +16,27 @@
  */
 package org.fusesource.amqpjms.provider;
 
-import java.net.URI;
-
 /**
- * Interface that all JMS Providers must implement.
+ * Set of Provider specific constants used when interacting with the Provider API.
  */
-public interface ProviderFactory {
+public final class ProviderConstants {
 
-    /**
-     * Creates an instance of the given Provider and configures it using the properties set
-     * on the given remote broker URI.
-     *
-     * @param remoteURO
-     *        The URI used to connect to a remote Broker.
-     *
-     * @return a new JMS Provider instance.
-     *
-     * @throws Exception if an error occurs while creating the Provider instance.
-     */
-    Provider createProvider(URI remoteURO) throws Exception;
+    private ProviderConstants() {}
 
-    /**
-     * @return the name of this JMS Provider, e.g. STOMP, AMQP, MQTT...etc
-     */
-    String getName();
+    public enum ACK_TYPE {
+        DELIVERED(0),
+        CONSUMED(1),
+        REDELIVERED(2),
+        POISONED(3);
 
+        private final int value;
+
+        private ACK_TYPE(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+    }
 }

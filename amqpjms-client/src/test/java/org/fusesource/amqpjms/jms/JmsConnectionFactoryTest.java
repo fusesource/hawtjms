@@ -23,9 +23,9 @@ import static org.junit.Assert.assertNull;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import javax.jms.Connection;
 import javax.jms.JMSException;
 
-import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.junit.Test;
 
@@ -81,12 +81,16 @@ public class JmsConnectionFactoryTest extends AmqpTestSupport {
     @Test
     public void testCreateConnectionGoodProviderURI() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getGoodProviderAddressURI());
-        assertNotNull(factory.createConnection());
+        Connection connection = factory.createConnection();
+        assertNotNull(connection);
+        connection.close();
     }
 
     @Test
     public void testCreateConnectionGoodProviderString() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getGoodProviderAddress());
-        assertNotNull(factory.createConnection());
+        Connection connection = factory.createConnection();
+        assertNotNull(connection);
+        connection.close();
     }
 }

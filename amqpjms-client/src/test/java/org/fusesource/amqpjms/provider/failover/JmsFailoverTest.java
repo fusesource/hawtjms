@@ -14,31 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.amqpjms.provider;
+package org.fusesource.amqpjms.provider.failover;
 
 import java.net.URI;
 
+import javax.jms.Connection;
+
+import org.fusesource.amqpjms.util.AmqpTestSupport;
+import org.junit.Ignore;
+import org.junit.Test;
+
 /**
- * Interface that all JMS Providers must implement.
+ * Basic tests for the FailoverProvider implementation
  */
-public interface ProviderFactory {
+public class JmsFailoverTest extends AmqpTestSupport {
 
-    /**
-     * Creates an instance of the given Provider and configures it using the properties set
-     * on the given remote broker URI.
-     *
-     * @param remoteURO
-     *        The URI used to connect to a remote Broker.
-     *
-     * @return a new JMS Provider instance.
-     *
-     * @throws Exception if an error occurs while creating the Provider instance.
-     */
-    Provider createProvider(URI remoteURO) throws Exception;
-
-    /**
-     * @return the name of this JMS Provider, e.g. STOMP, AMQP, MQTT...etc
-     */
-    String getName();
-
+    @Ignore
+    @Test
+    public void testFailoverConnects() throws Exception {
+        URI brokerURI = new URI("failover:" + getBrokerAmqpConnectionURI());
+        Connection connection = createAmqpConnection(brokerURI);
+        connection.start();
+        connection.close();
+    }
 }
