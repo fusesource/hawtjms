@@ -23,11 +23,11 @@ import javax.jms.Topic;
 import javax.jms.TopicSession;
 
 import org.fusesource.amqpjms.jms.util.IdGenerator;
-import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.BlockingProvider;
 
 public class JmsQueueConnection extends JmsConnection {
 
-    public JmsQueueConnection(String connectionId, Provider provider, IdGenerator clientIdGenerator) throws JMSException {
+    public JmsQueueConnection(String connectionId, BlockingProvider provider, IdGenerator clientIdGenerator) throws JMSException {
         super(connectionId, provider, clientIdGenerator);
     }
 

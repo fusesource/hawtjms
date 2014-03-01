@@ -18,8 +18,8 @@ package org.fusesource.amqpjms.provider.failover;
 
 import java.net.URI;
 
-import org.fusesource.amqpjms.provider.ProtocolProvider;
-import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.AsyncProvider;
+import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderFactory;
 
 /**
@@ -28,10 +28,8 @@ import org.fusesource.amqpjms.provider.ProviderFactory;
 public class FailoverProviderFactory implements ProviderFactory {
 
     @Override
-    public Provider createProvider(URI remoteURI) throws Exception {
-
+    public BlockingProvider createProvider(URI remoteURI) throws Exception {
         remoteURI = new URI(remoteURI.toString().substring("failover:".length()));
-
         return new FailoverProvider(remoteURI);
     }
 
@@ -41,7 +39,7 @@ public class FailoverProviderFactory implements ProviderFactory {
     }
 
     @Override
-    public ProtocolProvider createProtocol(URI remoteURO) throws Exception {
+    public AsyncProvider createAsyncProvider(URI remoteURO) throws Exception {
         throw new UnsupportedOperationException();
     }
 }

@@ -25,10 +25,11 @@ import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 
 /**
- * Defines the interface that is implemented by a Protocol Provider object
- * in order to map JMS functionality into the given wire level protocol.
+ * Defines the interface that an Implementation of a Specific wire level protocol
+ * provider must implement.  This Provider interface requires that the implementation
+ * methods all operate in an asynchronous manner.
  */
-public interface Provider {
+public interface AsyncProvider {
 
     /**
      * Performs the initial low level connection for this provider such as TCP or
@@ -42,21 +43,11 @@ public interface Provider {
 
     /**
      * Closes this Provider terminating all connections and canceling any pending
-     * operations.  The Provider is considered unusable after this call.
+     * operations.  The Provider is considered unusable after this call.  This call
+     * is a blocking call and will not return until the Provider has closed or an
+     * error occurs.
      */
     void close();
-
-    /**
-     * Called to indicate that a signaled recovery cycle is not complete.
-     *
-     * This method is used only when the Provider is a fault tolerant implementation and the
-     * recovery started event has been fired after a reconnect.  This allows for the fault
-     * tolerant implementation to perform any intermediate processing before a transition
-     * to a recovered state.
-     *
-     * @throws IOException if an error occurs during recovery completion processing.
-     */
-    void receoveryComplate() throws IOException;
 
     /**
      * Returns the URI used to configure this Provider and specify the remote address of the
@@ -76,12 +67,12 @@ public interface Provider {
      *
      * @param resource
      *        The JmsResouce instance that indicates what is being created.
-     *
-     * @return a JmsResource instance configured for the protocol provider.
+     * @param request
+     *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    JmsResource create(JmsResource resource) throws IOException;
+    void create(JmsResource resource, ProviderRequest<JmsResource> request) throws IOException;
 
     /**
      * Instruct the Provider to dispose of a given JmsResource.
@@ -91,20 +82,24 @@ public interface Provider {
      *
      * @param resource
      *        The JmsResouce that identifies a previously created JmsResource.
+     * @param request
+     *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void destroy(JmsResource resource) throws IOException;
+    void destroy(JmsResource resource, ProviderRequest<Void> request) throws IOException;
 
     /**
      * Sends the JmsMessage contained in the outbound dispatch envelope.
      *
      * @param envelope
      *        the message envelope containing the JmsMessage to send.
+     * @param request
+     *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void send(JmsOutboundMessageDispatch envelope) throws IOException;
+    void send(JmsOutboundMessageDispatch envelope, ProviderRequest<Void> request) throws IOException;
 
     /**
      * Called to acknowledge a JmsMessage has been delivered, consumed, re-delivered...etc.
@@ -116,10 +111,12 @@ public interface Provider {
      *        The message dispatch envelope containing the Message delivery information.
      * @param ackType
      *        The type of acknowledgment being done.
+     * @param request
+     *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws IOException;
+    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, ProviderRequest<Void> request) throws IOException;
 
     /**
      * Sets the listener of events from this Provider instance.

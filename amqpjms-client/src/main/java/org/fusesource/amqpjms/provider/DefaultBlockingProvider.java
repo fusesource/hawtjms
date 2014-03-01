@@ -29,11 +29,11 @@ import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
  * without any additional capabilities wrapped around it such as Failover or
  * Discovery.  All methods are executed as blocking operations.
  */
-public class DefaultProvider implements Provider {
+public class DefaultBlockingProvider implements BlockingProvider {
 
-    private final ProtocolProvider protocol;
+    private final AsyncProvider protocol;
 
-    public DefaultProvider(ProtocolProvider protocol) {
+    public DefaultBlockingProvider(AsyncProvider protocol) {
         this.protocol = protocol;
     }
 

@@ -18,9 +18,9 @@ package org.fusesource.amqpjms.provider.amqp;
 
 import java.net.URI;
 
-import org.fusesource.amqpjms.provider.DefaultProvider;
-import org.fusesource.amqpjms.provider.ProtocolProvider;
-import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.AsyncProvider;
+import org.fusesource.amqpjms.provider.BlockingProvider;
+import org.fusesource.amqpjms.provider.DefaultBlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderFactory;
 
 /**
@@ -29,8 +29,8 @@ import org.fusesource.amqpjms.provider.ProviderFactory;
 public class AmqpProviderFactory implements ProviderFactory {
 
     @Override
-    public Provider createProvider(URI remoteURI) {
-        return new DefaultProvider(new AmqpProvider(remoteURI));
+    public BlockingProvider createProvider(URI remoteURI) {
+        return new DefaultBlockingProvider(new AmqpProvider(remoteURI));
     }
 
     @Override
@@ -39,7 +39,7 @@ public class AmqpProviderFactory implements ProviderFactory {
     }
 
     @Override
-    public ProtocolProvider createProtocol(URI remoteURI) throws Exception {
+    public AsyncProvider createAsyncProvider(URI remoteURI) throws Exception {
         return new AmqpProvider(remoteURI);
     }
 }

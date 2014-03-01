@@ -60,7 +60,7 @@ import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.util.IdGenerator;
 import org.fusesource.amqpjms.jms.util.ThreadPoolUtils;
-import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,13 +94,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private URI brokerURI;
     private URI localURI;
     private SSLContext sslContext;
-    private Provider provider;
+    private BlockingProvider provider;
     private final Set<JmsConnectionListener> connectionListeners =
         new CopyOnWriteArraySet<JmsConnectionListener>();
 
     private final AtomicLong sessionIdGenerator = new AtomicLong();
 
-    protected JmsConnection(String connectionId, Provider provider, IdGenerator clientIdGenerator) throws JMSException {
+    protected JmsConnection(String connectionId, BlockingProvider provider, IdGenerator clientIdGenerator) throws JMSException {
 
         // This executor can be used for dispatching asynchronous tasks that might block or result
         // in reentrant calls to this Connection that could block.  The thread in this executor
@@ -694,11 +694,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.connectionInfo.setPassword(password);
     }
 
-    Provider getProvider() {
+    BlockingProvider getProvider() {
         return provider;
     }
 
-    void setProvider(Provider provider) {
+    void setProvider(BlockingProvider provider) {
         this.provider = provider;
     }
 
@@ -734,7 +734,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     @Override
-    public void onConnectionRecovery(Provider provider) {
+    public void onConnectionRecovery(BlockingProvider provider) {
         // TODO - Recover Advisory Consumer ?
         //        Recover Temporary Destinations ?
         for (JmsSession session : sessions) {

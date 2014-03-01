@@ -30,7 +30,7 @@ import javax.jms.MessageProducer;
 import org.fusesource.amqpjms.jms.message.JmsMessageTransformation;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
-import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.BlockingProvider;
 
 /**
  * Implementation of a Jms MessageProducer
@@ -312,7 +312,7 @@ public class JmsMessageProducer implements MessageProducer {
         }
     }
 
-    public void onConnectionRecovery(Provider provider) {
+    public void onConnectionRecovery(BlockingProvider provider) {
         // TODO - Attempt to create this Producer again using this
         //        consumer's JmsProducerInfo
     }

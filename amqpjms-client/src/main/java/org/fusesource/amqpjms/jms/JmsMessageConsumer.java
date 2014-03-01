@@ -35,7 +35,7 @@ import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
 import org.fusesource.amqpjms.jms.util.MessageQueue;
-import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.BlockingProvider;
 
 /**
  * implementation of a JMS Message Consumer
@@ -401,7 +401,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         return false;
     }
 
-    public void onConnectionRecovery(Provider provider) {
+    public void onConnectionRecovery(BlockingProvider provider) {
         // TODO - Attempt to create this Consumer again using this
         //        consumer's JmsConsumerInfo
     }

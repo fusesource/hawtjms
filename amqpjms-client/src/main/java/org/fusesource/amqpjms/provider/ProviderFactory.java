@@ -24,30 +24,30 @@ import java.net.URI;
 public interface ProviderFactory {
 
     /**
-     * Creates an instance of the given Provider and configures it using the properties set
-     * on the given remote broker URI.
+     * Creates an instance of the given BlockingProvider and configures it using the
+     * properties set on the given remote broker URI.
      *
      * @param remoteURI
      *        The URI used to connect to a remote Broker.
      *
-     * @return a new JMS Provider instance.
+     * @return a new BlockingProvider instance.
      *
      * @throws Exception if an error occurs while creating the Provider instance.
      */
-    Provider createProvider(URI remoteURI) throws Exception;
+    BlockingProvider createProvider(URI remoteURI) throws Exception;
 
     /**
-     * Creates an instance of the given Provider and configures it using the properties set
-     * on the given remote broker URI.
+     * Creates an instance of the given AsyncProvider and configures it using the
+     * properties set on the given remote broker URI.
      *
      * @param remoteURI
      *        The URI used to connect to a remote Broker.
      *
-     * @return a new JMS Provider instance.
+     * @return a new AsyncProvider instance.
      *
      * @throws Exception if an error occurs while creating the Provider instance.
      */
-    ProtocolProvider createProtocol(URI remoteURI) throws Exception;
+    AsyncProvider createAsyncProvider(URI remoteURI) throws Exception;
 
     /**
      * @return the name of this JMS Provider, e.g. STOMP, AMQP, MQTT...etc

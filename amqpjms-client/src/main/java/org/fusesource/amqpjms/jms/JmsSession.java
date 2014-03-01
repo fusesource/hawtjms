@@ -74,7 +74,7 @@ import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
-import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.hawtbuf.AsciiBuffer;
 
 /**
@@ -914,7 +914,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         }
     }
 
-    public void onConnectionRecovery(Provider provider) {
+    public void onConnectionRecovery(BlockingProvider provider) {
 
         // TODO - Recover or Rollback TX ?
 

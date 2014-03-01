@@ -44,7 +44,7 @@ import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsResourceVistor;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.jms.util.IOExceptionSupport;
-import org.fusesource.amqpjms.provider.ProtocolProvider;
+import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderListener;
 import org.fusesource.amqpjms.provider.ProviderRequest;
@@ -64,7 +64,7 @@ import org.vertx.java.core.buffer.Buffer;
  * All work within this Provider is serialized to a single Thread.  Any asynchronous exceptions
  * will be dispatched from that Thread and all in-bound requests are handled there as well.
  */
-public class AmqpProvider implements ProtocolProvider {
+public class AmqpProvider implements AsyncProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 

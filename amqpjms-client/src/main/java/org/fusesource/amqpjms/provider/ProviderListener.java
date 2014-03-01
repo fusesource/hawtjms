@@ -50,7 +50,7 @@ public interface ProviderListener {
      *        The new Provider instance that will become active after the state
      *        has been recovered.
      */
-    void onConnectionRecovery(Provider provider);
+    void onConnectionRecovery(BlockingProvider provider);
 
     /**
      * Called to signal that all recovery operations are now complete and the Provider

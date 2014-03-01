@@ -31,10 +31,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
-import org.fusesource.amqpjms.provider.DefaultProvider;
+import org.fusesource.amqpjms.provider.AsyncProvider;
+import org.fusesource.amqpjms.provider.BlockingProvider;
+import org.fusesource.amqpjms.provider.DefaultBlockingProvider;
 import org.fusesource.amqpjms.provider.DefaultProviderListener;
-import org.fusesource.amqpjms.provider.ProtocolProvider;
-import org.fusesource.amqpjms.provider.Provider;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderFactory;
 import org.fusesource.amqpjms.provider.ProviderFactoryFinder;
@@ -50,12 +50,12 @@ import org.slf4j.LoggerFactory;
  * connection the FailoverProvider will initiate state recovery of the active JMS
  * framework resources.
  */
-public class FailoverProvider extends DefaultProviderListener implements Provider {
+public class FailoverProvider extends DefaultProviderListener implements BlockingProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
     private ProviderListener proxied;
-    private ProtocolProvider provider;
+    private AsyncProvider provider;
     private final URI originalURI;
     private final Map<String, String> extraOptions;
 
@@ -229,7 +229,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     @Override
     public URI getRemoteURI() {
-        ProtocolProvider provider = this.provider;
+        AsyncProvider provider = this.provider;
         if (provider != null) {
             return provider.getRemoteURI();
         }
@@ -258,7 +258,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     if (provider == null) {
                         try {
                             ProviderFactory factory = ProviderFactoryFinder.findProviderFactory(originalURI);
-                            ProtocolProvider provider = factory.createProtocol(originalURI);
+                            AsyncProvider provider = factory.createAsyncProvider(originalURI);
                             provider.connect();
                             handleNewConnection(provider);
                         } catch (Throwable e) {
@@ -271,7 +271,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         }
     }
 
-    private void handleNewConnection(final ProtocolProvider provider) {
+    private void handleNewConnection(final AsyncProvider provider) {
         this.serializer.execute(new Runnable() {
             @Override
             public void run() {
@@ -284,7 +284,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     }
                 } else {
                     // TODO - Attempt state recovery.
-                    proxied.onConnectionRecovery(new DefaultProvider(provider));
+                    proxied.onConnectionRecovery(new DefaultBlockingProvider(provider));
                     FailoverProvider.this.provider = provider;
                     proxied.onConnectionRestored();
                 }

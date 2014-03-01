@@ -36,7 +36,7 @@ import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.jndi.JNDIStorable;
 import org.fusesource.amqpjms.jms.util.IdGenerator;
 import org.fusesource.amqpjms.jms.util.PropertyUtil;
-import org.fusesource.amqpjms.provider.Provider;
+import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderFactory;
 import org.fusesource.amqpjms.provider.ProviderFactoryFinder;
 import org.slf4j.Logger;
@@ -158,7 +158,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     public TopicConnection createTopicConnection(String userName, String password) throws JMSException {
         try {
             String connectionId = getConnectionIdGenerator().generateId();
-            Provider provider = createProvider(brokerURI);
+            BlockingProvider provider = createProvider(brokerURI);
             JmsTopicConnection result = new JmsTopicConnection(connectionId, provider, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
             return result;
@@ -188,7 +188,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     public Connection createConnection(String userName, String password) throws JMSException {
         try {
             String connectionId = getConnectionIdGenerator().generateId();
-            Provider provider = createProvider(brokerURI);
+            BlockingProvider provider = createProvider(brokerURI);
             JmsConnection result = new JmsConnection(connectionId, provider, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
             return result;
@@ -219,7 +219,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     public QueueConnection createQueueConnection(String userName, String password) throws JMSException {
         try {
             String connectionId = getConnectionIdGenerator().generateId();
-            Provider provider = createProvider(brokerURI);
+            BlockingProvider provider = createProvider(brokerURI);
             JmsQueueConnection result = new JmsQueueConnection(connectionId, provider, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
             return result;
@@ -228,8 +228,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         }
     }
 
-    private Provider createProvider(URI brokerURI) throws Exception {
-        Provider result = null;
+    private BlockingProvider createProvider(URI brokerURI) throws Exception {
+        BlockingProvider result = null;
 
         try {
             ProviderFactory factory = ProviderFactoryFinder.findProviderFactory(brokerURI);
