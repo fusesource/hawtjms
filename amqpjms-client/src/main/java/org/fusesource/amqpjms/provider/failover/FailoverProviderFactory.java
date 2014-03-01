@@ -18,6 +18,7 @@ package org.fusesource.amqpjms.provider.failover;
 
 import java.net.URI;
 
+import org.fusesource.amqpjms.provider.ProtocolProvider;
 import org.fusesource.amqpjms.provider.Provider;
 import org.fusesource.amqpjms.provider.ProviderFactory;
 
@@ -37,5 +38,10 @@ public class FailoverProviderFactory implements ProviderFactory {
     @Override
     public String getName() {
         return "Failover";
+    }
+
+    @Override
+    public ProtocolProvider createProtocol(URI remoteURO) throws Exception {
+        throw new UnsupportedOperationException();
     }
 }

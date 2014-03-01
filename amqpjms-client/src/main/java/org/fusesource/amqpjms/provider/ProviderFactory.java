@@ -27,14 +27,27 @@ public interface ProviderFactory {
      * Creates an instance of the given Provider and configures it using the properties set
      * on the given remote broker URI.
      *
-     * @param remoteURO
+     * @param remoteURI
      *        The URI used to connect to a remote Broker.
      *
      * @return a new JMS Provider instance.
      *
      * @throws Exception if an error occurs while creating the Provider instance.
      */
-    Provider createProvider(URI remoteURO) throws Exception;
+    Provider createProvider(URI remoteURI) throws Exception;
+
+    /**
+     * Creates an instance of the given Provider and configures it using the properties set
+     * on the given remote broker URI.
+     *
+     * @param remoteURI
+     *        The URI used to connect to a remote Broker.
+     *
+     * @return a new JMS Provider instance.
+     *
+     * @throws Exception if an error occurs while creating the Provider instance.
+     */
+    ProtocolProvider createProtocol(URI remoteURI) throws Exception;
 
     /**
      * @return the name of this JMS Provider, e.g. STOMP, AMQP, MQTT...etc

@@ -31,7 +31,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
+import org.fusesource.amqpjms.provider.DefaultProvider;
 import org.fusesource.amqpjms.provider.DefaultProviderListener;
+import org.fusesource.amqpjms.provider.ProtocolProvider;
 import org.fusesource.amqpjms.provider.Provider;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderFactory;
@@ -53,14 +55,14 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
     private ProviderListener proxied;
-    private Provider provider;
+    private ProtocolProvider provider;
     private final URI originalURI;
     private final Map<String, String> extraOptions;
 
     private final ExecutorService serializer;
     private final ScheduledExecutorService connectionHub;
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final LinkedList<ProviderRequest<?>> requests = new LinkedList<ProviderRequest<?>>();
+    private final LinkedList<FailoverRequest<?>> requests = new LinkedList<FailoverRequest<?>>();
 
     // All state and configuration values related to reconnection.
     private boolean firstConnection = true;
@@ -120,6 +122,10 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 @Override
                 public void run() {
                     try {
+                        for (FailoverRequest<?> request : requests) {
+                            request.onFailure(new IOException("Closed"));
+                        }
+
                         if (provider != null) {
                             provider.close();
                         }
@@ -152,92 +158,56 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     @Override
     public JmsResource create(final JmsResource resource) throws IOException {
         checkClosed();
-        final ProviderRequest<JmsResource> request = new ProviderRequest<JmsResource>();
-        serializer.execute(new Runnable() {
-
+        final FailoverRequest<JmsResource> request = new FailoverRequest<JmsResource>() {
             @Override
-            public void run() {
-                if (provider == null) {
-                    requests.addLast(request);
-                } else {
-                    try {
-                        provider.create(resource);
-                    } catch (IOException e) {
-                        request.onFailure(e);
-                    }
-                }
+            public void doTask() throws IOException {
+                provider.create(resource, this);
             }
-        });
+        };
 
+        serializer.execute(request);
         return request.getResponse();
     }
 
     @Override
     public void destroy(final JmsResource resource) throws IOException {
         checkClosed();
-        final ProviderRequest<Void> request = new ProviderRequest<Void>();
-        serializer.execute(new Runnable() {
-
+        final FailoverRequest<Void> request = new FailoverRequest<Void>() {
             @Override
-            public void run() {
-                if (provider == null) {
-                    requests.addLast(request);
-                } else {
-                    try {
-                        provider.destroy(resource);
-                    } catch (IOException e) {
-                        request.onFailure(e);
-                    }
-                }
+            public void doTask() throws IOException {
+                provider.destroy(resource, this);
             }
-        });
+        };
 
+        serializer.execute(request);
         request.getResponse();
     }
 
     @Override
     public void send(final JmsOutboundMessageDispatch envelope) throws IOException {
         checkClosed();
-        final ProviderRequest<Void> request = new ProviderRequest<Void>();
-        serializer.execute(new Runnable() {
-
+        final FailoverRequest<Void> request = new FailoverRequest<Void>() {
             @Override
-            public void run() {
-                if (provider == null) {
-                    requests.addLast(request);
-                } else {
-                    try {
-                        provider.send(envelope);
-                    } catch (IOException e) {
-                        request.onFailure(e);
-                    }
-                }
+            public void doTask() throws IOException {
+                provider.send(envelope, this);
             }
-        });
+        };
 
+        serializer.execute(request);
         request.getResponse();
     }
 
     @Override
-    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws IOException {
+    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType) throws IOException {
         checkClosed();
-        final ProviderRequest<Void> request = new ProviderRequest<Void>();
-        serializer.execute(new Runnable() {
-
+        final FailoverRequest<Void> request = new FailoverRequest<Void>() {
             @Override
-            public void run() {
-                try {
-                    checkClosed();
-
-                    // TODO - Ack
-
-                    request.onSuccess(null);
-                } catch (Exception error) {
-                    request.onFailure(error);
-                }
+            public void doTask() throws IOException {
+                provider.acknowledge(envelope, ackType, this);
             }
-        });
+        };
 
+        serializer.execute(request);
         request.getResponse();
     }
 
@@ -259,7 +229,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     @Override
     public URI getRemoteURI() {
-        Provider provider = this.provider;
+        ProtocolProvider provider = this.provider;
         if (provider != null) {
             return provider.getRemoteURI();
         }
@@ -288,7 +258,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     if (provider == null) {
                         try {
                             ProviderFactory factory = ProviderFactoryFinder.findProviderFactory(originalURI);
-                            Provider provider = factory.createProvider(originalURI);
+                            ProtocolProvider provider = factory.createProtocol(originalURI);
                             provider.connect();
                             handleNewConnection(provider);
                         } catch (Throwable e) {
@@ -301,7 +271,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         }
     }
 
-    private void handleNewConnection(final Provider provider) {
+    private void handleNewConnection(final ProtocolProvider provider) {
         this.serializer.execute(new Runnable() {
             @Override
             public void run() {
@@ -309,12 +279,12 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     firstConnection = false;
                     FailoverProvider.this.provider = provider;
 
-                    for (ProviderRequest<?> request : requests) {
-
+                    for (FailoverRequest<?> request : requests) {
+                        request.run();
                     }
                 } else {
                     // TODO - Attempt state recovery.
-                    proxied.onConnectionRecovery(provider);
+                    proxied.onConnectionRecovery(new DefaultProvider(provider));
                     FailoverProvider.this.provider = provider;
                     proxied.onConnectionRestored();
                 }
@@ -347,5 +317,25 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 //        so we must be careful not to schedule two reconnect attempts.
             }
         });
+    }
+
+    // Wraps incoming requests so they can be queued if offline.
+    private abstract class FailoverRequest<T> extends ProviderRequest<T> implements Runnable {
+
+        @Override
+        public void run() {
+            if (provider == null) {
+                requests.addLast(this);
+            } else {
+                try {
+                    doTask();
+                } catch (IOException e) {
+                    this.onFailure(e);
+                }
+            }
+        }
+
+        public abstract void doTask() throws IOException;
+
     }
 }
