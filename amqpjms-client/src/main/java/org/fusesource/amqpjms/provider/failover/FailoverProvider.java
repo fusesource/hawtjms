@@ -53,7 +53,9 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
-    private ProviderListener proxied;
+    private static final int INFINITE = -1;
+
+    private ProviderListener listener;
     private AsyncProvider provider;
     private final URI originalURI;
     private final Map<String, String> extraOptions;
@@ -65,8 +67,13 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
 
     // All state and configuration values related to reconnection.
     private boolean firstConnection = true;
+    private long reconnectAttempts;
     private final long reconnectDelay = TimeUnit.SECONDS.toMillis(5);
-    private final long initialReconnectDealy = 0L;
+    private long initialReconnectDealy = 0L;
+    private long maxReconnectDelay = TimeUnit.SECONDS.toMillis(30);
+    private long maxReconnectAttempts = INFINITE;
+    private int startupMaxReconnectAttempts = INFINITE;
+    private int warnAfterReconnectAttempts = 10;
 
     public FailoverProvider(URI uri) {
         this(uri, null);
@@ -86,7 +93,7 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
             public Thread newThread(Runnable runner) {
                 Thread serial = new Thread(runner);
                 serial.setDaemon(true);
-                serial.setName("FailoverProvider:");
+                serial.setName("FailoverProvider: serialization thread");
                 return serial;
             }
         });
@@ -218,12 +225,12 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
 
     @Override
     public void setProviderListener(ProviderListener listener) {
-        this.proxied = listener;
+        this.listener = listener;
     }
 
     @Override
     public ProviderListener getProviderListener() {
-        return proxied;
+        return listener;
     }
 
     @Override
@@ -281,18 +288,32 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
                         request.run();
                     }
                 } else {
-                    // TODO - Attempt state recovery.
-                    proxied.onConnectionRecovery(new DefaultBlockingProvider(provider));
+                    try {
+                        listener.onConnectionRecovery(new DefaultBlockingProvider(provider));
+                    } catch (Throwable e) {
+                        LOG.info("Failed while replaying state: {}", e.getMessage());
+                        triggerReconnect();
+                    }
                     FailoverProvider.this.provider = provider;
-                    proxied.onConnectionRestored();
+                    listener.onConnectionRestored();
                 }
             }
         });
     }
 
     @Override
-    public void onMessage(JmsInboundMessageDispatch envelope) {
-        this.proxied.onMessage(envelope);
+    public void onMessage(final JmsInboundMessageDispatch envelope) {
+        if (closed.get()) {
+            return;
+        }
+        serializer.execute(new Runnable() {
+            @Override
+            public void run() {
+                if (!closed.get()) {
+                    listener.onMessage(envelope);
+                }
+            }
+        });
     }
 
     @Override
@@ -307,7 +328,7 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
                 if (!closed.get()) {
                     provider = null;
                     triggerReconnect();
-                    proxied.onConnectionInterrupted();
+                    listener.onConnectionInterrupted();
                 }
                 // TODO - start reconnection
                 //        signal transport interrupted.
@@ -317,23 +338,109 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
         });
     }
 
-    // Wraps incoming requests so they can be queued if offline.
-    private abstract class FailoverRequest<T> extends ProviderRequest<T> implements Runnable {
+    /**
+     * For all requests that are dispatched from the FailoverProvider to a connected
+     * Provider instance an instance of FailoverRequest is used to handle errors that
+     * occur during processing of that request and trigger a reconnect.
+     *
+     * @param <T>
+     */
+    protected abstract class FailoverRequest<T> extends ProviderRequest<T> implements Runnable {
 
         @Override
         public void run() {
             if (provider == null) {
-                requests.addLast(this);
+                if (failureWhenOffline()) {
+                    onFailure(new IOException("Provider disconnected"));
+                } else if (succeedsWhenOffline()) {
+                    onSuccess(null);
+                } else {
+                    requests.addLast(this);
+                }
             } else {
                 try {
                     doTask();
                 } catch (IOException e) {
-                    this.onFailure(e);
+                    triggerReconnect();
                 }
             }
         }
 
         public abstract void doTask() throws IOException;
 
+        /**
+         * Should the request just succeed when the Provider is not connected.
+         *
+         * @return true if the request is marked as successful when not connected.
+         */
+        public boolean succeedsWhenOffline() {
+            return false;
+        }
+
+        /**
+         * When the transport is not connected should this request automatically fail.
+         *
+         * @return true if the task should fail when the Provider is offline.
+         */
+        public boolean failureWhenOffline() {
+            return false;
+        }
+    }
+
+    long getInitialReconnectDealy() {
+        return initialReconnectDealy;
+    }
+
+    void setInitialReconnectDealy(long initialReconnectDealy) {
+        this.initialReconnectDealy = initialReconnectDealy;
+    }
+
+    long getMaxReconnectDelay() {
+        return maxReconnectDelay;
+    }
+
+    void setMaxReconnectDelay(long maxReconnectDelay) {
+        this.maxReconnectDelay = maxReconnectDelay;
+    }
+
+    long getMaxReconnectAttempts() {
+        return maxReconnectAttempts;
+    }
+
+    void setMaxReconnectAttempts(long maxReconnectAttempts) {
+        this.maxReconnectAttempts = maxReconnectAttempts;
+    }
+
+    int getStartupMaxReconnectAttempts() {
+        return startupMaxReconnectAttempts;
+    }
+
+    void setStartupMaxReconnectAttempts(int startupMaxReconnectAttempts) {
+        this.startupMaxReconnectAttempts = startupMaxReconnectAttempts;
+    }
+
+    /**
+     * Gets the current setting controlling how many Connect / Reconnect attempts must occur
+     * before a warn message is logged.  A value of {@code <= 0} indicates that there will be
+     * no warn message logged regardless of how many reconnect attempts occur.
+     *
+     * @return the current number of connection attempts before warn logging is triggered.
+     */
+    public int getWarnAfterReconnectAttempts() {
+        return warnAfterReconnectAttempts;
+    }
+
+    /**
+     * Sets the number of Connect / Reconnect attempts that must occur before a warn message
+     * is logged indicating that the transport is not connected.  This can be useful when the
+     * client is running inside some container or service as it gives an indication of some
+     * problem with the client connection that might not otherwise be visible.  To disable the
+     * log messages this value should be set to a value @{code attempts <= 0}
+     *
+     * @param warnAfterReconnectAttempts
+     *        The number of failed connection attempts that must happen before a warning is logged.
+     */
+    public void setWarnAfterReconnectAttempts(int warnAfterReconnectAttempts) {
+        this.warnAfterReconnectAttempts = warnAfterReconnectAttempts;
     }
 }
