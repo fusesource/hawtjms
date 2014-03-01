@@ -67,18 +67,21 @@ public class DefaultProvider implements Provider {
     public void destroy(JmsResource resource) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         protocol.destroy(resource, request);
+        request.getResponse();
     }
 
     @Override
     public void send(JmsOutboundMessageDispatch envelope) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         protocol.send(envelope, request);
+        request.getResponse();
     }
 
     @Override
     public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         protocol.acknowledge(envelope, ackType, request);
+        request.getResponse();
     }
 
     @Override
