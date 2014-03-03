@@ -19,7 +19,7 @@ package org.fusesource.amqpjms.sasl;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.fusesource.amqpjms.jms.util.FactoryFinder;
+import org.fusesource.amqpjms.util.FactoryFinder;
 
 public abstract class MechanismFactoryFinder {
 

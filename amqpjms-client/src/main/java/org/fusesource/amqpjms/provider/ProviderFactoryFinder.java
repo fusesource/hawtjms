@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.fusesource.amqpjms.jms.util.FactoryFinder;
+import org.fusesource.amqpjms.util.FactoryFinder;
 
 public abstract class ProviderFactoryFinder {
 

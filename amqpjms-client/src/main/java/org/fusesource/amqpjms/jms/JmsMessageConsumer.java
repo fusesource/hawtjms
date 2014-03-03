@@ -34,8 +34,8 @@ import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
-import org.fusesource.amqpjms.jms.util.MessageQueue;
 import org.fusesource.amqpjms.provider.BlockingProvider;
+import org.fusesource.amqpjms.util.MessageQueue;
 
 /**
  * implementation of a JMS Message Consumer

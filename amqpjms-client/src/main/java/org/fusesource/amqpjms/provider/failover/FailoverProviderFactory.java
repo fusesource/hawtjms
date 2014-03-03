@@ -29,7 +29,9 @@ public class FailoverProviderFactory extends ProviderFactory {
 
     @Override
     public BlockingProvider createProvider(URI remoteURI) throws Exception {
-        remoteURI = new URI(remoteURI.toString().substring("failover:".length()));
+        
+        
+        
         return new FailoverProvider(remoteURI);
     }
 

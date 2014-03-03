@@ -17,7 +17,7 @@
 package org.fusesource.amqpjms.jms.meta;
 
 import org.fusesource.amqpjms.jms.JmsDestination;
-import org.fusesource.amqpjms.jms.util.ToStringSupport;
+import org.fusesource.amqpjms.util.ToStringSupport;
 
 public final class JmsProducerInfo implements JmsResource, Comparable<JmsProducerInfo> {
 

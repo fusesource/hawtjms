@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.fusesource.amqpjms.jms.util.IOExceptionSupport;
+import org.fusesource.amqpjms.util.IOExceptionSupport;
 
 /**
  * Asynchronous Provider response class.

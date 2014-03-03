@@ -39,8 +39,8 @@ import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
-import org.fusesource.amqpjms.jms.util.PropertyExpression;
-import org.fusesource.amqpjms.jms.util.TypeConversionSupport;
+import org.fusesource.amqpjms.util.PropertyExpression;
+import org.fusesource.amqpjms.util.TypeConversionSupport;
 import org.fusesource.hawtbuf.AsciiBuffer;
 
 public class JmsMessage implements javax.jms.Message {

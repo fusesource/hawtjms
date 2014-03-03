@@ -34,10 +34,10 @@ import javax.net.ssl.SSLContext;
 
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.jndi.JNDIStorable;
-import org.fusesource.amqpjms.jms.util.IdGenerator;
-import org.fusesource.amqpjms.jms.util.PropertyUtil;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderFactory;
+import org.fusesource.amqpjms.util.IdGenerator;
+import org.fusesource.amqpjms.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

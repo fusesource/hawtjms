@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
-import org.fusesource.amqpjms.jms.util.IOExceptionSupport;
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.DefaultBlockingProvider;
@@ -41,6 +40,7 @@ import org.fusesource.amqpjms.provider.ProviderFactory;
 import org.fusesource.amqpjms.provider.ProviderListener;
 import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.fusesource.amqpjms.provider.amqp.AmqpConnection;
+import org.fusesource.amqpjms.util.IOExceptionSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

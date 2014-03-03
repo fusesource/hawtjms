@@ -28,7 +28,7 @@ import javax.jms.MessageNotWriteableException;
 import javax.jms.StreamMessage;
 
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
-import org.fusesource.amqpjms.jms.util.MarshallingSupport;
+import org.fusesource.amqpjms.util.MarshallingSupport;
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.ByteArrayInputStream;
 import org.fusesource.hawtbuf.DataByteArrayOutputStream;

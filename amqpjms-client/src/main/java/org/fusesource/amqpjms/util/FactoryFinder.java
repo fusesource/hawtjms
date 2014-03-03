@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.amqpjms.jms.util;
+package org.fusesource.amqpjms.util;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -30,7 +30,7 @@ public class FactoryFinder {
     /**
      * The strategy that the FactoryFinder uses to find load and instantiate Objects can be
      * changed out by calling the
-     * {@link org.fusesource.amqpjms.jms.util.FactoryFinder#setObjectFactory(org.fusesource.amqpjms.jms.util.FactoryFinder.ObjectFactory)}
+     * {@link org.fusesource.amqpjms.util.FactoryFinder#setObjectFactory(org.fusesource.amqpjms.util.FactoryFinder.ObjectFactory)}
      * method with a custom implementation of ObjectFactory.
      *
      * The default ObjectFactory is typically changed out when running in a specialized

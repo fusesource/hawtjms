@@ -30,7 +30,7 @@ import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
 
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
-import org.fusesource.amqpjms.jms.util.ClassLoadingAwareObjectInputStream;
+import org.fusesource.amqpjms.util.ClassLoadingAwareObjectInputStream;
 import org.fusesource.hawtbuf.Buffer;
 
 /**

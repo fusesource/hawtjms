@@ -22,8 +22,8 @@ import javax.jms.ServerSessionPool;
 import javax.jms.Topic;
 import javax.jms.TopicSession;
 
-import org.fusesource.amqpjms.jms.util.IdGenerator;
 import org.fusesource.amqpjms.provider.BlockingProvider;
+import org.fusesource.amqpjms.util.IdGenerator;
 
 public class JmsQueueConnection extends JmsConnection {
 

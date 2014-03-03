@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.amqpjms.jms.util;
+package org.fusesource.amqpjms.util;
 
 /**
  * A very simple stop watch.

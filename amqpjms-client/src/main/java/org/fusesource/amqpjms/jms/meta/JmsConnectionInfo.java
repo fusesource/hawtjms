@@ -16,7 +16,7 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
-import org.fusesource.amqpjms.jms.util.ToStringSupport;
+import org.fusesource.amqpjms.util.ToStringSupport;
 
 /**
  * Meta object that contains the JmsConnection identification and configuration

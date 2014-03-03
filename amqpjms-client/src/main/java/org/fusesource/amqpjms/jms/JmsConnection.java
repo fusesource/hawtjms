@@ -58,10 +58,10 @@ import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
-import org.fusesource.amqpjms.jms.util.IdGenerator;
-import org.fusesource.amqpjms.jms.util.ThreadPoolUtils;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderListener;
+import org.fusesource.amqpjms.util.IdGenerator;
+import org.fusesource.amqpjms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
