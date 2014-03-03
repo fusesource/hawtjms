@@ -44,6 +44,7 @@ public class PropertyUtil {
      * @return <Code>Map</Code> of properties
      * @throws Exception
      */
+    @SuppressWarnings("unchecked")
     public static Map<String, String> parseParameters(URI uri) throws Exception {
         return uri.getQuery() == null ? Collections.EMPTY_MAP : parseQuery(stripPrefix(uri.getQuery(), "?"));
     }
@@ -56,6 +57,7 @@ public class PropertyUtil {
      * @return <Code>Map</Code> of properties
      * @throws Exception
      */
+    @SuppressWarnings("unchecked")
     public static Map<String, String> parseParameters(String uri) throws Exception {
         return uri == null ? Collections.EMPTY_MAP : parseQuery(stripUpto(uri, '?'));
     }
@@ -85,7 +87,7 @@ public class PropertyUtil {
             }
             return rc;
         }
-        return Collections.EMPTY_MAP;
+        return Collections.emptyMap();
     }
 
     /**
