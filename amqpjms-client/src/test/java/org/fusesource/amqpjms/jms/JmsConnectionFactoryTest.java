@@ -19,6 +19,7 @@ package org.fusesource.amqpjms.jms;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -92,5 +93,24 @@ public class JmsConnectionFactoryTest extends AmqpTestSupport {
         Connection connection = factory.createConnection();
         assertNotNull(connection);
         connection.close();
+    }
+
+    @Test
+    public void testUriOptionsApplied() throws Exception {
+        String uri = getGoodProviderAddress() + "?jms.omitHost=true&jms.forceAsyncSend=true";
+        JmsConnectionFactory factory = new JmsConnectionFactory(uri);
+        assertTrue(factory.isOmitHost());
+        assertTrue(factory.isForceAsyncSend());
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+        assertTrue(connection.isOmitHost());
+        assertTrue(connection.isForceAsyncSend());
+        connection.close();
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testBadUriOptionCausesFail() throws Exception {
+        String uri = getGoodProviderAddress() + "?jms.omitHost=true&jms.badOption=true";
+        new JmsConnectionFactory(uri);
     }
 }

@@ -21,12 +21,16 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.beans.PropertyEditor;
 import java.beans.PropertyEditorManager;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -36,6 +40,107 @@ import javax.net.ssl.SSLContext;
  * Utilities for properties
  */
 public class PropertyUtil {
+
+    /**
+     * Creates a URI from the original URI and the given parameters.
+     *
+     * @param originalURI
+     *        The URI whose current parameters are remove and replaced with the given remainder
+     *        value.
+     * @param params
+     *        The URI params that should be used to replace the current ones in the target.
+     *
+     * @return a new URI that matches the original one but has its query options replaced with
+     *         the given ones.
+     *
+     * @throws URISyntaxException
+     */
+    public static URI replaceQuery(URI originalURI, Map<String, String> params) throws URISyntaxException {
+        String s = createQueryString(params);
+        if (s.length() == 0) {
+            s = null;
+        }
+        return replaceQuery(originalURI, s);
+    }
+
+    /**
+     * Creates a URI with the given query, removing an previous query value from the given URI.
+     *
+     * @param uri
+     *        The source URI whose existing query is replaced with the newly supplied one.
+     * @param query
+     *        The new URI query string that should be appended to the given URI.
+     *
+     * @return a new URI that is a combination of the original URI and the given query string.
+     * @throws URISyntaxException
+     */
+    public static URI replaceQuery(URI uri, String query) throws URISyntaxException {
+        String schemeSpecificPart = uri.getRawSchemeSpecificPart();
+        // strip existing query if any
+        int questionMark = schemeSpecificPart.lastIndexOf("?");
+        // make sure question mark is not within parentheses
+        if (questionMark < schemeSpecificPart.lastIndexOf(")")) {
+            questionMark = -1;
+        }
+        if (questionMark > 0) {
+            schemeSpecificPart = schemeSpecificPart.substring(0, questionMark);
+        }
+        if (query != null && query.length() > 0) {
+            schemeSpecificPart += "?" + query;
+        }
+        return new URI(uri.getScheme(), schemeSpecificPart, uri.getFragment());
+    }
+
+    /**
+     * Creates a URI with the given query, removing an previous query value from the given URI.
+     *
+     * @param uri
+     *        The source URI whose existing query is replaced with the newly supplied one.
+     * @param query
+     *        The new URI query string that should be appended to the given URI.
+     *
+     * @return a new URI that is a combination of the original URI and the given query string.
+     * @throws URISyntaxException
+     */
+    public static URI eraseQuery(URI uri) throws URISyntaxException {
+        return replaceQuery(uri, (String) null);
+    }
+
+    /**
+     * Given a key / value mapping, create and return a URI formatted query string that is valid
+     * and can be appended to a URI.
+     *
+     * @param options
+     *        The Mapping that will create the new Query string.
+     *
+     * @return a URI formatted query string.
+     *
+     * @throws URISyntaxException
+     */
+    public static String createQueryString(Map<String, ? extends Object> options) throws URISyntaxException {
+        try {
+            if (options.size() > 0) {
+                StringBuffer rc = new StringBuffer();
+                boolean first = true;
+                for (String key : options.keySet()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        rc.append("&");
+                    }
+                    String value = (String) options.get(key);
+                    rc.append(URLEncoder.encode(key, "UTF-8"));
+                    rc.append("=");
+                    rc.append(URLEncoder.encode(value, "UTF-8"));
+                }
+                return rc.toString();
+            } else {
+                return "";
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw (URISyntaxException) new URISyntaxException(e.toString(), "Invalid encoding").initCause(e);
+        }
+    }
 
     /**
      * Get properties from a URI
@@ -67,6 +172,7 @@ public class PropertyUtil {
      *
      * @param uri
      * @return <Code>Map</Code> of properties
+     *
      * @throws Exception
      */
     public static Map<String, String> parseQuery(String uri) throws Exception {
@@ -91,6 +197,37 @@ public class PropertyUtil {
     }
 
     /**
+     * Given a map of properties, filter out only those prefixed with the given value, the
+     * values filtered are returned in a new Map instance.
+     *
+     * @param properties
+     *        The map of properties to filter.
+     * @param optionPrefix
+     *        The prefix value to use when filtering.
+     *
+     * @return a filter map with only values that match the given prefix.
+     */
+    public static Map<String, String> filterProperties(Map<String, String> props, String optionPrefix) {
+        if (props == null) {
+            throw new IllegalArgumentException("props was null.");
+        }
+
+        HashMap<String, String> rc = new HashMap<String, String>(props.size());
+
+        for (Iterator<String> iter = props.keySet().iterator(); iter.hasNext();) {
+            String name = iter.next();
+            if (name.startsWith(optionPrefix)) {
+                String value = props.get(name);
+                name = name.substring(optionPrefix.length());
+                rc.put(name, value);
+                iter.remove();
+            }
+        }
+
+        return rc;
+    }
+
+    /**
      * Add bean properties to a URI
      *
      * @param uri
@@ -101,6 +238,18 @@ public class PropertyUtil {
     public static String addPropertiesToURIFromBean(String uri, Object bean) throws Exception {
         Map<String, String> props = PropertyUtil.getProperties(bean);
         return PropertyUtil.addPropertiesToURI(uri, props);
+    }
+
+    /**
+     * Add properties to a URI
+     *
+     * @param uri
+     * @param props
+     * @return uri with properties on
+     * @throws Exception
+     */
+    public static String addPropertiesToURI(URI uri, Map<String, String> props) throws Exception {
+        return addPropertiesToURI(uri.toString(), props);
     }
 
     /**
@@ -136,22 +285,33 @@ public class PropertyUtil {
     }
 
     /**
-     * Set properties on an object
+     * Set properties on an object using the provided map. The return value indicates if all
+     * properties from the given map were set on the target object.
      *
      * @param target
+     *        the object whose properties are to be set from the map options.
      * @param props
+     *        the properties that should be applied to the given object.
+     *
+     * @return true if all values in the props map were applied to the target object.
      */
-    public static void setProperties(Object target, Map<String, String> props) {
+    public static boolean setProperties(Object target, Map<String, String> props) {
         if (target == null) {
             throw new IllegalArgumentException("target was null.");
         }
         if (props == null) {
             throw new IllegalArgumentException("props was null.");
         }
+
+        int setCounter = 0;
+
         for (Map.Entry<String, String> entry : props.entrySet()) {
             if (setProperty(target, entry.getKey(), entry.getValue())) {
+                setCounter++;
             }
         }
+
+        return setCounter == props.size();
     }
 
     /**
@@ -189,6 +349,18 @@ public class PropertyUtil {
         return props;
     }
 
+    /**
+     * Find a specific property getter in a given object based on a property name.
+     *
+     * @param object
+     *        the object to search.
+     * @param name
+     *        the property name to search for.
+     *
+     * @return the result of invoking the specific property get method.
+     *
+     * @throws Exception if an error occurs while searching the object's bean info.
+     */
     public static Object getProperty(Object object, String name) throws Exception {
         BeanInfo beanInfo = Introspector.getBeanInfo(object.getClass());
         PropertyDescriptor[] propertyDescriptors = beanInfo.getPropertyDescriptors();

@@ -287,6 +287,27 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             throw new IllegalArgumentException("brokerURI cannot be null");
         }
         this.brokerURI = createURI(brokerURI);
+
+        try {
+            if (this.brokerURI.getQuery() != null) {
+
+                Map<String, String> map = PropertyUtil.parseQuery(this.brokerURI.getQuery());
+                Map<String, String> jmsOptionsMap = PropertyUtil.filterProperties(map, "jms.");
+
+                if (!PropertyUtil.setProperties(this, jmsOptionsMap)) {
+                    String msg = ""
+                        + " Not all jms options could be set on the ConnectionFactory."
+                        + " Check the options are spelled correctly."
+                        + " Given parameters=[" + jmsOptionsMap + "]."
+                        + " This connection factory cannot be started.";
+                    throw new IllegalArgumentException(msg);
+                } else {
+                    this.brokerURI = PropertyUtil.replaceQuery(this.brokerURI, map);
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
     /**
