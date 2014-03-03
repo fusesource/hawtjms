@@ -38,6 +38,8 @@ import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderFactory;
 import org.fusesource.amqpjms.util.IdGenerator;
 import org.fusesource.amqpjms.util.PropertyUtil;
+import org.fusesource.amqpjms.util.URISupport;
+import org.fusesource.amqpjms.util.URISupport.CompositeData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -290,7 +292,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
         try {
             if (this.brokerURI.getQuery() != null) {
-
                 Map<String, String> map = PropertyUtil.parseQuery(this.brokerURI.getQuery());
                 Map<String, String> jmsOptionsMap = PropertyUtil.filterProperties(map, "jms.");
 
@@ -303,6 +304,19 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
                     throw new IllegalArgumentException(msg);
                 } else {
                     this.brokerURI = PropertyUtil.replaceQuery(this.brokerURI, map);
+                }
+            } else if (URISupport.isCompositeURI(this.brokerURI)) {
+                CompositeData data = URISupport.parseComposite(this.brokerURI);
+                Map<String, String> jmsOptionsMap = PropertyUtil.filterProperties(data.getParameters(), "jms.");
+                if (!PropertyUtil.setProperties(this, jmsOptionsMap)) {
+                    String msg = ""
+                        + " Not all jms options could be set on the ConnectionFactory."
+                        + " Check the options are spelled correctly."
+                        + " Given parameters=[" + jmsOptionsMap + "]."
+                        + " This connection factory cannot be started.";
+                    throw new IllegalArgumentException(msg);
+                } else {
+                    this.brokerURI = data.toURI();
                 }
             }
         } catch (Exception e) {
