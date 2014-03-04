@@ -16,11 +16,19 @@
  */
 package org.fusesource.amqpjms.provider.failover;
 
+import static org.junit.Assert.assertTrue;
+
 import java.net.URI;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
 
+import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -34,5 +42,37 @@ public class JmsFailoverTest extends AmqpTestSupport {
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
         connection.close();
+    }
+
+    @Test(timeout=60000, expected=JMSException.class)
+    public void testStartupReconnectAttempts() throws Exception {
+        URI brokerURI = new URI("failover://(amqp://localhost:61616)" +
+                                "?maxReconnectDelay=1000&startupMaxReconnectAttempts=5");
+        JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
+        Connection connection = factory.createConnection();
+        connection.start();
+    }
+
+    @Ignore
+    @Test(timeout=60000, expected=JMSException.class)
+    public void testStartFailureWithAsyncExceptionListener() throws Exception {
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")" +
+                                "?maxReconnectDelay=1000&maxReconnectAttempts=5");
+
+        final CountDownLatch failed = new CountDownLatch(1);
+        JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
+        factory.setExceptionListener(new ExceptionListener() {
+
+            @Override
+            public void onException(JMSException exception) {
+                failed.countDown();
+            }
+        });
+        Connection connection = factory.createConnection();
+        connection.start();
+
+        stopBroker();
+
+        assertTrue("No async exception", failed.await(15, TimeUnit.SECONDS));
     }
 }

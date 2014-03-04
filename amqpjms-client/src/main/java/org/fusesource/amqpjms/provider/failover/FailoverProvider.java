@@ -21,7 +21,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
@@ -68,7 +69,8 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
     private final ScheduledExecutorService connectionHub;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean failed = new AtomicBoolean();
-    private final LinkedList<FailoverRequest<?>> requests = new LinkedList<FailoverRequest<?>>();
+    private final AtomicLong requestId = new AtomicLong();
+    private final Map<Long, FailoverRequest<?>> requests = new LinkedHashMap<Long, FailoverRequest<?>>();
     private final DefaultProviderListener closedListener = new DefaultProviderListener();
 
     // Current state of connection / reconnection
@@ -140,15 +142,17 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
                 @Override
                 public void run() {
                     try {
-                        for (FailoverRequest<?> request : requests) {
-                            request.onFailure(new IOException("Closed"));
+                        IOException error = failureCause != null ? failureCause : new IOException("Connection closed");
+                        List<FailoverRequest<?>> pending = new ArrayList<FailoverRequest<?>>(requests.values());
+                        for (FailoverRequest<?> request : pending) {
+                            request.onFailure(error);
                         }
 
                         if (provider != null) {
                             provider.close();
                         }
                     } catch (Exception e) {
-                        LOG.debug("Caught exception while closing proton connection");
+                        LOG.debug("Caught exception while closing connection");
                     } finally {
 
                         if (connectionHub != null) {
@@ -303,15 +307,21 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
                     firstConnection = false;
                     FailoverProvider.this.provider = provider;
 
-                    for (FailoverRequest<?> request : requests) {
+                    List<FailoverRequest<?>> pending = new ArrayList<FailoverRequest<?>>(requests.values());
+                    for (FailoverRequest<?> request : pending) {
                         request.run();
                     }
                 } else {
                     try {
                         listener.onConnectionRecovery(new DefaultBlockingProvider(provider));
                         FailoverProvider.this.provider = provider;
-                        listener.onConnectionRestored();
 
+                        List<FailoverRequest<?>> pending = new ArrayList<FailoverRequest<?>>(requests.values());
+                        for (FailoverRequest<?> request : pending) {
+                            request.run();
+                        }
+
+                        listener.onConnectionRestored();
                         reconnectDelay = initialReconnectDelay;
                         reconnectAttempts = 0;
                     } catch (Throwable e) {
@@ -521,15 +531,16 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
      */
     protected abstract class FailoverRequest<T> extends ProviderRequest<T> implements Runnable {
 
+        private final long id = requestId.incrementAndGet();
+
         @Override
         public void run() {
+            requests.put(id, this);
             if (provider == null) {
                 if (failureWhenOffline()) {
                     onFailure(new IOException("Provider disconnected"));
                 } else if (succeedsWhenOffline()) {
                     onSuccess(null);
-                } else {
-                    requests.addLast(this);
                 }
             } else {
                 try {
@@ -539,6 +550,18 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
                     triggerReconnectionAttempt();
                 }
             }
+        }
+
+        @Override
+        public void onFailure(Throwable result) {
+            requests.remove(id);
+            super.onFailure(result);
+        }
+
+        @Override
+        public void onSuccess(T result) {
+            requests.remove(id);
+            super.onSuccess(result);
         }
 
         /**
