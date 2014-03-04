@@ -39,11 +39,15 @@ import org.apache.activemq.broker.jmx.TopicViewMBean;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.fusesource.amqpjms.util.Wait;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test for basic JMS MessageConsumer functionality.
  */
 public class JmsMessageConsumerTest extends AmqpTestSupport {
+
+    protected static final Logger LOG = LoggerFactory.getLogger(JmsMessageConsumerTest.class);
 
     @Test(timeout = 60000)
     public void testCreateMessageConsumer() throws Exception {
@@ -223,19 +227,5 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         sendToAmqQueue(3);
         assertNull(consumer.receive(2000));
         connection.close();
-    }
-
-    private void sendToAmqQueue(int count) throws Exception {
-        Connection activemqConnection = createActiveMQConnection();
-        Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue amqTestQueue = amqSession.createQueue(name.toString());
-        sendMessages(activemqConnection, amqTestQueue, count);
-    }
-
-    private void sendToAmqTopic(int count) throws Exception {
-        Connection activemqConnection = createActiveMQConnection();
-        Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic amqTestTopic = amqSession.createTopic(name.toString());
-        sendMessages(activemqConnection, amqTestTopic, count);
     }
 }

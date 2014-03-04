@@ -28,8 +28,10 @@ import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageProducer;
+import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.jms.Topic;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
@@ -244,6 +246,20 @@ public class AmqpTestSupport {
         TopicViewMBean proxy = (TopicViewMBean) brokerService.getManagementContext()
                 .newProxyInstance(topicViewMBeanName, TopicViewMBean.class, true);
         return proxy;
+    }
+
+    protected void sendToAmqQueue(int count) throws Exception {
+        Connection activemqConnection = createActiveMQConnection();
+        Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue amqTestQueue = amqSession.createQueue(name.toString());
+        sendMessages(activemqConnection, amqTestQueue, count);
+    }
+
+    protected void sendToAmqTopic(int count) throws Exception {
+        Connection activemqConnection = createActiveMQConnection();
+        Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic amqTestTopic = amqSession.createTopic(name.toString());
+        sendMessages(activemqConnection, amqTestTopic, count);
     }
 
     protected BrokerPlugin configureAuthorization() throws Exception {
