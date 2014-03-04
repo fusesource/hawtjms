@@ -306,6 +306,29 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
+    public void acknowledge(final JmsSessionInfo session, final ProviderRequest<Void> request) throws IOException {
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+
+                    //AmqpSession amqpSession = connection.getSession(session.getSessionId());
+
+                    // TODO -- Full ack all delivered messages in all consumers.
+
+                    pumpToProtonTransport();
+                    request.onSuccess(null);
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
+    }
+
+    @Override
     public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, final ProviderRequest<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {

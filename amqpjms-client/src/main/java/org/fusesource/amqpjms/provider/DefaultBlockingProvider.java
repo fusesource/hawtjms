@@ -22,6 +22,7 @@ import java.net.URI;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
+import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 
 /**
@@ -74,6 +75,13 @@ public class DefaultBlockingProvider implements BlockingProvider {
     public void send(JmsOutboundMessageDispatch envelope) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         protocol.send(envelope, request);
+        request.getResponse();
+    }
+
+    @Override
+    public void acknowledge(JmsSessionInfo session) throws IOException {
+        ProviderRequest<Void> request = new ProviderRequest<Void>();
+        protocol.acknowledge(session, request);
         request.getResponse();
     }
 

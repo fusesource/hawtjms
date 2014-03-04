@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
+import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.DefaultBlockingProvider;
@@ -212,6 +213,20 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
             @Override
             public void doTask() throws IOException {
                 provider.send(envelope, this);
+            }
+        };
+
+        serializer.execute(request);
+        request.getResponse();
+    }
+
+    @Override
+    public void acknowledge(final JmsSessionInfo session) throws IOException {
+        checkClosed();
+        final FailoverRequest<Void> request = new FailoverRequest<Void>() {
+            @Override
+            public void doTask() throws IOException {
+                provider.acknowledge(session, this);
             }
         };
 

@@ -22,6 +22,7 @@ import java.net.URI;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
+import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 
 /**
@@ -97,7 +98,7 @@ public interface BlockingProvider {
     void destroy(JmsResource resource) throws IOException;
 
     /**
-     * Sends the JmsMessage contained in the outbound dispatch envelope.
+     * Sends the JmsMessage contained in the out-bound dispatch envelope.
      *
      * @param envelope
      *        the message envelope containing the JmsMessage to send.
@@ -105,6 +106,20 @@ public interface BlockingProvider {
      * @throws IOException if an error occurs or the Provider is already closed.
      */
     void send(JmsOutboundMessageDispatch envelope) throws IOException;
+
+    /**
+     * Called to acknowledge all messages that have been delivered in a given session.
+     *
+     * This method is typically used by a Session that is configured for client acknowledge
+     * mode.  The acknowledgment should only be applied to Messages that have been marked
+     * as delivered and not those still awaiting dispatch.
+     *
+     * @param session
+     *        the Session whose delivered messages should be acknowledged.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    void acknowledge(JmsSessionInfo session) throws IOException;
 
     /**
      * Called to acknowledge a JmsMessage has been delivered, consumed, re-delivered...etc.
