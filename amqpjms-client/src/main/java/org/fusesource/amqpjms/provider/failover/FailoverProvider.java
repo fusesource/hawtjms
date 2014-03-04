@@ -553,9 +553,18 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
         }
 
         @Override
-        public void onFailure(Throwable result) {
-            requests.remove(id);
-            super.onFailure(result);
+        public void onFailure(final Throwable result) {
+            if (closed.get() || failed.get()) {
+                requests.remove(id);
+                super.onFailure(result);
+            } else {
+                serializer.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        handleProviderFailure(IOExceptionSupport.create(result));
+                    }
+                });
+            }
         }
 
         @Override
