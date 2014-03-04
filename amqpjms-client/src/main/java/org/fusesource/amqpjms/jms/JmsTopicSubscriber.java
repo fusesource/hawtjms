@@ -28,8 +28,6 @@ import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
  */
 public class JmsTopicSubscriber extends JmsMessageConsumer implements TopicSubscriber {
 
-    private final boolean noLocal;
-
     /**
      * Constructor
      *
@@ -37,19 +35,7 @@ public class JmsTopicSubscriber extends JmsMessageConsumer implements TopicSubsc
      * @param destination
      */
     JmsTopicSubscriber(JmsConsumerId id, JmsSession s, JmsDestination destination, boolean noLocal, String selector) throws JMSException {
-        super(id, s, destination, selector);
-        this.noLocal = noLocal;
-    }
-
-    /**
-     * @return noLocal flag
-     * @throws IllegalStateException
-     * @see javax.jms.TopicSubscriber#getNoLocal()
-     */
-    @Override
-    public boolean getNoLocal() throws IllegalStateException {
-        checkClosed();
-        return this.noLocal;
+        super(id, s, destination, selector, noLocal);
     }
 
     /**

@@ -29,6 +29,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
     protected String clientId;
     protected String subscriptionName;
     protected boolean noLocal;
+    protected int acknowledgementMode;
 
     // Can be used to track the last consumed message.
     private transient long lastDeliveredSequenceId;
@@ -55,6 +56,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
         info.clientId = clientId;
         info.subscriptionName = subscriptionName;
         info.noLocal = noLocal;
+        info.acknowledgementMode = acknowledgementMode;
     }
 
     public boolean isDurable() {
@@ -131,6 +133,14 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
 
     public JmsSessionId getParentId() {
         return this.consumerId.getParentId();
+    }
+
+    public int getAcknowledgementMode() {
+        return acknowledgementMode;
+    }
+
+    public void setAcknowledgementMode(int acknowledgementMode) {
+        this.acknowledgementMode = acknowledgementMode;
     }
 
     @Override

@@ -54,7 +54,8 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     protected final Lock lock = new ReentrantLock();
     protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
 
-    protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination, String selector) throws JMSException {
+    protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination,
+                                 String selector, boolean noLocal) throws JMSException {
         this.session = session;
         this.connection = session.getConnection();
         this.acknowledgementMode = session.acknowledgementMode();
@@ -69,6 +70,8 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         this.consumerInfo = new JmsConsumerInfo(consumerId);
         this.consumerInfo.setSelector(selector);
         this.consumerInfo.setDestination(destination);
+        this.consumerInfo.setAcknowledgementMode(acknowledgementMode);
+        this.consumerInfo.setNoLocal(noLocal);
 
         // We are ready for dispatching
         this.session.add(this);
@@ -365,7 +368,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     }
 
     public boolean getNoLocal() throws IllegalStateException {
-        return false;
+        return this.consumerInfo.isNoLocal();
     }
 
     public void onConnectionRecovery(BlockingProvider provider) {

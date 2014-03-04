@@ -43,7 +43,7 @@ public class JmsQueueReceiver extends JmsMessageConsumer implements QueueReceive
      * @throws JMSException
      */
     protected JmsQueueReceiver(JmsConsumerId id, JmsSession session, JmsDestination dest, String selector) throws JMSException {
-        super(id, session, dest, selector);
+        super(id, session, dest, selector, false);
     }
 
     /**

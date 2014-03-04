@@ -83,7 +83,7 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
     private JmsMessageConsumer createConsumer() throws JMSException {
         browseDone.set(false);
 
-        JmsMessageConsumer rc = new JmsMessageConsumer(consumerId, session, destination, selector) {
+        JmsMessageConsumer rc = new JmsMessageConsumer(consumerId, session, destination, selector, false) {
 
             @Override
             public boolean isBrowser() {
