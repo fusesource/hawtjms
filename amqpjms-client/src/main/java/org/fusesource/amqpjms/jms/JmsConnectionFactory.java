@@ -162,6 +162,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             BlockingProvider provider = createProvider(brokerURI);
             JmsTopicConnection result = new JmsTopicConnection(connectionId, provider, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
+            result.setExceptionListener(exceptionListener);
             return result;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
@@ -192,6 +193,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             BlockingProvider provider = createProvider(brokerURI);
             JmsConnection result = new JmsConnection(connectionId, provider, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
+            result.setExceptionListener(exceptionListener);
             return result;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
@@ -223,6 +225,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             BlockingProvider provider = createProvider(brokerURI);
             JmsQueueConnection result = new JmsQueueConnection(connectionId, provider, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
+            result.setExceptionListener(exceptionListener);
             return result;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
