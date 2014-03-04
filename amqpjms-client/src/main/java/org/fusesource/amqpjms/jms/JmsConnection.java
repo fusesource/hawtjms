@@ -59,6 +59,7 @@ import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.provider.BlockingProvider;
+import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderListener;
 import org.fusesource.amqpjms.util.IdGenerator;
 import org.fusesource.amqpjms.util.ThreadPoolUtils;
@@ -540,6 +541,22 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             provider.send(envelope);
+        } catch (Exception ioe) {
+            throw JmsExceptionSupport.create(ioe);
+        }
+    }
+
+    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+
+        // TODO - We don't currently have a way to say that an operation
+        //        should be done asynchronously.  For a some acknowledgments
+        //        we only care that the request hits the wire, not that
+        //        any response comes back.
+
+        try {
+            provider.acknowledge(envelope, ackType);
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }

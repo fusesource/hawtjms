@@ -34,8 +34,10 @@ import org.apache.qpid.proton.jms.InboundTransformer;
 import org.apache.qpid.proton.jms.JMSMappingInboundTransformer;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
+import org.fusesource.amqpjms.jms.message.JmsMessageId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
+import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderListener;
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.ByteArrayOutputStream;
@@ -98,6 +100,8 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
                 LOG.warn("Error on transform: {}", e.getMessage());
             }
 
+            message.getMessageId().setProviderHint(incoming);
+
             JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch();
             envelope.setMessage(message);
             envelope.setConsumerId(info.getConsumerId());
@@ -107,12 +111,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
                 LOG.trace("Dispatching received message: {}", message.getMessageId());
                 listener.onMessage(envelope);
             }
-
-            // TODO - For now we are just acking right away.  Later we need to track
-            //        pending acks and wait for the JMS consumer to ack.
-            endpoint.flow(1);
-            incoming.disposition(Accepted.getInstance());
-            incoming.settle();
         }
     }
 
@@ -135,11 +133,38 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     @Override
     public void opened() {
-
-        // TODO - Better initialize the consumer based on prefetch value.
+        // TODO - this may be better applied in a start method.
+        // this.endpoint.flow(info.getPrefetchSize());
         this.endpoint.flow(1);
-
         super.opened();
+    }
+
+    /**
+     * Called to acknowledge a given delivery.  Depending on the Ack Mode that
+     * the consumer was created with this method can acknowledge more than just
+     * the target delivery.
+     *
+     * @param envelope
+     *        the delivery that is to be acknowledged.
+     * @param ackType
+     *        the type of acknowledgment to perform.
+     */
+    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) {
+        JmsMessageId messageId = envelope.getMessage().getMessageId();
+        LOG.debug("Processing ack for message: {}", messageId);
+        if (messageId.getProviderHint() instanceof Delivery) {
+            Delivery incoming = (Delivery) messageId.getProviderHint();
+
+            // TODO - For now we are just acking right away.  Later we need to track
+            //        pending acks and wait for the JMS consumer to ack.
+            endpoint.flow(1);
+            incoming.disposition(Accepted.getInstance());
+            incoming.settle();
+        }
+
+        // TODO - If not in hint search for it in pending.
+        // TODO - based on ack mode we might need to ack all previous.
+        // TODO - delivered increments flow, but if no delivered then consume must do it.
     }
 
     @Override

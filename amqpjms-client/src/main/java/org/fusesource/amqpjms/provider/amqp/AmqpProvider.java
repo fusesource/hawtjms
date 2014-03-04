@@ -37,6 +37,7 @@ import org.apache.qpid.proton.framing.TransportFrame;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
@@ -305,7 +306,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, final ProviderRequest<Void> request) throws IOException {
+    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, final ProviderRequest<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -314,7 +315,17 @@ public class AmqpProvider implements AsyncProvider {
                 try {
                     checkClosed();
 
-                    // TODO - Ack
+                    JmsConsumerId consumerId = envelope.getConsumerId();
+                    AmqpConsumer consumer = null;
+
+                    if (consumerId.getProviderHint() instanceof AmqpConsumer) {
+                        consumer = (AmqpConsumer) consumerId.getProviderHint();
+                    } else {
+                        AmqpSession session = connection.getSession(consumerId.getParentId());
+                        consumer = session.getConsumer(consumerId);
+                    }
+
+                    consumer.acknowledge(envelope, ackType);
 
                     pumpToProtonTransport();
                     request.onSuccess(null);

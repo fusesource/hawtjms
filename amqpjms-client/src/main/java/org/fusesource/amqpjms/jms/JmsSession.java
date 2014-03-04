@@ -75,6 +75,7 @@ import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.provider.BlockingProvider;
+import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.hawtbuf.AsciiBuffer;
 
 /**
@@ -737,6 +738,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         } else {
             // TODO - Async sends
         }
+    }
+
+    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
+        // TODO - Async Acks
+        this.connection.acknowledge(envelope, ackType);
     }
 
     public boolean isClosed() {

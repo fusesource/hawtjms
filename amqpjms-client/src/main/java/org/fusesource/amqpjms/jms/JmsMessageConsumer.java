@@ -35,6 +35,7 @@ import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
 import org.fusesource.amqpjms.provider.BlockingProvider;
+import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.util.MessageQueue;
 
 /**
@@ -218,62 +219,28 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         return envelope.getMessage().copy();
     }
 
-    JmsInboundMessageDispatch ack(final JmsInboundMessageDispatch envelope) {
+    JmsInboundMessageDispatch ack(final JmsInboundMessageDispatch envelope) throws JMSException {
         if (envelope != null) {
             JmsMessage message = envelope.getMessage();
             if (message.getAcknowledgeCallback() != null) {
                 // Message has been received by the app.. expand the credit
                 // window so that we receive more messages.
-//                StompFrame frame = session.channel.serverAdaptor.createCreditFrame(this, message.getFrame());
-//                if (frame != null) {
-//                    try {
-//                        session.channel.sendFrame(frame);
-//                    } catch (IOException ignore) {
-//                    }
-//                }
-                // don't actually ack yet.. client code does it.
-                return envelope;
+                session.acknowledge(envelope, ACK_TYPE.DELIVERED);
+            } else {
+                doAck(envelope);
             }
-            doAck(message);
         }
         return envelope;
     }
 
-    private void doAck(final JmsMessage message) {
-//            try {
-//                StompChannel channel = session.channel;
-//                if (channel == null) {
-//                    throw new JMSException("Consumer closed");
-//                }
-//
-//                final Promise<StompFrame> ack = new Promise<StompFrame>();
-//                switch (session.acknowledgementMode) {
-//                    case Session.CLIENT_ACKNOWLEDGE:
-//                        channel.ackMessage(id, message.getMessageID(), null, ack);
-//                        break;
-//                    case Session.AUTO_ACKNOWLEDGE:
-//                        channel.ackMessage(id, message.getMessageID(), null, ack);
-//                        break;
-//                    case Session.DUPS_OK_ACKNOWLEDGE:
-//                        channel.ackMessage(id, message.getMessageID(), null, null);
-//                        ack.onSuccess(null);
-//                        break;
-//                    case Session.SESSION_TRANSACTED:
-//                        channel.ackMessage(id, message.getMessageID(), session.currentTransactionId, null);
-//                        ack.onSuccess(null);
-//                        break;
-//                    case JmsSession.SERVER_AUTO_ACKNOWLEDGE:
-//                        throw new IllegalStateException("This should never get called.");
-//                }
-//                ack.await();
-//
-//            } catch (JMSException e) {
-//                session.connection.onException(e);
-//                throw new RuntimeException(e);
-//            } catch (Exception e) {
-//                session.connection.onException(new JMSException("Exception occurred sending ACK for message id : " + message.getMessageID()));
-//                throw new RuntimeException("Exception occurred sending ACK for message id : " + message.getMessageID(), e);
-//            }
+    private void doAck(final JmsInboundMessageDispatch envelope) throws JMSException {
+        checkClosed();
+        try {
+            session.acknowledge(envelope, ACK_TYPE.CONSUMED);
+        } catch (JMSException ex) {
+            session.onException(ex);
+            throw ex;
+        }
     }
 
     /**
@@ -290,7 +257,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
                         if (session.isClosed()) {
                             throw new javax.jms.IllegalStateException("Session closed.");
                         }
-                        doAck(envelope.getMessage());
+                        doAck(envelope);
                         return null;
                     }
                 });

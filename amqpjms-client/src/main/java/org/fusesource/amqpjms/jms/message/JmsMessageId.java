@@ -30,6 +30,7 @@ public class JmsMessageId implements Comparable<JmsMessageId> {
 
     private transient String key;
     private transient int hashCode;
+    private transient Object providerHint;
 
     public JmsMessageId(JmsProducerInfo producerInfo, long producerSequenceId) {
         this.producerId = producerInfo.getProducerId();
@@ -58,6 +59,13 @@ public class JmsMessageId implements Comparable<JmsMessageId> {
         return id;
     }
 
+    public JmsMessageId copy() {
+        JmsMessageId copy = new JmsMessageId(producerId, producerSequenceId);
+        copy.key = key;
+        copy.textView = textView;
+        return copy;
+    }
+
     /**
      * Sets the value as a String
      */
@@ -72,19 +80,6 @@ public class JmsMessageId implements Comparable<JmsMessageId> {
             throw new NumberFormatException();
         }
         producerId = new JmsProducerId(messageKey);
-    }
-
-    /**
-     * Sets the transient text view of the message which will be ignored if the message is
-     * marshaled on a transport; so is only for in-JVM changes to accommodate foreign JMS
-     * message IDs
-     */
-    public void setTextView(String key) {
-        this.textView = key;
-    }
-
-    public String getTextView() {
-        return textView;
     }
 
     @Override
@@ -117,6 +112,15 @@ public class JmsMessageId implements Comparable<JmsMessageId> {
     }
 
     @Override
+    public int compareTo(JmsMessageId other) {
+        int result = -1;
+        if (other != null) {
+            result = this.toString().compareTo(other.toString());
+        }
+        return result;
+    }
+
+    @Override
     public String toString() {
         if (key == null) {
             if (textView != null) {
@@ -130,6 +134,19 @@ public class JmsMessageId implements Comparable<JmsMessageId> {
             }
         }
         return key;
+    }
+
+    /**
+     * Sets the transient text view of the message which will be ignored if the message is
+     * marshaled on a transport; so is only for in-JVM changes to accommodate foreign JMS
+     * message IDs
+     */
+    public void setTextView(String key) {
+        this.textView = key;
+    }
+
+    public String getTextView() {
+        return textView;
     }
 
     public JmsProducerId getProducerId() {
@@ -148,19 +165,11 @@ public class JmsMessageId implements Comparable<JmsMessageId> {
         this.producerSequenceId = producerSequenceId;
     }
 
-    public JmsMessageId copy() {
-        JmsMessageId copy = new JmsMessageId(producerId, producerSequenceId);
-        copy.key = key;
-        copy.textView = textView;
-        return copy;
+    public void setProviderHint(Object hint) {
+        this.providerHint = hint;
     }
 
-    @Override
-    public int compareTo(JmsMessageId other) {
-        int result = -1;
-        if (other != null) {
-            result = this.toString().compareTo(other.toString());
-        }
-        return result;
+    public Object getProviderHint() {
+        return this.providerHint;
     }
 }
