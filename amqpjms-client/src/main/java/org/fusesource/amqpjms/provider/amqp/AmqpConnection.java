@@ -50,6 +50,11 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     private final Map<JmsSessionId, AmqpSession> pendingOpenSessions = new HashMap<JmsSessionId, AmqpSession>();
     private final Map<JmsSessionId, AmqpSession> pendingCloseSessions = new HashMap<JmsSessionId, AmqpSession>();
 
+    private String queuePrefix;
+    private String topicPrefix;
+    private String tempQueuePrefix;
+    private String tempTopicPrefix;
+
     public AmqpConnection(AmqpProvider provider, Connection protonConnection, Sasl sasl, JmsConnectionInfo info) {
         super(info, protonConnection);
 
@@ -61,6 +66,12 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         }
 
         this.info.getConnectionId().setProviderHint(this);
+
+        this.queuePrefix = info.getQueuePrefix();
+        this.topicPrefix = info.getTopicPrefix();
+        this.tempQueuePrefix = info.getTempQueuePrefix();
+        this.tempTopicPrefix = info.getTempTopicPrefix();
+
         // TODO check info to see if we can meet all the requested options.
     }
 
@@ -222,6 +233,38 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
 
     public AmqpProvider getProvider() {
         return this.provider;
+    }
+
+    public String getQueuePrefix() {
+        return queuePrefix;
+    }
+
+    public void setQueuePrefix(String queuePrefix) {
+        this.queuePrefix = queuePrefix;
+    }
+
+    public String getTopicPrefix() {
+        return topicPrefix;
+    }
+
+    public void setTopicPrefix(String topicPrefix) {
+        this.topicPrefix = topicPrefix;
+    }
+
+    public String getTempQueuePrefix() {
+        return tempQueuePrefix;
+    }
+
+    public void setTempQueuePrefix(String tempQueuePrefix) {
+        this.tempQueuePrefix = tempQueuePrefix;
+    }
+
+    public String getTempTopicPrefix() {
+        return tempTopicPrefix;
+    }
+
+    public void setTempTopicPrefix(String tempTopicPrefix) {
+        this.tempTopicPrefix = tempTopicPrefix;
     }
 
     /**

@@ -118,7 +118,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     @Override
     protected void doOpen() {
-        String subscription = info.getDestination().getName();
+        String subscription = session.getQualifiedName(info.getDestination());
 
         Source source = new Source();
         source.setAddress(subscription);

@@ -154,7 +154,7 @@ public final class TypeConversionSupport {
         CONVERSION_MAP.put(new ConversionKey(String.class, JmsDestination.class), new Converter() {
             @Override
             public Object convert(JmsConnection connection, Object value) {
-                return new JmsQueue(connection, value.toString());
+                return new JmsQueue(value.toString());
             }
         });
     }

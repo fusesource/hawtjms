@@ -25,15 +25,11 @@ import javax.jms.TemporaryQueue;
 public class JmsTemporaryQueue extends JmsDestination implements TemporaryQueue {
 
     public JmsTemporaryQueue() {
-        super(null, null);
+        this(null);
     }
 
     public JmsTemporaryQueue(String name) {
-        super(null, name);
-    }
-
-    public JmsTemporaryQueue(String prefix, String name) {
-        super(prefix, name);
+        super(name, false, true);
     }
 
     @Override
@@ -41,11 +37,6 @@ public class JmsTemporaryQueue extends JmsDestination implements TemporaryQueue 
         final JmsTemporaryQueue copy = new JmsTemporaryQueue();
         copy.setProperties(getProperties());
         return copy;
-    }
-
-    @Override
-    public boolean isTemporary() {
-        return true;
     }
 
     /**

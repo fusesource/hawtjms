@@ -25,15 +25,11 @@ import javax.jms.TemporaryTopic;
 public class JmsTemporaryTopic extends JmsDestination implements TemporaryTopic {
 
     public JmsTemporaryTopic() {
-        this(null, null);
+        super(null, true, true);
     }
 
     public JmsTemporaryTopic(String name) {
-        super(null, name);
-    }
-
-    public JmsTemporaryTopic(String prefix, String name) {
-        super(prefix, name);
+        super(name, true, true);
     }
 
     @Override
@@ -41,11 +37,6 @@ public class JmsTemporaryTopic extends JmsDestination implements TemporaryTopic 
         final JmsTemporaryTopic copy = new JmsTemporaryTopic();
         copy.setProperties(getProperties());
         return copy;
-    }
-
-    @Override
-    public boolean isTemporary() {
-        return true;
     }
 
     /**

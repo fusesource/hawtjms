@@ -615,7 +615,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public Queue createQueue(String queueName) throws JMSException {
         checkClosed();
-        return new JmsQueue(connection, queueName);
+        return new JmsQueue(queueName);
     }
 
     /**
@@ -651,7 +651,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public Topic createTopic(String topicName) throws JMSException {
         checkClosed();
-        return new JmsTopic(connection, topicName);
+        return new JmsTopic(topicName);
     }
 
     //////////////////////////////////////////////////////////////////////////

@@ -24,15 +24,11 @@ import javax.jms.Queue;
 public class JmsQueue extends JmsDestination implements Queue {
 
     public JmsQueue() {
-        super(null, null);
+        super(null, false, false);
     }
 
     public JmsQueue(String name) {
-        super(null, name);
-    }
-
-    public JmsQueue(JmsConnection connection, String name) {
-        this(connection.getQueuePrefix(), name);
+        super(name, false, false);
     }
 
     @Override
@@ -40,15 +36,6 @@ public class JmsQueue extends JmsDestination implements Queue {
         final JmsQueue copy = new JmsQueue();
         copy.setProperties(getProperties());
         return copy;
-    }
-
-    /**
-     * Constructor
-     *
-     * @param name
-     */
-    public JmsQueue(String type, String name) {
-        super(type, name);
     }
 
     /**

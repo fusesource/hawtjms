@@ -70,13 +70,13 @@ public final class JmsMessageTransformation {
 
             } else {
                 if (destination instanceof TemporaryQueue) {
-                    result = new JmsTemporaryQueue(connection.getQueuePrefix(), ((TemporaryQueue) destination).getQueueName());
+                    result = new JmsTemporaryQueue(((TemporaryQueue) destination).getQueueName());
                 } else if (destination instanceof TemporaryTopic) {
-                    result = new JmsTemporaryTopic(connection.getTopicPrefix(), ((TemporaryTopic) destination).getTopicName());
+                    result = new JmsTemporaryTopic(((TemporaryTopic) destination).getTopicName());
                 } else if (destination instanceof Queue) {
-                    result = new JmsQueue(connection, ((Queue) destination).getQueueName());
+                    result = new JmsQueue(((Queue) destination).getQueueName());
                 } else if (destination instanceof Topic) {
-                    result = new JmsTopic(connection, ((Topic) destination).getTopicName());
+                    result = new JmsTopic(((Topic) destination).getTopicName());
                 }
             }
         }

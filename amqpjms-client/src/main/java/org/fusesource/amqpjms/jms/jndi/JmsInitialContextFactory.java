@@ -83,7 +83,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
 
             @Override
             protected Object createEntry(String name) {
-                return new JmsQueue(queuePrefix, name);
+                return new JmsQueue(name);
             }
         });
 
@@ -92,7 +92,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
 
             @Override
             protected Object createEntry(String name) {
-                return new JmsTopic(topicPrefix, name);
+                return new JmsTopic(name);
             }
         });
 
@@ -152,14 +152,14 @@ public class JmsInitialContextFactory implements InitialContextFactory {
      * Factory method to create new Queue instances
      */
     protected Queue createQueue(String name) {
-        return new JmsQueue(queuePrefix, name);
+        return new JmsQueue(name);
     }
 
     /**
      * Factory method to create new Topic instances
      */
     protected Topic createTopic(String name) {
-        return new JmsTopic(topicPrefix, name);
+        return new JmsTopic(name);
     }
 
     /**
@@ -194,5 +194,4 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     public void setConnectionPrefix(String connectionPrefix) {
         this.connectionPrefix = connectionPrefix;
     }
-
 }

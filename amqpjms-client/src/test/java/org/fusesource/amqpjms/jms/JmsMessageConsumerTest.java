@@ -32,8 +32,10 @@ import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.Topic;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
+import org.apache.activemq.broker.jmx.TopicViewMBean;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.fusesource.amqpjms.util.Wait;
 import org.junit.Test;
@@ -76,6 +78,33 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertNotNull("Failed to receive any message.", consumer.receive(2000));
 
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return proxy.getQueueSize() == 0;
+            }
+        }));
+        connection.close();
+    }
+
+    @Test(timeout = 60000)
+    public void testSyncConsumeFromTopic() throws Exception {
+        Connection connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Topic topic = session.createTopic(name.toString());
+        MessageConsumer consumer = session.createConsumer(topic);
+
+        sendToAmqTopic(1);
+
+        final TopicViewMBean proxy = getProxyToTopic(name.toString());
+        //assertEquals(1, proxy.getQueueSize());
+
+        assertNotNull("Failed to receive any message.", consumer.receive(2000));
+
+        assertTrue("Published message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisified() throws Exception {
@@ -201,5 +230,12 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue amqTestQueue = amqSession.createQueue(name.toString());
         sendMessages(activemqConnection, amqTestQueue, count);
+    }
+
+    private void sendToAmqTopic(int count) throws Exception {
+        Connection activemqConnection = createActiveMQConnection();
+        Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic amqTestTopic = amqSession.createTopic(name.toString());
+        sendMessages(activemqConnection, amqTestTopic, count);
     }
 }

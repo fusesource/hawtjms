@@ -57,10 +57,10 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private SSLContext sslContext;
     private boolean forceAsyncSend;
     private boolean omitHost;
-    private String queuePrefix = "/queue/";
-    private String topicPrefix = "/topic/";
-    private String tempQueuePrefix = "/temp-queue/";
-    private String tempTopicPrefix = "/temp-topic/";
+    private String queuePrefix = "queue://";
+    private String topicPrefix = "topic://";
+    private String tempQueuePrefix = "temp-queue://";
+    private String tempTopicPrefix = "temp-topic://";
     private long disconnectTimeout = 10000;
     private IdGenerator clientIdGenerator;
     private String clientIDPrefix;

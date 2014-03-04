@@ -35,7 +35,6 @@ import javax.jms.MessageNotWriteableException;
 import org.apache.activemq.command.ActiveMQBytesMessage;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.JmsTopic;
-import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -63,8 +62,8 @@ public class JmsMessageTest {
     public void setUp() throws Exception {
         this.jmsMessageID = "ID:TEST-ID:0:0:0:1";
         this.jmsCorrelationID = "testcorrelationid";
-        this.jmsDestination = new JmsTopic("topic://", "test.topic");
-        this.jmsReplyTo = new JmsTopic("topic://", "test.replyto.topic:001");
+        this.jmsDestination = new JmsTopic("test.topic");
+        this.jmsReplyTo = new JmsTopic("test.replyto.topic:001");
         this.jmsDeliveryMode = Message.DEFAULT_DELIVERY_MODE;
         this.jmsRedelivered = true;
         this.jmsType = "test type";
@@ -129,8 +128,8 @@ public class JmsMessageTest {
     public void testCopy() throws Exception {
         this.jmsMessageID = "testid";
         this.jmsCorrelationID = "testcorrelationid";
-        this.jmsDestination = new JmsTopic("topic://", "test.topic");
-        this.jmsReplyTo = new JmsTopic("topic://", "test.replyto.topic:001");
+        this.jmsDestination = new JmsTopic("test.topic");
+        this.jmsReplyTo = new JmsTopic("test.replyto.topic:001");
         this.jmsDeliveryMode = Message.DEFAULT_DELIVERY_MODE;
         this.jmsRedelivered = true;
         this.jmsType = "test type";

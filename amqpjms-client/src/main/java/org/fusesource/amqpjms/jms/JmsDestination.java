@@ -25,56 +25,29 @@ import java.util.Map;
 import javax.jms.JMSException;
 
 import org.fusesource.amqpjms.jms.jndi.JNDIStorable;
-import org.fusesource.hawtbuf.AsciiBuffer;
 
 /**
  * Jms Destination
  */
-public class JmsDestination extends JNDIStorable implements Externalizable, javax.jms.Destination, Comparable<JmsDestination> {
+public abstract class JmsDestination extends JNDIStorable implements Externalizable, javax.jms.Destination, Comparable<JmsDestination> {
 
-    protected transient String prefix;
     protected transient String name;
     protected transient boolean topic;
     protected transient boolean temporary;
     protected transient int hashValue;
-    protected transient String toString;
-    protected transient AsciiBuffer buffer;
-    protected transient Map<String, String> subscribeHeaders;
-
     protected transient JmsConnection connection;
 
-    public JmsDestination() {
+    protected JmsDestination(String name, boolean topic, boolean temporary) {
+        this.name = name;
+        this.topic = topic;
+        this.temporary = temporary;
     }
 
-    public JmsDestination(String name) {
-        this("", name);
-    }
-
-    public JmsDestination(String prefix, String name) {
-        this.prefix = prefix;
-        setName(name);
-    }
-
-    public JmsDestination copy() {
-        final JmsDestination copy = new JmsDestination();
-        copy.setProperties(getProperties());
-        return copy;
-    }
+    public abstract JmsDestination copy();
 
     @Override
     public String toString() {
-        if (toString == null) {
-            toString = getPrefix() + getName();
-        }
-        return toString;
-    }
-
-    public String getPrefix() {
-        return prefix;
-    }
-
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
+        return name;
     }
 
     /**
@@ -86,8 +59,6 @@ public class JmsDestination extends JNDIStorable implements Externalizable, java
 
     private void setName(String name) {
         this.name = name;
-        this.toString = null;
-        this.buffer = null;
     }
 
     /**
@@ -116,7 +87,6 @@ public class JmsDestination extends JNDIStorable implements Externalizable, java
      */
     @Override
     protected void buildFromProperties(Map<String, String> props) {
-        setPrefix(getProperty(props, "prefix", ""));
         setName(getProperty(props, "name", ""));
         Boolean bool = Boolean.valueOf(getProperty(props, "topic", Boolean.TRUE.toString()));
         this.topic = bool.booleanValue();
@@ -129,7 +99,6 @@ public class JmsDestination extends JNDIStorable implements Externalizable, java
      */
     @Override
     protected void populateProperties(Map<String, String> props) {
-        props.put("prefix", getPrefix());
         props.put("name", getName());
         props.put("topic", Boolean.toString(isTopic()));
         props.put("temporary", Boolean.toString(isTemporary()));
@@ -176,7 +145,6 @@ public class JmsDestination extends JNDIStorable implements Externalizable, java
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeUTF(getPrefix());
         out.writeUTF(getName());
         out.writeBoolean(isTopic());
         out.writeBoolean(isTemporary());
@@ -184,41 +152,9 @@ public class JmsDestination extends JNDIStorable implements Externalizable, java
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        setPrefix(in.readUTF());
         setName(in.readUTF());
         this.topic = in.readBoolean();
         this.temporary = in.readBoolean();
-    }
-
-    public static JmsDestination createDestination(JmsConnection connection, String name) throws JMSException {
-
-        // TODO
-        // JmsDestination x = connection.isTemporaryQueue(name);
-        // if (x != null) {
-        // return x;
-        // }
-        // x = connection.isTemporaryTopic(name);
-        // if (x != null) {
-        // return x;
-        // }
-
-        if (name.startsWith(connection.getTopicPrefix())) {
-            return new JmsTopic(connection, name.substring(connection.getTopicPrefix().length()));
-        }
-
-        if (name.startsWith(connection.getQueuePrefix())) {
-            return new JmsQueue(connection, name.substring(connection.getQueuePrefix().length()));
-        }
-
-        return new JmsDestination("", name);
-    }
-
-    public Map<String, String> getSubscribeHeaders() {
-        return subscribeHeaders;
-    }
-
-    public void setSubscribeHeaders(Map<String, String> subscribeHeaders) {
-        this.subscribeHeaders = subscribeHeaders;
     }
 
     void setConnection(JmsConnection connection) {

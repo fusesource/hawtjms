@@ -155,7 +155,7 @@ public class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo, Sender> 
 
     @Override
     protected void doOpen() {
-        String destnationName = info.getDestination().getName();
+        String destnationName = session.getQualifiedName(info.getDestination());
         String sourceAddress = UUID.randomUUID().toString();
         Source source = new Source();
         source.setAddress(sourceAddress);

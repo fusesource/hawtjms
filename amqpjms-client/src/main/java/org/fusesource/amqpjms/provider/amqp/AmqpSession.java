@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Session;
+import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
@@ -156,6 +157,26 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
                 linkIterator.remove();
             }
         }
+    }
+
+    public String getQualifiedName(JmsDestination destination) {
+        String result = null;
+
+        if (destination.isTopic()) {
+            if (destination.isTemporary()) {
+                result = connection.getTempTopicPrefix() + destination.getName();
+            } else {
+                result = connection.getTopicPrefix() + destination.getName();
+            }
+        } else {
+            if (destination.isTemporary()) {
+                result = connection.getTempQueuePrefix() + destination.getName();
+            } else {
+                result = connection.getQueuePrefix() + destination.getName();
+            }
+        }
+
+        return result;
     }
 
     public AmqpProvider getProvider() {

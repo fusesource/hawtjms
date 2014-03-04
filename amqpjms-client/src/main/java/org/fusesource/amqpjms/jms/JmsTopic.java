@@ -24,15 +24,11 @@ import javax.jms.Topic;
 public class JmsTopic extends JmsDestination implements Topic {
 
     public JmsTopic() {
-        super(null, null);
+        this(null);
     }
 
     public JmsTopic(String name) {
-        super(null, name);
-    }
-
-    public JmsTopic(JmsConnection connection, String name) {
-        this(connection.getTopicPrefix(), name);
+        super(name, true, false);
     }
 
     @Override
@@ -40,16 +36,6 @@ public class JmsTopic extends JmsDestination implements Topic {
         final JmsTopic copy = new JmsTopic();
         copy.setProperties(getProperties());
         return copy;
-    }
-
-    /**
-     * Constructor
-     *
-     * @param name
-     */
-    public JmsTopic(String type, String name) {
-        super(type, name);
-        this.topic = true;
     }
 
     /**
