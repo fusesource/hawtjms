@@ -18,8 +18,11 @@ package org.fusesource.amqpjms.provider.failover;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,7 +61,7 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
 
     private ProviderListener listener;
     private AsyncProvider provider;
-    private final URI originalURI;
+    private final List<URI> uris = new ArrayList<URI>();
     private final Map<String, String> extraOptions;
 
     private final ExecutorService serializer;
@@ -83,12 +86,12 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
     private int startupMaxReconnectAttempts = INFINITE;
     private int warnAfterReconnectAttempts = 10;
 
-    public FailoverProvider(URI uri) {
-        this(uri, null);
+    public FailoverProvider(URI[] uris) {
+        this(uris, null);
     }
 
-    public FailoverProvider(URI uri, Map<String, String> extraOptions) {
-        this.originalURI = uri;
+    public FailoverProvider(URI[] uris, Map<String, String> extraOptions) {
+        this.uris.addAll(Arrays.asList(uris));
         if (extraOptions != null) {
             this.extraOptions = extraOptions;
         } else {
@@ -344,11 +347,11 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
 
                 reconnectAttempts++;
                 try {
-                    AsyncProvider provider = ProviderFactory.createAsync(originalURI);
+                    AsyncProvider provider = ProviderFactory.createAsync(uris.get(0));
                     initializeNewConnection(provider);
                     return;
                 } catch (Throwable e) {
-                    LOG.info("Connection attempt to: {} failed.", originalURI);
+                    LOG.info("Connection attempt to: {} failed.", uris.get(0));
                     failure = e;
                 }
 
@@ -434,35 +437,35 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
 
     //--------------- Property Getters and Setters ---------------------------//
 
-    long getInitialReconnectDealy() {
+    public long getInitialReconnectDealy() {
         return initialReconnectDelay;
     }
 
-    void setInitialReconnectDealy(long initialReconnectDealy) {
+    public void setInitialReconnectDealy(long initialReconnectDealy) {
         this.initialReconnectDelay = initialReconnectDealy;
     }
 
-    long getMaxReconnectDelay() {
+    public long getMaxReconnectDelay() {
         return maxReconnectDelay;
     }
 
-    void setMaxReconnectDelay(long maxReconnectDelay) {
+    public void setMaxReconnectDelay(long maxReconnectDelay) {
         this.maxReconnectDelay = maxReconnectDelay;
     }
 
-    int getMaxReconnectAttempts() {
+    public int getMaxReconnectAttempts() {
         return maxReconnectAttempts;
     }
 
-    void setMaxReconnectAttempts(int maxReconnectAttempts) {
+    public void setMaxReconnectAttempts(int maxReconnectAttempts) {
         this.maxReconnectAttempts = maxReconnectAttempts;
     }
 
-    int getStartupMaxReconnectAttempts() {
+    public int getStartupMaxReconnectAttempts() {
         return startupMaxReconnectAttempts;
     }
 
-    void setStartupMaxReconnectAttempts(int startupMaxReconnectAttempts) {
+    public void setStartupMaxReconnectAttempts(int startupMaxReconnectAttempts) {
         this.startupMaxReconnectAttempts = startupMaxReconnectAttempts;
     }
 

@@ -17,10 +17,14 @@
 package org.fusesource.amqpjms.provider.failover;
 
 import java.net.URI;
+import java.util.Map;
 
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderFactory;
+import org.fusesource.amqpjms.util.PropertyUtil;
+import org.fusesource.amqpjms.util.URISupport;
+import org.fusesource.amqpjms.util.URISupport.CompositeData;
 
 /**
  * Factory for creating instances of the Failover Provider type.
@@ -29,10 +33,21 @@ public class FailoverProviderFactory extends ProviderFactory {
 
     @Override
     public BlockingProvider createProvider(URI remoteURI) throws Exception {
-        
-        
-        
-        return new FailoverProvider(remoteURI);
+
+        CompositeData composite = URISupport.parseComposite(remoteURI);
+        Map<String, String> options = composite.getParameters();
+        Map<String, String> nested = PropertyUtil.filterProperties(options, "nested.");
+
+        FailoverProvider provider = new FailoverProvider(composite.getComponents(), nested);
+        if (!PropertyUtil.setProperties(provider, options)) {
+            String msg = ""
+                + " Not all options could be set on the Failover provider."
+                + " Check the options are spelled correctly."
+                + " Given parameters=[" + options + "]."
+                + " This Provider cannot be started.";
+            throw new IllegalArgumentException(msg);
+        }
+        return provider;
     }
 
     @Override
