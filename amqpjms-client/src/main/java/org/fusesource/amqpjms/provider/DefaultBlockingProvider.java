@@ -108,6 +108,13 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
+    public void unsubscribe(String subscription) throws IOException {
+        ProviderRequest<Void> request = new ProviderRequest<Void>();
+        protocol.unsubscribe(subscription, request);
+        request.getResponse();
+    }
+
+    @Override
     public void setProviderListener(ProviderListener listener) {
         protocol.setProviderListener(listener);
     }

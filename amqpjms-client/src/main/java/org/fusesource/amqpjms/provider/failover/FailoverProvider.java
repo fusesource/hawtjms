@@ -269,7 +269,21 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
         final FailoverRequest<Void> request = new FailoverRequest<Void>() {
             @Override
             public void doTask() throws IOException {
-                provider.commit(txId, this);
+                provider.rollback(txId, this);
+            }
+        };
+
+        serializer.execute(request);
+        request.getResponse();
+    }
+
+    @Override
+    public void unsubscribe(final String subscription) throws IOException {
+        checkClosed();
+        final FailoverRequest<Void> request = new FailoverRequest<Void>() {
+            @Override
+            public void doTask() throws IOException {
+                provider.unsubscribe(subscription, this);
             }
         };
 

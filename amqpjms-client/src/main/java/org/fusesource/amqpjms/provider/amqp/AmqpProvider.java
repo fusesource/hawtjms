@@ -394,6 +394,24 @@ public class AmqpProvider implements AsyncProvider {
         });
     }
 
+    @Override
+    public void unsubscribe(final String subscription, final ProviderRequest<Void> request) throws IOException {
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    pumpToProtonTransport();
+                    request.onSuccess(null);
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
+    }
+
     /**
      * Provides an extension point for subclasses to insert other types of transports such
      * as SSL etc.

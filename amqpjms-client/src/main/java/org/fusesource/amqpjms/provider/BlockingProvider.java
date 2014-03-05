@@ -158,6 +158,16 @@ public interface BlockingProvider {
     void rollback(JmsTransactionId txId) throws IOException;
 
     /**
+     * Remove a durable topic subscription by name.
+     *
+     * @param subscription
+     *        the name of the durable subscription that is to be removed.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    void unsubscribe(String subscription) throws IOException;
+
+    /**
      * Sets the listener of events from this Provider instance.
      *
      * @param listener

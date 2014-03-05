@@ -161,6 +161,18 @@ public interface AsyncProvider {
     void rollback(JmsTransactionId txId, ProviderRequest<Void> request) throws IOException;
 
     /**
+     * Remove a durable topic subscription by name.
+     *
+     * @param subscription
+     *        the name of the durable subscription that is to be removed.
+     * @param request
+     *        The request object that should be signaled when this operation completes.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    void unsubscribe(String subscription, ProviderRequest<Void> request) throws IOException;
+
+    /**
      * Sets the listener of events from this Provider instance.
      *
      * @param listener
