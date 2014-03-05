@@ -20,6 +20,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.objectweb.jtests.jms.conform.connection.ConnectionTest;
 import org.objectweb.jtests.jms.conform.message.MessageBodyTest;
 
 public class JoramJmsTest extends TestCase {
@@ -42,7 +43,7 @@ public class JoramJmsTest extends TestCase {
 //        suite.addTestSuite(QueueSessionTest.class);
 //        suite.addTestSuite(SelectorTest.class);
 //        suite.addTestSuite(TemporaryQueueTest.class);
-//        suite.addTestSuite(ConnectionTest.class);
+        suite.addTestSuite(ConnectionTest.class);
 //        suite.addTestSuite(SessionTest.class);
 //        suite.addTestSuite(JMSXPropertyTest.class);
         suite.addTestSuite(MessageBodyTest.class);

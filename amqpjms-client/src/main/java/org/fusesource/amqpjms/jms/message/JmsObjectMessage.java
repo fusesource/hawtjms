@@ -78,7 +78,11 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
         other.storeContent();
         super.copy(other);
         this.object = null;
-        this.content = other.content.deepCopy();
+        if (other.content != null) {
+            this.content = other.content.deepCopy();
+        } else {
+            this.content = null;
+        }
     }
 
     public Buffer getContent() {
