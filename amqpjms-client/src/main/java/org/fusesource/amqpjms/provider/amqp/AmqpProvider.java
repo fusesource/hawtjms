@@ -315,11 +315,8 @@ public class AmqpProvider implements AsyncProvider {
             public void run() {
                 try {
                     checkClosed();
-
-                    //AmqpSession amqpSession = connection.getSession(session.getSessionId());
-
-                    // TODO -- Full ack all delivered messages in all consumers.
-
+                    AmqpSession amqpSession = connection.getSession(session.getSessionId());
+                    amqpSession.acknowledge();
                     pumpToProtonTransport();
                     request.onSuccess(null);
                 } catch (Exception error) {

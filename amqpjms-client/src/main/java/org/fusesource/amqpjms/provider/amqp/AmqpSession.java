@@ -63,6 +63,12 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
         this.connection.addToPendingCloseSessions(this);
     }
 
+    public void acknowledge() {
+        for (AmqpConsumer consumer : consumers.values()) {
+            consumer.acknowledge();
+        }
+    }
+
     public AmqpProducer createProducer(JmsProducerInfo producerInfo) {
         return new AmqpProducer(this, producerInfo);
     }

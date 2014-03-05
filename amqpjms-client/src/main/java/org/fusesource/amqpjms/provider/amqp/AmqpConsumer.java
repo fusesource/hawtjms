@@ -140,6 +140,15 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     }
 
     /**
+     * Called to acknowledge all messages that have been marked as delivered but
+     * have not yet been marked consumed.  Usually this is called as part of an
+     * client acknowledge session operation.
+     */
+    public void acknowledge() {
+
+    }
+
+    /**
      * Called to acknowledge a given delivery.  Depending on the Ack Mode that
      * the consumer was created with this method can acknowledge more than just
      * the target delivery.
