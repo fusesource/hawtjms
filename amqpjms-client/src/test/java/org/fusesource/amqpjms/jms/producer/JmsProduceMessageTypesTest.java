@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.amqpjms.jms;
+package org.fusesource.amqpjms.jms.producer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -38,24 +38,7 @@ import org.junit.Test;
 /**
  * Test basic MessageProducer functionality.
  */
-public class JmsMessageProducerTest extends AmqpTestSupport {
-
-    @Test(timeout = 60000)
-    public void testCreateMessageProducer() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
-        assertNotNull(connection);
-        connection.start();
-
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        assertNotNull(session);
-        Queue queue = session.createQueue("test.queue");
-        session.createProducer(queue);
-
-        QueueViewMBean proxy = getProxyToQueue("test.queue");
-        assertEquals(0, proxy.getQueueSize());
-        connection.close();
-    }
+public class JmsProduceMessageTypesTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)
     public void testSendJMSMessage() throws Exception {
