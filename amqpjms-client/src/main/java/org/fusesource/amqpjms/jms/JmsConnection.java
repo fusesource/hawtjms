@@ -100,7 +100,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private BlockingProvider provider;
     private final Set<JmsConnectionListener> connectionListeners =
         new CopyOnWriteArraySet<JmsConnectionListener>();
-
+    private final Map<JmsDestination, JmsDestination> tempDestinations =
+        new ConcurrentHashMap<JmsDestination, JmsDestination>();
     private final AtomicLong sessionIdGenerator = new AtomicLong();
     private final AtomicLong tempDestIdGenerator = new AtomicLong();
 
@@ -184,6 +185,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
             clientIdSet = false;
         }
 
+        tempDestinations.clear();
         started.set(false);
     }
 
@@ -467,7 +469,29 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
-    void deleteDestination(JmsDestination destination) throws JMSException {
+    /**
+     * @return a newly initialized TemporaryQueue instance.
+     */
+    protected TemporaryQueue createTemporaryQueue() throws JMSException {
+        String destinationName = connectionInfo.getConnectionId() + ":" + tempDestIdGenerator.incrementAndGet();
+        JmsTemporaryQueue queue = new JmsTemporaryQueue(destinationName);
+        queue = createResource(queue);
+        tempDestinations.put(queue, queue);
+        return queue;
+    }
+
+    /**
+     * @return a newly initialized TemporaryTopic instance.
+     */
+    protected TemporaryTopic createTemporaryTopic() throws JMSException {
+        String destinationName = connectionInfo.getConnectionId() + ":" + tempDestIdGenerator.incrementAndGet();
+        JmsTemporaryTopic topic = new JmsTemporaryTopic(destinationName);
+        topic = createResource(topic);
+        tempDestinations.put(topic, topic);
+        return topic;
+    }
+
+    protected void deleteDestination(JmsDestination destination) throws JMSException {
         checkClosedOrFailed();
         connect();
 
@@ -479,12 +503,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                 }
             }
 
-            // Provider delete if supported.
-
-            // TODO if we track temporary destinations and this happens to be one
-            //      we need to clean up our internal state.
             if (destination.isTemporary()) {
+                tempDestinations.remove(destination);
             }
+
+            destroyResource(destination);
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
         }
@@ -851,23 +874,5 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         if (firstFailureError == null) {
             firstFailureError = error;
         }
-    }
-
-    /**
-     * @return a newly initialized TemporaryQueue instance.
-     */
-    protected TemporaryQueue createTemporaryQueue() {
-        String destinationName = connectionInfo.getConnectionId() + ":" + tempDestIdGenerator.incrementAndGet();
-        JmsTemporaryQueue queue = new JmsTemporaryQueue(destinationName);
-        return queue;
-    }
-
-    /**
-     * @return a newly initialized TemporaryTopic instance.
-     */
-    protected TemporaryTopic createTemporaryTopic() {
-        String destinationName = connectionInfo.getConnectionId() + ":" + tempDestIdGenerator.incrementAndGet();
-        JmsTemporaryTopic topic = new JmsTemporaryTopic(destinationName);
-        return topic;
     }
 }

@@ -120,6 +120,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
         Source source = new Source();
         source.setAddress(subscription);
+        source.setDynamic(info.getDestination().isTemporary());
         Target target = new Target();
 
         endpoint = session.getProtonSession().receiver(subscription);

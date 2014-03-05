@@ -19,13 +19,10 @@ package org.fusesource.amqpjms.jms;
 import javax.jms.JMSException;
 import javax.jms.TemporaryTopic;
 
-import org.fusesource.amqpjms.jms.meta.JmsResource;
-import org.fusesource.amqpjms.jms.meta.JmsResourceVistor;
-
 /**
  * Temporary Topic Object
  */
-public class JmsTemporaryTopic extends JmsDestination implements JmsResource, TemporaryTopic {
+public class JmsTemporaryTopic extends JmsDestination implements TemporaryTopic {
 
     public JmsTemporaryTopic() {
         super(null, true, true);
@@ -61,10 +58,5 @@ public class JmsTemporaryTopic extends JmsDestination implements JmsResource, Te
     @Override
     public String getTopicName() {
         return getName();
-    }
-
-    @Override
-    public void visit(JmsResourceVistor visitor) throws Exception {
-        visitor.processTemporaryTopic(this);
     }
 }

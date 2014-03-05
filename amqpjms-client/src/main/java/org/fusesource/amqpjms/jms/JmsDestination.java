@@ -25,11 +25,13 @@ import java.util.Map;
 import javax.jms.JMSException;
 
 import org.fusesource.amqpjms.jms.jndi.JNDIStorable;
+import org.fusesource.amqpjms.jms.meta.JmsResource;
+import org.fusesource.amqpjms.jms.meta.JmsResourceVistor;
 
 /**
  * Jms Destination
  */
-public abstract class JmsDestination extends JNDIStorable implements Externalizable, javax.jms.Destination, Comparable<JmsDestination> {
+public abstract class JmsDestination extends JNDIStorable implements JmsResource, Externalizable, javax.jms.Destination, Comparable<JmsDestination> {
 
     protected transient String name;
     protected transient boolean topic;
@@ -178,5 +180,10 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
         if (connection != null) {
             connection.deleteDestination(this);
         }
+    }
+
+    @Override
+    public void visit(JmsResourceVistor visitor) throws Exception {
+        visitor.processDestination(this);
     }
 }

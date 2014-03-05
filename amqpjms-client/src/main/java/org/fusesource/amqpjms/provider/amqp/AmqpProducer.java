@@ -161,6 +161,7 @@ public class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo, Sender> 
         source.setAddress(sourceAddress);
         Target target = new Target();
         target.setAddress(destnationName);
+        target.setDynamic(info.getDestination().isTemporary());
 
         String senderName = destnationName + "<-" + sourceAddress;
         endpoint = session.getProtonSession().sender(senderName);

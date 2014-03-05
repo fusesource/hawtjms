@@ -16,8 +16,7 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
-import org.fusesource.amqpjms.jms.JmsTemporaryQueue;
-import org.fusesource.amqpjms.jms.JmsTemporaryTopic;
+import org.fusesource.amqpjms.jms.JmsDestination;
 
 /**
  * Visitor interface to make processing JmsResources simpler.
@@ -32,8 +31,6 @@ public interface JmsResourceVistor {
 
     void processProducerInfo(JmsProducerInfo producerInfo) throws Exception;
 
-    void processTemporaryTopic(JmsTemporaryTopic temporaryTopic) throws Exception;
-
-    void processTemporaryQueue(JmsTemporaryQueue temporaryQueue) throws Exception;
+    void processDestination(JmsDestination destination) throws Exception;
 
 }

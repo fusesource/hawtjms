@@ -19,13 +19,10 @@ package org.fusesource.amqpjms.jms;
 import javax.jms.JMSException;
 import javax.jms.TemporaryQueue;
 
-import org.fusesource.amqpjms.jms.meta.JmsResource;
-import org.fusesource.amqpjms.jms.meta.JmsResourceVistor;
-
 /**
  * Temporary Queue Object
  */
-public class JmsTemporaryQueue extends JmsDestination implements JmsResource, TemporaryQueue {
+public class JmsTemporaryQueue extends JmsDestination implements TemporaryQueue {
 
     public JmsTemporaryQueue() {
         this(null);
@@ -61,10 +58,5 @@ public class JmsTemporaryQueue extends JmsDestination implements JmsResource, Te
     @Override
     public String getQueueName() {
         return getName();
-    }
-
-    @Override
-    public void visit(JmsResourceVistor visitor) throws Exception {
-        visitor.processTemporaryQueue(this);
     }
 }
