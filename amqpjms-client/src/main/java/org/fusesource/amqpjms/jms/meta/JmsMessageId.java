@@ -14,15 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.amqpjms.jms.message;
+package org.fusesource.amqpjms.jms.meta;
 
-import org.fusesource.amqpjms.jms.meta.JmsProducerId;
-import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 
 /**
  * JMS Message Id class used to uniquely identify messages for the JMS Framework.
  */
-public class JmsMessageId implements Comparable<JmsMessageId> {
+public class JmsMessageId implements Comparable<JmsMessageId>, JmsResourceId {
 
     protected String textView;
     protected JmsProducerId producerId;
@@ -165,10 +163,12 @@ public class JmsMessageId implements Comparable<JmsMessageId> {
         this.producerSequenceId = producerSequenceId;
     }
 
+    @Override
     public void setProviderHint(Object hint) {
         this.providerHint = hint;
     }
 
+    @Override
     public Object getProviderHint() {
         return this.providerHint;
     }
