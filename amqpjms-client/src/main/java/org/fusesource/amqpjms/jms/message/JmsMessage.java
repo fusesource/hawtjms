@@ -382,6 +382,18 @@ public class JmsMessage implements javax.jms.Message {
     public Enumeration getPropertyNames() throws JMSException {
         try {
             Vector<String> result = new Vector<String>(this.getProperties().keySet());
+            if (getRedeliveryCounter() != 0) {
+                result.add("JMSXDeliveryCount");
+            }
+            if (getGroupId() != null) {
+                result.add("JMSXGroupID");
+            }
+            if (getGroupId() != null) {
+                result.add("JMSXGroupSeq");
+            }
+            if (getUserId() != null) {
+                result.add("JMSXUserID");
+            }
             return result.elements();
         } catch (IOException e) {
             throw JmsExceptionSupport.create(e);
@@ -421,7 +433,26 @@ public class JmsMessage implements javax.jms.Message {
                 message.setRedeliveryCounter(rc.intValue() - 1);
             }
         });
-
+        JMS_PROPERTY_SETERS.put("JMSXGroupID", new PropertySetter() {
+            @Override
+            public void set(JmsConnection connection, JmsMessage message, Object value) throws MessageFormatException {
+                String rc = (String) TypeConversionSupport.convert(connection, value, String.class);
+                if (rc == null) {
+                    throw new MessageFormatException("Property JMSXGroupID cannot be set from a " + value.getClass().getName() + ".");
+                }
+                message.setGroupId(rc);
+            }
+        });
+        JMS_PROPERTY_SETERS.put("JMSXGroupSeq", new PropertySetter() {
+            @Override
+            public void set(JmsConnection connection, JmsMessage message, Object value) throws MessageFormatException {
+                Integer rc = (Integer) TypeConversionSupport.convert(connection, value, Integer.class);
+                if (rc == null) {
+                    throw new MessageFormatException("Property JMSXGroupSeq cannot be set from a " + value.getClass().getName() + ".");
+                }
+                message.setGroupSequence(rc.intValue());
+            }
+        });
         JMS_PROPERTY_SETERS.put("JMSCorrelationID", new PropertySetter() {
             @Override
             public void set(JmsConnection connection, JmsMessage message, Object value) throws MessageFormatException {

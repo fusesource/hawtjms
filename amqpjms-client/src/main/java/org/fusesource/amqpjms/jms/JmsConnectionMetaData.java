@@ -137,6 +137,11 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
     @Override
     public Enumeration<String> getJMSXPropertyNames() {
         Vector<String> jmxProperties = new Vector<String>();
+        jmxProperties.add("JMSXUserID");
+        jmxProperties.add("JMSXGroupID");
+        jmxProperties.add("JMSXGroupSeq");
+        jmxProperties.add("JMSXDeliveryCount");
+        jmxProperties.add("JMSXProducerTXID");
         return jmxProperties.elements();
     }
 }

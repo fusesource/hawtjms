@@ -135,6 +135,13 @@ public class PropertyExpression {
                 return Integer.valueOf(message.getRedeliveryCounter() + 1);
             }
         });
+        JMS_PROPERTY_EXPRESSIONS.put("JMSXGroupID", new SubExpression() {
+
+            @Override
+            public Object evaluate(JmsMessage message) {
+                return message.getGroupId();
+            }
+        });
         JMS_PROPERTY_EXPRESSIONS.put("JMSXUserID", new SubExpression() {
 
             @Override
