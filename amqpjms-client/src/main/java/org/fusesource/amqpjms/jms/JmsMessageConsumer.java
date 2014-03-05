@@ -260,7 +260,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
                         if (session.isClosed()) {
                             throw new javax.jms.IllegalStateException("Session closed.");
                         }
-                        doAck(envelope);
+                        session.acknowledge();
                         return null;
                     }
                 });

@@ -736,13 +736,24 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         if (sync) {
             this.connection.send(envelope);
         } else {
-            // TODO - Async sends
+            this.connection.send(envelope);
+            // TODO - Async sends should be supported
         }
     }
 
     void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
-        // TODO - Async Acks
+        // TODO - Async Acks should be supported for some Ack types or based on configuration.
         this.connection.acknowledge(envelope, ackType);
+    }
+
+    /**
+     * Acknowledge all previously delivered messages in this Session as consumed.  This
+     * method is usually only called when the Session is in the CLIENT_ACKNOWLEDGE mode.
+     *
+     * @throws JMSException if an error occurs while the acknowledge is processed.
+     */
+    void acknowledge() throws JMSException {
+        this.connection.acknowledge(sessionInfo.getSessionId());
     }
 
     public boolean isClosed() {

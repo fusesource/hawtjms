@@ -16,8 +16,8 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.jms.JMSException;
 
@@ -54,7 +54,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     private final AmqpSession session;
     private final InboundTransformer inboundTransformer =
         new JMSMappingInboundTransformer(AmqpJMSVendor.INSTANCE);;
-    private final List<Delivery> pending = new LinkedList<Delivery>();
+    private final Map<JmsMessageId, Delivery> delivered = new LinkedHashMap<JmsMessageId, Delivery>();
 
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
         super(info);
@@ -143,9 +143,19 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
      * Called to acknowledge all messages that have been marked as delivered but
      * have not yet been marked consumed.  Usually this is called as part of an
      * client acknowledge session operation.
+     *
+     * Only messages that have already been acknowledged as delivered by the JMS
+     * framework will be in the delivered Map.  This means that the link credit
+     * would already have been given for these so we just need to settle them.
      */
     public void acknowledge() {
+        LOG.debug("Session Acknowledge for consumer: {}", info.getConsumerId());
+        for (Delivery delivery : delivered.values()) {
+            delivery.disposition(Accepted.getInstance());
+            delivery.settle();
+        }
 
+        delivered.clear();
     }
 
     /**
@@ -160,20 +170,36 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
      */
     public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) {
         JmsMessageId messageId = envelope.getMessage().getMessageId();
-        LOG.debug("Processing ack for message: {}", messageId);
-        if (messageId.getProviderHint() instanceof Delivery) {
-            Delivery incoming = (Delivery) messageId.getProviderHint();
+        Delivery delivery = null;
 
-            // TODO - For now we are just acking right away.  Later we need to track
-            //        pending acks and wait for the JMS consumer to ack.
+        if (messageId.getProviderHint() instanceof Delivery) {
+            delivery = (Delivery) messageId.getProviderHint();
+        } else {
+            LOG.warn("Received Ack for unknown message: {}", envelope.getMessage().getMessageId());
+            return;
+        }
+
+        if (ackType.equals(ACK_TYPE.DELIVERED)) {
+            LOG.info("Delivered Ack of message: {}", messageId);
+            delivered.put(messageId, delivery);
             endpoint.flow(1);
-            incoming.disposition(Accepted.getInstance());
-            incoming.settle();
+        } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
+            // An Auto Ack consumer won't deliver Ack first it just marks the message
+            // as consumed so we need to increase link credit here for that case.
+            if (delivered.remove(messageId) == null) {
+                endpoint.flow(1);
+            }
+
+            LOG.info("Consumed Ack of message: {}", messageId);
+            delivery.disposition(Accepted.getInstance());
+            delivery.settle();
+        } else {
+            LOG.warn("Unsupporeted Ack Type for message: {}", messageId);
         }
 
         // TODO - If not in hint search for it in pending.
         // TODO - based on ack mode we might need to ack all previous.
-        // TODO - delivered increments flow, but if no delivered then consume must do it.
+        // TODO - handle the other ack modes, poisoned, redelivered
     }
 
     @Override
