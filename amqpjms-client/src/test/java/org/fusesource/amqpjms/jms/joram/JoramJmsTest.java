@@ -21,7 +21,11 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.objectweb.jtests.jms.conform.connection.ConnectionTest;
+import org.objectweb.jtests.jms.conform.connection.TopicConnectionTest;
 import org.objectweb.jtests.jms.conform.message.MessageBodyTest;
+import org.objectweb.jtests.jms.conform.message.MessageDefaultTest;
+import org.objectweb.jtests.jms.conform.message.properties.MessagePropertyConversionTest;
+import org.objectweb.jtests.jms.conform.message.properties.MessagePropertyTest;
 
 public class JoramJmsTest extends TestCase {
 
@@ -38,7 +42,7 @@ public class JoramJmsTest extends TestCase {
 //        suite.addTestSuite(MessageTypeTest.class);
 //        suite.addTestSuite(UnifiedSessionTest.class);
 //        suite.addTestSuite(TemporaryTopicTest.class);
-//        suite.addTestSuite(TopicConnectionTest.class);
+        suite.addTestSuite(TopicConnectionTest.class);
 //        suite.addTestSuite(SelectorSyntaxTest.class);
 //        suite.addTestSuite(QueueSessionTest.class);
 //        suite.addTestSuite(SelectorTest.class);
@@ -47,9 +51,9 @@ public class JoramJmsTest extends TestCase {
 //        suite.addTestSuite(SessionTest.class);
 //        suite.addTestSuite(JMSXPropertyTest.class);
         suite.addTestSuite(MessageBodyTest.class);
-//        suite.addTestSuite(MessageDefaultTest.class);
-//        suite.addTestSuite(MessagePropertyConversionTest.class);
-//        suite.addTestSuite(MessagePropertyTest.class);
+        suite.addTestSuite(MessageDefaultTest.class);
+        suite.addTestSuite(MessagePropertyConversionTest.class);
+        suite.addTestSuite(MessagePropertyTest.class);
 
         return suite;
     }
