@@ -228,6 +228,7 @@ public class AmqpProvider implements AsyncProvider {
                         @Override
                         public void processDestination(JmsDestination destination) throws Exception {
                             // TODO - Create remote temporary Topic or Queue
+                            request.onSuccess(destination);
                         }
                     });
 
@@ -278,6 +279,7 @@ public class AmqpProvider implements AsyncProvider {
                         @Override
                         public void processDestination(JmsDestination destination) throws Exception {
                             // TODO - Delete remote temporary Topic or Queue
+                            request.onSuccess(null);
                         }
                     });
 

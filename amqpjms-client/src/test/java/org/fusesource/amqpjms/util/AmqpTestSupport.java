@@ -50,6 +50,7 @@ import org.apache.activemq.security.AuthorizationPlugin;
 import org.apache.activemq.security.DefaultAuthorizationMap;
 import org.apache.activemq.security.SimpleAuthenticationPlugin;
 import org.apache.activemq.security.TempDestinationAuthorizationEntry;
+import org.apache.activemq.util.JMXSupport;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.junit.After;
 import org.junit.Before;
@@ -241,6 +242,14 @@ public class AmqpTestSupport {
         return proxy;
     }
 
+    protected QueueViewMBean getProxyToTemporaryQueue(String name) throws MalformedObjectNameException, JMSException {
+        name = JMXSupport.encodeObjectNamePart(name);
+        ObjectName queueViewMBeanName = new ObjectName("org.apache.activemq:type=Broker,brokerName=localhost,destinationType=TempQueue,destinationName="+name);
+        QueueViewMBean proxy = (QueueViewMBean) brokerService.getManagementContext()
+                .newProxyInstance(queueViewMBeanName, QueueViewMBean.class, true);
+        return proxy;
+    }
+
     protected TopicViewMBean getProxyToTopic(String name) throws MalformedObjectNameException, JMSException {
         ObjectName topicViewMBeanName = new ObjectName("org.apache.activemq:type=Broker,brokerName=localhost,destinationType=Topic,destinationName="+name);
         TopicViewMBean proxy = (TopicViewMBean) brokerService.getManagementContext()
@@ -311,9 +320,9 @@ public class AmqpTestSupport {
         authorizationEntries.add(entry);
 
         TempDestinationAuthorizationEntry tempEntry = new TempDestinationAuthorizationEntry();
-        tempEntry.setRead("admins");
-        tempEntry.setWrite("admins");
-        tempEntry.setAdmin("admins");
+        tempEntry.setRead("admins,anonymous");
+        tempEntry.setWrite("admins,anonymous");
+        tempEntry.setAdmin("admins,anonymous");
 
         DefaultAuthorizationMap authorizationMap = new DefaultAuthorizationMap(authorizationEntries);
         authorizationMap.setTempDestinationAuthorizationEntry(tempEntry);
