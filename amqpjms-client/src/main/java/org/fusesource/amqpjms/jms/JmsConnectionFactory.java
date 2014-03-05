@@ -163,6 +163,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             JmsTopicConnection result = new JmsTopicConnection(connectionId, provider, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
             result.setExceptionListener(exceptionListener);
+            result.setUsername(userName);
+            result.setPassword(password);
             return result;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
@@ -194,6 +196,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             JmsConnection result = new JmsConnection(connectionId, provider, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
             result.setExceptionListener(exceptionListener);
+            result.setUsername(userName);
+            result.setPassword(password);
             return result;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
@@ -226,6 +230,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             JmsQueueConnection result = new JmsQueueConnection(connectionId, provider, getClientIdGenerator());
             PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
             result.setExceptionListener(exceptionListener);
+            result.setUsername(userName);
+            result.setPassword(password);
             return result;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);

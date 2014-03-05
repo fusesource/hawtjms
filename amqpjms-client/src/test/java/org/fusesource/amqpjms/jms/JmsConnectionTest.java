@@ -79,12 +79,30 @@ public class JmsConnectionTest extends AmqpTestSupport {
         connection.close();
     }
 
+    @Test(timeout=30000)
+    public void testCreateConnectionCallSystemAdmin() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        JmsConnection connection = (JmsConnection) factory.createConnection("system", "manager");
+        assertNotNull(connection);
+        connection.start();
+        connection.close();
+    }
+
     @Test(timeout=30000, expected = JMSSecurityException.class)
     public void testCreateConnectionAsUnknwonUser() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         factory.setUsername("unknown");
         factory.setPassword("unknown");
         JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+        connection.start();
+        connection.close();
+    }
+
+    @Test(timeout=30000, expected = JMSSecurityException.class)
+    public void testCreateConnectionCallUnknwonUser() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        JmsConnection connection = (JmsConnection) factory.createConnection("unknown", "unknown");
         assertNotNull(connection);
         connection.start();
         connection.close();

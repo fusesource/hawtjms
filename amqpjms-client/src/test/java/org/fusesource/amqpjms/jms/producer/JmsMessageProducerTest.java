@@ -20,6 +20,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import javax.jms.Connection;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
@@ -56,14 +58,37 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
         Queue queue = session.createQueue(name.toString());
-        session.createProducer(queue);
+        MessageProducer producer = session.createProducer(queue);
 
         QueueViewMBean proxy = getProxyToQueue(name.toString());
         assertEquals(0, proxy.getQueueSize());
+
+        Message message = session.createMessage();
+        producer.send(message);
+
+        assertEquals(1, proxy.getQueueSize());
         connection.close();
     }
 
     @Test
     public void testSendWorksAfterConnectionStopped() throws Exception {
+        Connection connection = createAmqpConnection();
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue(name.toString());
+        MessageProducer producer = session.createProducer(queue);
+
+        QueueViewMBean proxy = getProxyToQueue(name.toString());
+        assertEquals(0, proxy.getQueueSize());
+        connection.stop();
+
+        Message message = session.createMessage();
+        producer.send(message);
+
+        assertEquals(1, proxy.getQueueSize());
+        connection.close();
     }
 }
