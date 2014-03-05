@@ -23,6 +23,7 @@ import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 
 /**
@@ -135,6 +136,26 @@ public interface BlockingProvider {
      * @throws IOException if an error occurs or the Provider is already closed.
      */
     void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws IOException;
+
+    /**
+     * Called to commit an open transaction.
+     *
+     * @param txId
+     *        the transaction id that should be committed.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    void commit(JmsTransactionId txId) throws IOException;
+
+    /**
+     * Called to roll back an open transaction.
+     *
+     * @param txId
+     *        the transaction id that should be rolled back.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    void rollback(JmsTransactionId txId) throws IOException;
 
     /**
      * Sets the listener of events from this Provider instance.

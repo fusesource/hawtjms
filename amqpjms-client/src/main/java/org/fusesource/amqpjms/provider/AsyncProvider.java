@@ -23,6 +23,7 @@ import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 
 /**
@@ -134,6 +135,30 @@ public interface AsyncProvider {
      * @throws IOException if an error occurs or the Provider is already closed.
      */
     void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, ProviderRequest<Void> request) throws IOException;
+
+    /**
+     * Called to commit an open transaction.
+     *
+     * @param txId
+     *        the transaction id that should be committed.
+     * @param request
+     *        The request object that should be signaled when this operation completes.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    void commit(JmsTransactionId txId, ProviderRequest<Void> request) throws IOException;
+
+    /**
+     * Called to roll back an open transaction.
+     *
+     * @param txId
+     *        the transaction id that should be rolled back.
+     * @param request
+     *        The request object that should be signaled when this operation completes.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    void rollback(JmsTransactionId txId, ProviderRequest<Void> request) throws IOException;
 
     /**
      * Sets the listener of events from this Provider instance.

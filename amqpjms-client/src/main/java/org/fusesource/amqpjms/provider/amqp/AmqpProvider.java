@@ -44,6 +44,7 @@ import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsResourceVistor;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderListener;
@@ -350,6 +351,42 @@ public class AmqpProvider implements AsyncProvider {
 
                     consumer.acknowledge(envelope, ackType);
 
+                    pumpToProtonTransport();
+                    request.onSuccess(null);
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void commit(final JmsTransactionId txId, final ProviderRequest<Void> request) throws IOException {
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    pumpToProtonTransport();
+                    request.onSuccess(null);
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void rollback(final JmsTransactionId txId, final ProviderRequest<Void> request) throws IOException {
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
                     pumpToProtonTransport();
                     request.onSuccess(null);
                 } catch (Exception error) {

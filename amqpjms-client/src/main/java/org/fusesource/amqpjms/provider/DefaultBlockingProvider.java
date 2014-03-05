@@ -23,6 +23,7 @@ import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 
 /**
@@ -89,6 +90,20 @@ public class DefaultBlockingProvider implements BlockingProvider {
     public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         protocol.acknowledge(envelope, ackType, request);
+        request.getResponse();
+    }
+
+    @Override
+    public void commit(JmsTransactionId txId) throws IOException {
+        ProviderRequest<Void> request = new ProviderRequest<Void>();
+        protocol.commit(txId, request);
+        request.getResponse();
+    }
+
+    @Override
+    public void rollback(JmsTransactionId txId) throws IOException {
+        ProviderRequest<Void> request = new ProviderRequest<Void>();
+        protocol.rollback(txId, request);
         request.getResponse();
     }
 
