@@ -43,6 +43,8 @@ import javax.jms.QueueConnection;
 import javax.jms.QueueSession;
 import javax.jms.ServerSessionPool;
 import javax.jms.Session;
+import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
 import javax.jms.Topic;
 import javax.jms.TopicConnection;
 import javax.jms.TopicSession;
@@ -100,6 +102,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         new CopyOnWriteArraySet<JmsConnectionListener>();
 
     private final AtomicLong sessionIdGenerator = new AtomicLong();
+    private final AtomicLong tempDestIdGenerator = new AtomicLong();
 
     protected JmsConnection(String connectionId, BlockingProvider provider, IdGenerator clientIdGenerator) throws JMSException {
 
@@ -848,5 +851,23 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         if (firstFailureError == null) {
             firstFailureError = error;
         }
+    }
+
+    /**
+     * @return a newly initialized TemporaryQueue instance.
+     */
+    protected TemporaryQueue createTemporaryQueue() {
+        String destinationName = connectionInfo.getConnectionId() + ":" + tempDestIdGenerator.incrementAndGet();
+        JmsTemporaryQueue queue = new JmsTemporaryQueue(destinationName);
+        return queue;
+    }
+
+    /**
+     * @return a newly initialized TemporaryTopic instance.
+     */
+    protected TemporaryTopic createTemporaryTopic() {
+        String destinationName = connectionInfo.getConnectionId() + ":" + tempDestIdGenerator.incrementAndGet();
+        JmsTemporaryTopic topic = new JmsTemporaryTopic(destinationName);
+        return topic;
     }
 }

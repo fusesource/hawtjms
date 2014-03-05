@@ -34,6 +34,8 @@ import org.apache.qpid.proton.engine.impl.EngineFactoryImpl;
 import org.apache.qpid.proton.engine.impl.ProtocolTracer;
 import org.apache.qpid.proton.engine.impl.TransportImpl;
 import org.apache.qpid.proton.framing.TransportFrame;
+import org.fusesource.amqpjms.jms.JmsTemporaryQueue;
+import org.fusesource.amqpjms.jms.JmsTemporaryTopic;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
@@ -223,6 +225,16 @@ public class AmqpProvider implements AsyncProvider {
                             connection = new AmqpConnection(AmqpProvider.this, protonConnection, sasl, connectionInfo);
                             connection.open(request);
                         }
+
+                        @Override
+                        public void processTemporaryTopic(JmsTemporaryTopic topic) throws Exception {
+                            // TODO - Create remote temporary Topic.
+                        }
+
+                        @Override
+                        public void processTemporaryQueue(JmsTemporaryQueue queue) throws Exception {
+                            // TODO - Create remote temporary Topic.
+                        }
                     });
 
                     pumpToProtonTransport();
@@ -267,6 +279,17 @@ public class AmqpProvider implements AsyncProvider {
                         @Override
                         public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
                             connection.close(request);
+                        }
+
+
+                        @Override
+                        public void processTemporaryTopic(JmsTemporaryTopic topic) throws Exception {
+                            // TODO - Destroy remote temporary Topic.
+                        }
+
+                        @Override
+                        public void processTemporaryQueue(JmsTemporaryQueue queue) throws Exception {
+                            // TODO - Destroy remote temporary Topic.
                         }
                     });
 

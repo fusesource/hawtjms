@@ -114,6 +114,9 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
     @Override
     public int compareTo(JmsDestination other) {
         if (other != null) {
+            if (this == other) {
+                return 0;
+            }
             if (isTemporary() == other.isTemporary()) {
                 return getName().compareTo(other.getName());
             }

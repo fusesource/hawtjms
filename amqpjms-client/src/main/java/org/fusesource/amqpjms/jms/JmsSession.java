@@ -627,8 +627,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public TemporaryQueue createTemporaryQueue() throws JMSException {
         checkClosed();
-        // TODO - Ask Provider to create a temporary destination.
-        return null;
+        return connection.createTemporaryQueue();
     }
 
     /**
@@ -639,8 +638,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public TemporaryTopic createTemporaryTopic() throws JMSException {
         checkClosed();
-        // TODO - Ask Provider to create a temporary destination.
-        return null;
+        return connection.createTemporaryTopic();
     }
 
     /**
