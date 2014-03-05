@@ -43,6 +43,7 @@ import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsResourceVistor;
+import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.AsyncProvider;
@@ -307,7 +308,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void acknowledge(final JmsSessionInfo session, final ProviderRequest<Void> request) throws IOException {
+    public void acknowledge(final JmsSessionId sessionId, final ProviderRequest<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -315,7 +316,7 @@ public class AmqpProvider implements AsyncProvider {
             public void run() {
                 try {
                     checkClosed();
-                    AmqpSession amqpSession = connection.getSession(session.getSessionId());
+                    AmqpSession amqpSession = connection.getSession(sessionId);
                     amqpSession.acknowledge();
                     pumpToProtonTransport();
                     request.onSuccess(null);

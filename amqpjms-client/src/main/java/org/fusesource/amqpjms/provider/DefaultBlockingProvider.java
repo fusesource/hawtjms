@@ -22,7 +22,7 @@ import java.net.URI;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
-import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 
@@ -80,9 +80,9 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
-    public void acknowledge(JmsSessionInfo session) throws IOException {
+    public void acknowledge(JmsSessionId sessionId) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
-        protocol.acknowledge(session, request);
+        protocol.acknowledge(sessionId, request);
         request.getResponse();
     }
 

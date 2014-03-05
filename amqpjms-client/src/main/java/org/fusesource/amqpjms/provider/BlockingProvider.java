@@ -22,7 +22,7 @@ import java.net.URI;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
-import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 
@@ -115,12 +115,12 @@ public interface BlockingProvider {
      * mode.  The acknowledgment should only be applied to Messages that have been marked
      * as delivered and not those still awaiting dispatch.
      *
-     * @param session
-     *        the Session whose delivered messages should be acknowledged.
+     * @param sessionId
+     *        the Session Id whose delivered messages should be acknowledged.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void acknowledge(JmsSessionInfo session) throws IOException;
+    void acknowledge(JmsSessionId sessionId) throws IOException;
 
     /**
      * Called to acknowledge a JmsMessage has been delivered, consumed, re-delivered...etc.
