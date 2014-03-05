@@ -142,7 +142,11 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
         super.copy(other);
         this.dataOut = null;
         this.dataIn = null;
-        this.content = other.content.deepCopy();
+        if (other.content != null) {
+            this.content = other.content.deepCopy();
+        } else {
+            this.content = null;
+        }
     }
 
     @Override

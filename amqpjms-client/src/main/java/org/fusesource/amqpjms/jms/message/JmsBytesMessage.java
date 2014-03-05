@@ -104,7 +104,11 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     private void copy(JmsBytesMessage other) throws JMSException {
         other.storeContent();
         super.copy(other);
-        this.content = other.content.deepCopy();
+        if (other.content != null) {
+            this.content = other.content.deepCopy();
+        } else {
+            this.content = null;
+        }
         this.bytesOut = null;
         this.dataIn = null;
     }
