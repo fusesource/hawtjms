@@ -236,7 +236,9 @@ public class AmqpTestSupport {
     }
 
     protected QueueViewMBean getProxyToQueue(String name) throws MalformedObjectNameException, JMSException {
-        ObjectName queueViewMBeanName = new ObjectName("org.apache.activemq:type=Broker,brokerName=localhost,destinationType=Queue,destinationName="+name);
+        ObjectName queueViewMBeanName = new ObjectName(
+            "org.apache.activemq:type=Broker,brokerName=localhost," +
+            "destinationType=Queue,destinationName=" + name);
         QueueViewMBean proxy = (QueueViewMBean) brokerService.getManagementContext()
                 .newProxyInstance(queueViewMBeanName, QueueViewMBean.class, true);
         return proxy;
@@ -244,16 +246,30 @@ public class AmqpTestSupport {
 
     protected QueueViewMBean getProxyToTemporaryQueue(String name) throws MalformedObjectNameException, JMSException {
         name = JMXSupport.encodeObjectNamePart(name);
-        ObjectName queueViewMBeanName = new ObjectName("org.apache.activemq:type=Broker,brokerName=localhost,destinationType=TempQueue,destinationName="+name);
+        ObjectName queueViewMBeanName = new ObjectName(
+            "org.apache.activemq:type=Broker,brokerName=localhost," +
+            "destinationType=TempQueue,destinationName=" + name);
         QueueViewMBean proxy = (QueueViewMBean) brokerService.getManagementContext()
                 .newProxyInstance(queueViewMBeanName, QueueViewMBean.class, true);
         return proxy;
     }
 
     protected TopicViewMBean getProxyToTopic(String name) throws MalformedObjectNameException, JMSException {
-        ObjectName topicViewMBeanName = new ObjectName("org.apache.activemq:type=Broker,brokerName=localhost,destinationType=Topic,destinationName="+name);
+        ObjectName topicViewMBeanName = new ObjectName(
+            "org.apache.activemq:type=Broker,brokerName=localhost," +
+            "destinationType=Topic,destinationName=" + name);
         TopicViewMBean proxy = (TopicViewMBean) brokerService.getManagementContext()
                 .newProxyInstance(topicViewMBeanName, TopicViewMBean.class, true);
+        return proxy;
+    }
+
+    protected TopicViewMBean getProxyToTemporaryTopic(String name) throws MalformedObjectNameException, JMSException {
+        name = JMXSupport.encodeObjectNamePart(name);
+        ObjectName topicViewMBeanName = new ObjectName(
+            "org.apache.activemq:type=Broker,brokerName=localhost," +
+            "destinationType=TempTopic,destinationName=" + name);
+        TopicViewMBean proxy = (TopicViewMBean) brokerService.getManagementContext()
+            .newProxyInstance(topicViewMBeanName, TopicViewMBean.class, true);
         return proxy;
     }
 
