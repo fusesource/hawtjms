@@ -33,20 +33,20 @@ import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
  */
 public class DefaultBlockingProvider implements BlockingProvider {
 
-    private final AsyncProvider protocol;
+    private final AsyncProvider next;
 
     public DefaultBlockingProvider(AsyncProvider protocol) {
-        this.protocol = protocol;
+        this.next = protocol;
     }
 
     @Override
     public void connect() throws IOException {
-        protocol.connect();
+        next.connect();
     }
 
     @Override
     public void close() {
-        protocol.close();
+        next.close();
     }
 
     @Override
@@ -55,72 +55,72 @@ public class DefaultBlockingProvider implements BlockingProvider {
 
     @Override
     public URI getRemoteURI() {
-        return protocol.getRemoteURI();
+        return next.getRemoteURI();
     }
 
     @Override
     public JmsResource create(JmsResource resource) throws IOException {
         ProviderRequest<JmsResource> request = new ProviderRequest<JmsResource>();
-        protocol.create(resource, request);
+        next.create(resource, request);
         return request.getResponse();
     }
 
     @Override
     public void destroy(JmsResource resource) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
-        protocol.destroy(resource, request);
+        next.destroy(resource, request);
         request.getResponse();
     }
 
     @Override
     public void send(JmsOutboundMessageDispatch envelope) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
-        protocol.send(envelope, request);
+        next.send(envelope, request);
         request.getResponse();
     }
 
     @Override
     public void acknowledge(JmsSessionId sessionId) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
-        protocol.acknowledge(sessionId, request);
+        next.acknowledge(sessionId, request);
         request.getResponse();
     }
 
     @Override
     public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
-        protocol.acknowledge(envelope, ackType, request);
+        next.acknowledge(envelope, ackType, request);
         request.getResponse();
     }
 
     @Override
     public void commit(JmsTransactionId txId) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
-        protocol.commit(txId, request);
+        next.commit(txId, request);
         request.getResponse();
     }
 
     @Override
     public void rollback(JmsTransactionId txId) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
-        protocol.rollback(txId, request);
+        next.rollback(txId, request);
         request.getResponse();
     }
 
     @Override
     public void unsubscribe(String subscription) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
-        protocol.unsubscribe(subscription, request);
+        next.unsubscribe(subscription, request);
         request.getResponse();
     }
 
     @Override
     public void setProviderListener(ProviderListener listener) {
-        protocol.setProviderListener(listener);
+        next.setProviderListener(listener);
     }
 
     @Override
     public ProviderListener getProviderListener() {
-        return protocol.getProviderListener();
+        return next.getProviderListener();
     }
 }
