@@ -41,15 +41,19 @@ public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestinatio
 
     @Override
     protected void doOpen() {
-        // TODO Auto-generated method stub
+        this.connection.addToPendingOpen(this);
     }
 
     @Override
     protected void doClose() {
-        // TODO Auto-generated method stub
+        this.connection.addToPendingClose(this);
     }
 
     public AmqpConnection getConnection() {
         return this.connection;
+    }
+
+    public JmsDestination getJmsDestination() {
+        return this.info;
     }
 }

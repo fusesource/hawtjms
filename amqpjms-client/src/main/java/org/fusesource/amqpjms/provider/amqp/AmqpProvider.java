@@ -203,7 +203,7 @@ public class AmqpProvider implements AsyncProvider {
                         @Override
                         public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
                             AmqpSession session = connection.getSession(producerInfo.getParentId());
-                            AmqpProducer producer = session.createProducer(producerInfo);
+                            AmqpFixedProducer producer = session.createProducer(producerInfo);
                             producer.open(request);
                         }
 
@@ -229,8 +229,8 @@ public class AmqpProvider implements AsyncProvider {
                         @Override
                         public void processDestination(JmsDestination destination) throws Exception {
                             if (destination.isTemporary()) {
-                                AmqpTemporaryDestination temporary = connection.createTemporaryDestination(destination);
-                                temporary.open(request);
+                                //AmqpTemporaryDestination temporary = connection.createTemporaryDestination(destination);
+                                //temporary.open(request);
                             }
                             // TODO - only report success for non-temporary dests, for now we just say
                             //        that they all worked.
@@ -310,8 +310,8 @@ public class AmqpProvider implements AsyncProvider {
                     JmsProducerId producerId = envelope.getProducerId();
                     AmqpProducer producer = null;
 
-                    if (producerId.getProviderHint() instanceof AmqpProducer) {
-                        producer = (AmqpProducer) producerId.getProviderHint();
+                    if (producerId.getProviderHint() instanceof AmqpFixedProducer) {
+                        producer = (AmqpFixedProducer) producerId.getProviderHint();
                     } else {
                         AmqpSession session = connection.getSession(producerId.getParentId());
                         producer = session.getProducer(producerId);

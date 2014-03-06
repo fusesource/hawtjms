@@ -17,10 +17,11 @@
 package org.fusesource.amqpjms.provider.amqp;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
@@ -44,12 +45,13 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
 
     private final URI remoteURI;
     private final Map<JmsSessionId, AmqpSession> sessions = new HashMap<JmsSessionId, AmqpSession>();
+    private final Map<JmsDestination, AmqpTemporaryDestination> tempDests = new HashMap<JmsDestination, AmqpTemporaryDestination>();
     private final AmqpProvider provider;
     private boolean connected;
     private AmqpSaslAuthenticator authenticator;
 
-    private final Map<JmsSessionId, AmqpSession> pendingOpenSessions = new HashMap<JmsSessionId, AmqpSession>();
-    private final Map<JmsSessionId, AmqpSession> pendingCloseSessions = new HashMap<JmsSessionId, AmqpSession>();
+    private final List<AmqpResource> pendingOpen = new LinkedList<AmqpResource>();
+    private final List<AmqpResource> pendingClose = new LinkedList<AmqpResource>();
 
     private String queuePrefix;
     private String topicPrefix;
@@ -135,7 +137,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
             }
         }
 
-        processPendingSessions();
+        processPendingResources();
 
         for (AmqpSession session : this.sessions.values()) {
             session.processUpdates();
@@ -162,39 +164,48 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         }
     }
 
-    private void processPendingSessions() {
+    private void processPendingResources() {
 
-        if (pendingOpenSessions.isEmpty() && pendingCloseSessions.isEmpty()) {
+        if (pendingOpen.isEmpty() && pendingClose.isEmpty()) {
             return;
         }
 
-        ArrayList<JmsSessionId> toRemove = new ArrayList<JmsSessionId>();
-        for (Entry<JmsSessionId, AmqpSession> entry : pendingOpenSessions.entrySet()) {
-            if (entry.getValue().isOpen()) {
-                toRemove.add(entry.getKey());
-                sessions.put(entry.getKey(), entry.getValue());
-                entry.getValue().opened();
+        Iterator<AmqpResource> iterator = pendingOpen.iterator();
+        while (iterator.hasNext()) {
+            AmqpResource resource = iterator.next();
+            if (resource.isOpen()) {
+                if (resource instanceof AmqpSession) {
+                    AmqpSession session = (AmqpSession) resource;
+                    sessions.put(session.getSessionId(), session);
+                    LOG.info("Session {} is now open", session.getSessionId());
+                } else if (resource instanceof AmqpTemporaryDestination) {
+                    AmqpTemporaryDestination destination = (AmqpTemporaryDestination) resource;
+                    tempDests.put(destination.getJmsDestination(), destination);
+                    LOG.info("Temporary Destination {} is now open", destination);
+                }
+
+                iterator.remove();
+                resource.opened();
             }
         }
 
-        for (JmsSessionId id : toRemove) {
-            LOG.info("Session {} is now open", id);
-            pendingOpenSessions.remove(id);
-        }
+        iterator = pendingClose.iterator();
+        while (iterator.hasNext()) {
+            AmqpResource resource = iterator.next();
+            if (resource.isClosed()) {
+                if (resource instanceof AmqpSession) {
+                    AmqpSession session = (AmqpSession) resource;
+                    sessions.remove(session.getSessionId());
+                    LOG.info("Session {} is now closed", session.getSessionId());
+                } else if (resource instanceof AmqpTemporaryDestination) {
+                    AmqpTemporaryDestination destination = (AmqpTemporaryDestination) resource;
+                    tempDests.remove(destination.getJmsDestination());
+                    LOG.info("Temporary Destination {} is now closed", destination);
+                }
 
-        toRemove.clear();
-
-        for (Entry<JmsSessionId, AmqpSession> entry : pendingCloseSessions.entrySet()) {
-            if (entry.getValue().isClosed()) {
-                toRemove.add(entry.getKey());
-                sessions.remove(entry.getKey());
-                entry.getValue().closed();
+                iterator.remove();
+                resource.closed();
             }
-        }
-
-        for (JmsSessionId id : toRemove) {
-            LOG.info("Session {} is now closed", id);
-            pendingCloseSessions.remove(id);
         }
     }
 
@@ -209,12 +220,12 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         return null;
     }
 
-    void addToPendingOpenSessions(AmqpSession session) {
-        this.pendingOpenSessions.put(session.getSessionId(), session);
+    void addToPendingOpen(AmqpResource session) {
+        this.pendingOpen.add(session);
     }
 
-    void addToPendingCloseSessions(AmqpSession session) {
-        this.pendingCloseSessions.put(session.getSessionId(), session);
+    void addToPendingClose(AmqpResource session) {
+        this.pendingClose.add(session);
     }
 
     public JmsConnectionInfo getConnectionInfo() {
