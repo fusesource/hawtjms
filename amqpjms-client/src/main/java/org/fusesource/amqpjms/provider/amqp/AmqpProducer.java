@@ -41,6 +41,7 @@ import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
+import org.fusesource.amqpjms.provider.AsyncResult;
 import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.fusesource.amqpjms.util.IOExceptionSupport;
 import org.fusesource.hawtbuf.Buffer;
@@ -70,7 +71,7 @@ public class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo, Sender> 
         this.info.getProducerId().setProviderHint(this);
     }
 
-    public void send(JmsOutboundMessageDispatch envelope, ProviderRequest<Void> request) throws IOException {
+    public void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException {
         LOG.info("Producer sending message: {}", envelope.getMessage().getMessageId());
 
         byte[] tag = borrowTag();

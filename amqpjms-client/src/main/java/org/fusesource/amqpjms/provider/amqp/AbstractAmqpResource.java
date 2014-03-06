@@ -21,7 +21,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.proton.engine.Endpoint;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
-import org.fusesource.amqpjms.provider.ProviderRequest;
+import org.fusesource.amqpjms.provider.AsyncResult;
 
 /**
  * Abstract base for all AmqpResource implementations to extend.
@@ -32,8 +32,8 @@ import org.fusesource.amqpjms.provider.ProviderRequest;
  */
 public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endpoint> implements AmqpResource {
 
-    protected ProviderRequest<JmsResource> openRequest;
-    protected ProviderRequest<Void> closeRequest;
+    protected AsyncResult<JmsResource> openRequest;
+    protected AsyncResult<Void> closeRequest;
 
     protected E endpoint;
     protected final R info;
@@ -64,7 +64,7 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
     }
 
     @Override
-    public void open(ProviderRequest<JmsResource> request) {
+    public void open(AsyncResult<JmsResource> request) {
         doOpen();
         this.endpoint.setContext(this);
         this.endpoint.open();
@@ -85,7 +85,7 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
     }
 
     @Override
-    public void close(ProviderRequest<Void> request) {
+    public void close(AsyncResult<Void> request) {
         doClose();
         this.endpoint.close();
         this.closeRequest = request;

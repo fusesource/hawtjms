@@ -180,7 +180,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     @Override
-    public void create(final JmsResource resource, ProviderRequest<JmsResource> request) throws IOException {
+    public void create(final JmsResource resource, AsyncResult<JmsResource> request) throws IOException {
         checkClosed();
         final FailoverRequest<JmsResource> pending = new FailoverRequest<JmsResource>(request) {
             @Override
@@ -193,7 +193,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     @Override
-    public void destroy(final JmsResource resourceId, ProviderRequest<Void> request) throws IOException {
+    public void destroy(final JmsResource resourceId, AsyncResult<Void> request) throws IOException {
         checkClosed();
         final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
@@ -206,7 +206,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     @Override
-    public void send(final JmsOutboundMessageDispatch envelope, ProviderRequest<Void> request) throws IOException {
+    public void send(final JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException {
         checkClosed();
         final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
@@ -219,7 +219,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     @Override
-    public void acknowledge(final JmsSessionId sessionId, ProviderRequest<Void> request) throws IOException {
+    public void acknowledge(final JmsSessionId sessionId, AsyncResult<Void> request) throws IOException {
         checkClosed();
         final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
@@ -232,7 +232,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     @Override
-    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, ProviderRequest<Void> request) throws IOException {
+    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, AsyncResult<Void> request) throws IOException {
         checkClosed();
         final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
@@ -245,7 +245,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     @Override
-    public void commit(final JmsTransactionId txId, ProviderRequest<Void> request) throws IOException {
+    public void commit(final JmsTransactionId txId, AsyncResult<Void> request) throws IOException {
         checkClosed();
         final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
@@ -258,7 +258,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     @Override
-    public void rollback(final JmsTransactionId txId, ProviderRequest<Void> request) throws IOException {
+    public void rollback(final JmsTransactionId txId, AsyncResult<Void> request) throws IOException {
         checkClosed();
         final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
@@ -271,7 +271,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     @Override
-    public void unsubscribe(final String subscription, ProviderRequest<Void> request) throws IOException {
+    public void unsubscribe(final String subscription, AsyncResult<Void> request) throws IOException {
         checkClosed();
         final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override

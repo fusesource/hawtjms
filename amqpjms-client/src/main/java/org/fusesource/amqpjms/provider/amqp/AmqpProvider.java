@@ -48,6 +48,7 @@ import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.AsyncProvider;
+import org.fusesource.amqpjms.provider.AsyncResult;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderListener;
 import org.fusesource.amqpjms.provider.ProviderRequest;
@@ -183,7 +184,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void create(final JmsResource resource, final ProviderRequest<JmsResource> request) throws IOException {
+    public void create(final JmsResource resource, final AsyncResult<JmsResource> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -241,7 +242,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void destroy(final JmsResource resource, final ProviderRequest<Void> request) throws IOException {
+    public void destroy(final JmsResource resource, final AsyncResult<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -292,7 +293,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void send(final JmsOutboundMessageDispatch envelope, final ProviderRequest<Void> request) throws IOException {
+    public void send(final JmsOutboundMessageDispatch envelope, final AsyncResult<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -321,7 +322,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void acknowledge(final JmsSessionId sessionId, final ProviderRequest<Void> request) throws IOException {
+    public void acknowledge(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -341,7 +342,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, final ProviderRequest<Void> request) throws IOException {
+    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, final AsyncResult<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -372,7 +373,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void commit(final JmsTransactionId txId, final ProviderRequest<Void> request) throws IOException {
+    public void commit(final JmsTransactionId txId, final AsyncResult<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -390,7 +391,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void rollback(final JmsTransactionId txId, final ProviderRequest<Void> request) throws IOException {
+    public void rollback(final JmsTransactionId txId, final AsyncResult<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -408,7 +409,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void unsubscribe(final String subscription, final ProviderRequest<Void> request) throws IOException {
+    public void unsubscribe(final String subscription, final AsyncResult<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 

@@ -17,7 +17,7 @@
 package org.fusesource.amqpjms.provider.amqp;
 
 import org.fusesource.amqpjms.jms.meta.JmsResource;
-import org.fusesource.amqpjms.provider.ProviderRequest;
+import org.fusesource.amqpjms.provider.AsyncResult;
 
 /**
  * AmqpResource specification.
@@ -34,7 +34,7 @@ public interface AmqpResource {
      * @param request
      *        The initiating request that triggered this open call.
      */
-    void open(ProviderRequest<JmsResource> request);
+    void open(AsyncResult<JmsResource> request);
 
     /**
      * @return if the resource has moved to the opened state on the remote.
@@ -54,7 +54,7 @@ public interface AmqpResource {
      * @param request
      *        The initiating request that triggered this close call.
      */
-    void close(ProviderRequest<Void> request);
+    void close(AsyncResult<Void> request);
 
     /**
      * @return if the resource has moved to the closed state on the remote.

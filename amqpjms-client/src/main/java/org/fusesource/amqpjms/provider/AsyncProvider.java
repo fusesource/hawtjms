@@ -74,7 +74,7 @@ public interface AsyncProvider {
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void create(JmsResource resource, ProviderRequest<JmsResource> request) throws IOException;
+    void create(JmsResource resource, AsyncResult<JmsResource> request) throws IOException;
 
     /**
      * Instruct the Provider to dispose of a given JmsResource.
@@ -89,7 +89,7 @@ public interface AsyncProvider {
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void destroy(JmsResource resourceId, ProviderRequest<Void> request) throws IOException;
+    void destroy(JmsResource resourceId, AsyncResult<Void> request) throws IOException;
 
     /**
      * Sends the JmsMessage contained in the outbound dispatch envelope.
@@ -101,7 +101,7 @@ public interface AsyncProvider {
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void send(JmsOutboundMessageDispatch envelope, ProviderRequest<Void> request) throws IOException;
+    void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException;
 
     /**
      * Called to acknowledge all messages that have been delivered in a given session.
@@ -117,7 +117,7 @@ public interface AsyncProvider {
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void acknowledge(JmsSessionId sessionId, ProviderRequest<Void> request) throws IOException;
+    void acknowledge(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException;
 
     /**
      * Called to acknowledge a JmsMessage has been delivered, consumed, re-delivered...etc.
@@ -134,7 +134,7 @@ public interface AsyncProvider {
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, ProviderRequest<Void> request) throws IOException;
+    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult<Void> request) throws IOException;
 
     /**
      * Called to commit an open transaction.
@@ -146,7 +146,7 @@ public interface AsyncProvider {
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void commit(JmsTransactionId txId, ProviderRequest<Void> request) throws IOException;
+    void commit(JmsTransactionId txId, AsyncResult<Void> request) throws IOException;
 
     /**
      * Called to roll back an open transaction.
@@ -158,7 +158,7 @@ public interface AsyncProvider {
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void rollback(JmsTransactionId txId, ProviderRequest<Void> request) throws IOException;
+    void rollback(JmsTransactionId txId, AsyncResult<Void> request) throws IOException;
 
     /**
      * Remove a durable topic subscription by name.
@@ -170,7 +170,7 @@ public interface AsyncProvider {
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void unsubscribe(String subscription, ProviderRequest<Void> request) throws IOException;
+    void unsubscribe(String subscription, AsyncResult<Void> request) throws IOException;
 
     /**
      * Sets the listener of events from this Provider instance.
