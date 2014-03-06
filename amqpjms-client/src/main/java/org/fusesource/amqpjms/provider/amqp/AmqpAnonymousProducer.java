@@ -19,8 +19,10 @@ package org.fusesource.amqpjms.provider.amqp;
 import java.io.IOException;
 
 import org.apache.qpid.proton.engine.Link;
+import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
+import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.provider.AsyncResult;
 
 /**
@@ -40,6 +42,9 @@ public class AmqpAnonymousProducer extends AmqpProducer {
 
     @Override
     public void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException {
+
+        JmsDestination destination = envelope.getDestination();
+        AmqpFixedProducer producer = new AmqpFixedProducer(session, info);
     }
 
     @Override
@@ -48,31 +53,50 @@ public class AmqpAnonymousProducer extends AmqpProducer {
     }
 
     @Override
-    protected void doOpen() {
+    public void open(AsyncResult<JmsResource> request) {
         // Trigger an immediate open, we don't talk to the Broker until
         // a send occurs so we must not let the client block.
-        this.opened();
+        request.onSuccess(info);
+    }
+
+    @Override
+    public void close(AsyncResult<Void> request) {
+        // Trigger an immediate close, the internal producers that are currently in a send
+        // will track their own state and close as the send completes or fails.
+        request.onSuccess(null);
+    }
+
+    @Override
+    protected void doOpen() {
     }
 
     @Override
     protected void doClose() {
-        // TODO Auto-generated method stub
     }
 
     @Override
     public Link getProtonLink() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Object getRemoteTerminus() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public boolean isAnonymous() {
         return true;
+    }
+
+    private class AnonymousSendRequest implements AsyncResult<Void> {
+
+        @Override
+        public void onFailure(Throwable result) {
+        }
+
+        @Override
+        public void onSuccess(Void result) {
+        }
     }
 }

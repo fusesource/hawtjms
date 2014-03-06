@@ -16,15 +16,25 @@
  */
 package org.fusesource.amqpjms.jms.message;
 
+import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 
 /**
- *
+ * Envelope that wraps the objects involved in a Message send operation.
  */
 public class JmsOutboundMessageDispatch {
 
     private JmsProducerId producerId;
     private JmsMessage message;
+    private JmsDestination destination;
+
+    public JmsDestination getDestination() {
+        return destination;
+    }
+
+    public void setDestination(JmsDestination destination) {
+        this.destination = destination;
+    }
 
     public JmsMessage getMessage() {
         return message;

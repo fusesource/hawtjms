@@ -730,17 +730,20 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         JmsOutboundMessageDispatch envelope = new JmsOutboundMessageDispatch();
         envelope.setMessage(copy);
         envelope.setProducerId(producer.getProducerId());
+        envelope.setDestination(destination);
 
         if (sync) {
             this.connection.send(envelope);
         } else {
             this.connection.send(envelope);
             // TODO - Async sends should be supported
+            //        we could force this down into the provider though
         }
     }
 
     void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
         // TODO - Async Acks should be supported for some Ack types or based on configuration.
+        //        This could be pushed down to the Provider though.
         this.connection.acknowledge(envelope, ackType);
     }
 
