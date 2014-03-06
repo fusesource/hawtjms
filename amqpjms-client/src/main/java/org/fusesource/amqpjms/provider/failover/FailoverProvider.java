@@ -38,7 +38,7 @@ import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.AsyncProvider;
-import org.fusesource.amqpjms.provider.BlockingProvider;
+import org.fusesource.amqpjms.provider.AsyncResult;
 import org.fusesource.amqpjms.provider.DefaultBlockingProvider;
 import org.fusesource.amqpjms.provider.DefaultProviderListener;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  * connection the FailoverProvider will initiate state recovery of the active JMS
  * framework resources.
  */
-public class FailoverProvider extends DefaultProviderListener implements BlockingProvider {
+public class FailoverProvider extends DefaultProviderListener implements AsyncProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
@@ -180,121 +180,107 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
     }
 
     @Override
-    public JmsResource create(final JmsResource resource) throws IOException {
+    public void create(final JmsResource resource, ProviderRequest<JmsResource> request) throws IOException {
         checkClosed();
-        final FailoverRequest<JmsResource> request = new FailoverRequest<JmsResource>() {
+        final FailoverRequest<JmsResource> pending = new FailoverRequest<JmsResource>(request) {
             @Override
             public void doTask() throws IOException {
                 provider.create(resource, this);
             }
         };
 
-        serializer.execute(request);
-        return request.getResponse();
+        serializer.execute(pending);
     }
 
     @Override
-    public void destroy(final JmsResource resource) throws IOException {
+    public void destroy(final JmsResource resourceId, ProviderRequest<Void> request) throws IOException {
         checkClosed();
-        final FailoverRequest<Void> request = new FailoverRequest<Void>() {
+        final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
             public void doTask() throws IOException {
-                provider.destroy(resource, this);
+                provider.destroy(resourceId, this);
             }
         };
 
-        serializer.execute(request);
-        request.getResponse();
+        serializer.execute(pending);
     }
 
     @Override
-    public void send(final JmsOutboundMessageDispatch envelope) throws IOException {
+    public void send(final JmsOutboundMessageDispatch envelope, ProviderRequest<Void> request) throws IOException {
         checkClosed();
-        final FailoverRequest<Void> request = new FailoverRequest<Void>() {
+        final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
             public void doTask() throws IOException {
                 provider.send(envelope, this);
             }
         };
 
-        serializer.execute(request);
-        request.getResponse();
+        serializer.execute(pending);
     }
 
     @Override
-    public void acknowledge(final JmsSessionId sessionId) throws IOException {
+    public void acknowledge(final JmsSessionId sessionId, ProviderRequest<Void> request) throws IOException {
         checkClosed();
-        final FailoverRequest<Void> request = new FailoverRequest<Void>() {
+        final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
             public void doTask() throws IOException {
                 provider.acknowledge(sessionId, this);
             }
         };
 
-        serializer.execute(request);
-        request.getResponse();
+        serializer.execute(pending);
     }
 
     @Override
-    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType) throws IOException {
+    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, ProviderRequest<Void> request) throws IOException {
         checkClosed();
-        final FailoverRequest<Void> request = new FailoverRequest<Void>() {
+        final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
             public void doTask() throws IOException {
                 provider.acknowledge(envelope, ackType, this);
             }
         };
 
-        serializer.execute(request);
-        request.getResponse();
+        serializer.execute(pending);
     }
 
     @Override
-    public void commit(final JmsTransactionId txId) throws IOException {
+    public void commit(final JmsTransactionId txId, ProviderRequest<Void> request) throws IOException {
         checkClosed();
-        final FailoverRequest<Void> request = new FailoverRequest<Void>() {
+        final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
             public void doTask() throws IOException {
                 provider.commit(txId, this);
             }
         };
 
-        serializer.execute(request);
-        request.getResponse();
+        serializer.execute(pending);
     }
 
     @Override
-    public void rollback(final JmsTransactionId txId) throws IOException {
+    public void rollback(final JmsTransactionId txId, ProviderRequest<Void> request) throws IOException {
         checkClosed();
-        final FailoverRequest<Void> request = new FailoverRequest<Void>() {
+        final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
             public void doTask() throws IOException {
                 provider.rollback(txId, this);
             }
         };
 
-        serializer.execute(request);
-        request.getResponse();
+        serializer.execute(pending);
     }
 
     @Override
-    public void unsubscribe(final String subscription) throws IOException {
+    public void unsubscribe(final String subscription, ProviderRequest<Void> request) throws IOException {
         checkClosed();
-        final FailoverRequest<Void> request = new FailoverRequest<Void>() {
+        final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
             public void doTask() throws IOException {
                 provider.unsubscribe(subscription, this);
             }
         };
 
-        serializer.execute(request);
-        request.getResponse();
-    }
-
-    @Override
-    public void receoveryComplate() throws IOException {
-        checkClosed();
-        // TODO Auto-generated method stub
+        serializer.execute(pending);
     }
 
     @Override
@@ -591,12 +577,17 @@ public class FailoverProvider extends DefaultProviderListener implements Blockin
 
         private final long id = requestId.incrementAndGet();
 
+        public FailoverRequest(AsyncResult<T> watcher) {
+            super(watcher);
+        }
+
         @Override
         public void run() {
             requests.put(id, this);
             if (provider == null) {
                 if (failureWhenOffline()) {
-                    onFailure(new IOException("Provider disconnected"));
+                    watcher.onFailure(new IOException("Provider disconnected"));
+                    requests.remove(id);
                 } else if (succeedsWhenOffline()) {
                     onSuccess(null);
                 }

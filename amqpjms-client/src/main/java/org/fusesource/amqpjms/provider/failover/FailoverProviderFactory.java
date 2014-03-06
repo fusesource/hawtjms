@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.BlockingProvider;
+import org.fusesource.amqpjms.provider.DefaultBlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderFactory;
 import org.fusesource.amqpjms.util.PropertyUtil;
 import org.fusesource.amqpjms.util.URISupport;
@@ -38,8 +39,8 @@ public class FailoverProviderFactory extends ProviderFactory {
         Map<String, String> options = composite.getParameters();
         Map<String, String> nested = PropertyUtil.filterProperties(options, "nested.");
 
-        FailoverProvider provider = new FailoverProvider(composite.getComponents(), nested);
-        if (!PropertyUtil.setProperties(provider, options)) {
+        FailoverProvider failover = new FailoverProvider(composite.getComponents(), nested);
+        if (!PropertyUtil.setProperties(failover, options)) {
             String msg = ""
                 + " Not all options could be set on the Failover provider."
                 + " Check the options are spelled correctly."
@@ -47,6 +48,9 @@ public class FailoverProviderFactory extends ProviderFactory {
                 + " This Provider cannot be started.";
             throw new IllegalArgumentException(msg);
         }
+
+        BlockingProvider provider = new DefaultBlockingProvider(failover);
+
         return provider;
     }
 

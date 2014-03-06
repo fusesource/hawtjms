@@ -26,6 +26,7 @@ import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.fusesource.amqpjms.provider.DefaultBlockingProvider;
 import org.fusesource.amqpjms.provider.DefaultProviderListener;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.junit.Test;
@@ -38,7 +39,9 @@ public class FailoverProviderTest extends AmqpTestSupport {
     @Test(timeout=60000)
     public void testFailoverCreate() throws Exception {
         URI brokerURI = new URI("failover:" + getBrokerAmqpConnectionURI());
-        FailoverProvider provider = (FailoverProvider) FailoverProviderFactory.createBlocking(brokerURI);
+        DefaultBlockingProvider blocking = (DefaultBlockingProvider) FailoverProviderFactory.createBlocking(brokerURI);
+        assertNotNull(blocking);
+        FailoverProvider provider = (FailoverProvider) blocking.getNext();
         assertNotNull(provider);
     }
 
@@ -47,7 +50,9 @@ public class FailoverProviderTest extends AmqpTestSupport {
         URI brokerURI = new URI("failover://(" + getBrokerAmqpConnectionURI() + ")" +
                                 "?maxReconnectDelay=1000&useExponentialBackOff=false" +
                                 "&maxReconnectAttempts=10&startupMaxReconnectAttempts=20");
-        FailoverProvider provider = (FailoverProvider) FailoverProviderFactory.createBlocking(brokerURI);
+        DefaultBlockingProvider blocking = (DefaultBlockingProvider) FailoverProviderFactory.createBlocking(brokerURI);
+        assertNotNull(blocking);
+        FailoverProvider provider = (FailoverProvider) blocking.getNext();
         assertNotNull(provider);
 
         assertEquals(1000, provider.getMaxReconnectDelay());
@@ -60,7 +65,9 @@ public class FailoverProviderTest extends AmqpTestSupport {
     public void testStartupReconnectAttempts() throws Exception {
         URI brokerURI = new URI("failover://(amqp://localhost:61616)" +
                                 "?maxReconnectDelay=100&startupMaxReconnectAttempts=5");
-        FailoverProvider provider = (FailoverProvider) FailoverProviderFactory.createBlocking(brokerURI);
+        DefaultBlockingProvider blocking = (DefaultBlockingProvider) FailoverProviderFactory.createBlocking(brokerURI);
+        assertNotNull(blocking);
+        FailoverProvider provider = (FailoverProvider) blocking.getNext();
         assertNotNull(provider);
 
         assertEquals(100, provider.getMaxReconnectDelay());
