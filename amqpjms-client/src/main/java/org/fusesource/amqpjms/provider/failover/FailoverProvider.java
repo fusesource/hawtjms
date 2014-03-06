@@ -321,7 +321,11 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
         LOG.debug("handling Provider failure: {}", cause.getMessage());
 
         this.provider.setProviderListener(closedListener);
-        this.provider.close();
+        try {
+            this.provider.close();
+        } catch (Throwable error) {
+            LOG.trace("Caught exception while closing failed provider: {}", error.getMessage());
+        }
         this.provider = null;
 
         if (reconnectAllowed()) {
@@ -347,18 +351,20 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
         this.serializer.execute(new Runnable() {
             @Override
             public void run() {
-                if (firstConnection) {
-                    firstConnection = false;
-                    FailoverProvider.this.provider = provider;
+                try {
+                    if (firstConnection) {
+                        firstConnection = false;
+                        FailoverProvider.this.provider = provider;
+                        provider.setProviderListener(FailoverProvider.this);
 
-                    List<FailoverRequest<?>> pending = new ArrayList<FailoverRequest<?>>(requests.values());
-                    for (FailoverRequest<?> request : pending) {
-                        request.run();
-                    }
-                } else {
-                    try {
+                        List<FailoverRequest<?>> pending = new ArrayList<FailoverRequest<?>>(requests.values());
+                        for (FailoverRequest<?> request : pending) {
+                            request.run();
+                        }
+                    } else {
                         listener.onConnectionRecovery(new DefaultBlockingProvider(provider));
                         FailoverProvider.this.provider = provider;
+                        provider.setProviderListener(FailoverProvider.this);
 
                         List<FailoverRequest<?>> pending = new ArrayList<FailoverRequest<?>>(requests.values());
                         for (FailoverRequest<?> request : pending) {
@@ -368,10 +374,9 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
                         listener.onConnectionRestored();
                         reconnectDelay = initialReconnectDelay;
                         reconnectAttempts = 0;
-                    } catch (Throwable e) {
-                        LOG.info("Failed while replaying state: {}", e.getMessage());
-                        triggerReconnectionAttempt();
                     }
+                } catch (Throwable error) {
+                    handleProviderFailure(IOExceptionSupport.create(error));
                 }
             }
         });
@@ -461,7 +466,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
     @Override
     public void onMessage(final JmsInboundMessageDispatch envelope) {
-        if (closed.get()) {
+        if (closed.get() || failed.get()) {
             return;
         }
         serializer.execute(new Runnable() {
@@ -476,13 +481,14 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
     @Override
     public void onConnectionFailure(final IOException ex) {
-        if (closed.get()) {
+        if (closed.get() || failed.get()) {
             return;
         }
         serializer.execute(new Runnable() {
             @Override
             public void run() {
                 if (!closed.get() && !failed.get()) {
+                    LOG.debug("Failover: the provider reports failure: {}", ex.getMessage());
                     handleProviderFailure(ex);
                 }
             }
@@ -593,6 +599,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
                 }
             } else {
                 try {
+                    LOG.debug("Executing Failover Task:");
                     doTask();
                 } catch (IOException e) {
                     LOG.debug("Caught exception while executing task: {}", e.getMessage());
@@ -607,6 +614,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
                 requests.remove(id);
                 super.onFailure(result);
             } else {
+                LOG.debug("Request received error: {}", result.getMessage());
                 serializer.execute(new Runnable() {
                     @Override
                     public void run() {

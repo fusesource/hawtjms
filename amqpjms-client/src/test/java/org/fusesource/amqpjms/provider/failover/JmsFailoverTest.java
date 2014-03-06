@@ -28,7 +28,6 @@ import javax.jms.JMSException;
 
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -53,8 +52,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         connection.start();
     }
 
-    @Ignore
-    @Test(timeout=60000, expected=JMSException.class)
+    @Test(timeout=60000)
     public void testStartFailureWithAsyncExceptionListener() throws Exception {
         URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")" +
                                 "?maxReconnectDelay=1000&maxReconnectAttempts=5");
@@ -65,6 +63,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
             @Override
             public void onException(JMSException exception) {
+                LOG.info("Connection got exception: {}", exception.getMessage());
                 failed.countDown();
             }
         });
