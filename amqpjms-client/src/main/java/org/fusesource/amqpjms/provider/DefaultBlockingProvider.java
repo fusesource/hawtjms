@@ -123,4 +123,8 @@ public class DefaultBlockingProvider implements BlockingProvider {
     public ProviderListener getProviderListener() {
         return next.getProviderListener();
     }
+
+    public AsyncProvider getNext() {
+        return next;
+    }
 }
