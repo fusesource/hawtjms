@@ -39,7 +39,22 @@ public abstract class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo,
         this.info.getProducerId().setProviderHint(this);
     }
 
+    /**
+     * Sends the given message
+     *
+     * @param envelope
+     *        The envelope that contains the message and it's targeted destination.
+     * @param request
+     *        The AsyncRequest that will be notified on send success or failure.
+     *
+     * @throws IOException
+     */
     public abstract void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException;
+
+    /**
+     * @return true if this is an anonymous producer or false if fixed to a given destination.
+     */
+    public abstract boolean isAnonymous();
 
     /**
      * @return the JmsProducerId that was assigned to this AmqpProducer.

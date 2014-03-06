@@ -199,4 +199,8 @@ public class AmqpFixedProducer extends AmqpProducer {
         return this.endpoint;
     }
 
+    @Override
+    public boolean isAnonymous() {
+        return false;
+    }
 }

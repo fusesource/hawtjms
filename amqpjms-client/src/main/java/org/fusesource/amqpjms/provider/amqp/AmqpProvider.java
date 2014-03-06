@@ -203,7 +203,7 @@ public class AmqpProvider implements AsyncProvider {
                         @Override
                         public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
                             AmqpSession session = connection.getSession(producerInfo.getParentId());
-                            AmqpFixedProducer producer = session.createProducer(producerInfo);
+                            AmqpProducer producer = session.createProducer(producerInfo);
                             producer.open(request);
                         }
 

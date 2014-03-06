@@ -65,10 +65,10 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
 
     @Override
     public void open(AsyncResult<JmsResource> request) {
+        this.openRequest = request;
         doOpen();
         this.endpoint.setContext(this);
         this.endpoint.open();
-        this.openRequest = request;
     }
 
     @Override
@@ -86,9 +86,9 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
 
     @Override
     public void close(AsyncResult<Void> request) {
+        this.closeRequest = request;
         doClose();
         this.endpoint.close();
-        this.closeRequest = request;
     }
 
     @Override

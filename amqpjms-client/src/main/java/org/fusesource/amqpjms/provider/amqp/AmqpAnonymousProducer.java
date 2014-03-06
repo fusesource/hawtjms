@@ -16,8 +16,12 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
-import org.apache.qpid.proton.engine.Sender;
+import java.io.IOException;
+
+import org.apache.qpid.proton.engine.Link;
+import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
+import org.fusesource.amqpjms.provider.AsyncResult;
 
 /**
  * Handles the case of anonymous JMS MessageProducers.
@@ -25,16 +29,17 @@ import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
  * In order to simulate the anonymous producer we must create a sender for each message
  * send attempt and close it following a successful send.
  */
-public class AmqpAnonymousProducer extends AbstractAmqpResource<JmsProducerInfo, Sender>{
-
-    private final AmqpSession session;
+public class AmqpAnonymousProducer extends AmqpProducer {
 
     /**
      * @param info
      */
     public AmqpAnonymousProducer(AmqpSession session, JmsProducerInfo info) {
-        super(info);
-        this.session = session;
+        super(session, info);
+    }
+
+    @Override
+    public void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException {
     }
 
     @Override
@@ -44,7 +49,9 @@ public class AmqpAnonymousProducer extends AbstractAmqpResource<JmsProducerInfo,
 
     @Override
     protected void doOpen() {
-        // TODO Auto-generated method stub
+        // Trigger an immediate open, we don't talk to the Broker until
+        // a send occurs so we must not let the client block.
+        this.opened();
     }
 
     @Override
@@ -52,7 +59,20 @@ public class AmqpAnonymousProducer extends AbstractAmqpResource<JmsProducerInfo,
         // TODO Auto-generated method stub
     }
 
-    public AmqpSession getSession() {
-        return session;
+    @Override
+    public Link getProtonLink() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Object getRemoteTerminus() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean isAnonymous() {
+        return true;
     }
 }

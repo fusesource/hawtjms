@@ -63,20 +63,23 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
         this.connection.addToPendingClose(this);
     }
 
+    /**
+     * Perform an acknowledge of all delivered messages for all consumers active in this
+     * Session.
+     */
     public void acknowledge() {
         for (AmqpConsumer consumer : consumers.values()) {
             consumer.acknowledge();
         }
     }
 
-    public AmqpFixedProducer createProducer(JmsProducerInfo producerInfo) {
+    public AmqpProducer createProducer(JmsProducerInfo producerInfo) {
         if (producerInfo.getDestination() != null) {
             LOG.debug("Creating fixed Producer for: {}", producerInfo.getDestination());
             return new AmqpFixedProducer(this, producerInfo);
         } else {
-            // TODO - Create the anonymous instance once it's complete.
             LOG.debug("Creating an Anonymous Producer: ");
-            return new AmqpFixedProducer(this, producerInfo);
+            return new AmqpAnonymousProducer(this, producerInfo);
         }
     }
 
