@@ -36,6 +36,7 @@ import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.jms.AutoOutboundTransformer;
 import org.apache.qpid.proton.jms.EncodedMessage;
 import org.apache.qpid.proton.jms.OutboundTransformer;
+import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
@@ -155,13 +156,17 @@ public class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo, Sender> 
 
     @Override
     protected void doOpen() {
-        String destnationName = session.getQualifiedName(info.getDestination());
+        JmsDestination destination = info.getDestination();
+
+        String destnationName = session.getQualifiedName(destination);
         String sourceAddress = UUID.randomUUID().toString();
         Source source = new Source();
         source.setAddress(sourceAddress);
         Target target = new Target();
         target.setAddress(destnationName);
-        target.setDynamic(info.getDestination().isTemporary());
+        if (destination.isQueue()) {
+            target.setDynamic(destination.isTemporary());
+        }
 
         String senderName = destnationName + "<-" + sourceAddress;
         endpoint = session.getProtonSession().sender(senderName);

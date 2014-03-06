@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNotNull;
 
 import javax.jms.Connection;
 import javax.jms.Session;
-import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
 
 import org.fusesource.amqpjms.jms.consumer.JmsMessageConsumerTest;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
@@ -30,9 +30,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Test functionality of Temporary Queues.
+ * Test functionality of Temporary Topics
  */
-public class JmsTemporaryQueueTest extends AmqpTestSupport {
+public class JmsTemporaryTopicTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsMessageConsumerTest.class);
 
@@ -43,10 +43,10 @@ public class JmsTemporaryQueueTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        TemporaryQueue queue = session.createTemporaryQueue();
-        session.createConsumer(queue);
+        TemporaryTopic topic = session.createTemporaryTopic();
+        session.createConsumer(topic);
 
-        assertEquals(1, brokerService.getAdminView().getTemporaryQueues().length);
+        assertEquals(1, brokerService.getAdminView().getTemporaryTopics().length);
 
         connection.close();
     }

@@ -32,6 +32,7 @@ import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.jms.EncodedMessage;
 import org.apache.qpid.proton.jms.InboundTransformer;
 import org.apache.qpid.proton.jms.JMSMappingInboundTransformer;
+import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
@@ -116,11 +117,14 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     @Override
     protected void doOpen() {
-        String subscription = session.getQualifiedName(info.getDestination());
+        JmsDestination destination  = info.getDestination();
+        String subscription = session.getQualifiedName(destination);
 
         Source source = new Source();
         source.setAddress(subscription);
-        source.setDynamic(info.getDestination().isTemporary());
+        if (destination.isQueue()) {
+            source.setDynamic(destination.isTemporary());
+        }
         Target target = new Target();
 
         endpoint = session.getProtonSession().receiver(subscription);
