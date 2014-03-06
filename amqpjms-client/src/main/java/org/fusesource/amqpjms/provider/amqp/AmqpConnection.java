@@ -31,6 +31,7 @@ import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Sasl;
+import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
@@ -88,6 +89,11 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     public AmqpSession createSession(JmsSessionInfo sessionInfo) {
         AmqpSession session = new AmqpSession(this, sessionInfo);
         return session;
+    }
+
+    public AmqpTemporaryDestination createTemporaryDestination(JmsDestination destination) {
+        AmqpTemporaryDestination temporary = new AmqpTemporaryDestination(this, destination);
+        return temporary;
     }
 
     @Override
