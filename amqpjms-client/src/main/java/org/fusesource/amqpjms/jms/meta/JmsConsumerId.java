@@ -42,6 +42,12 @@ public final class JmsConsumerId implements JmsResourceId, Comparable<JmsConsume
         throw new IllegalArgumentException("Failed to parse Id string: " + str);
     }
 
+    public JmsConsumerId(String connectionId, long sessionId, long consumerId) {
+        this.connectionId = connectionId;
+        this.sessionId = sessionId;
+        this.value = consumerId;
+    }
+
     public JmsConsumerId(JmsSessionId sessionId, long consumerId) {
         this.connectionId = sessionId.getConnectionId();
         this.sessionId = sessionId.getValue();

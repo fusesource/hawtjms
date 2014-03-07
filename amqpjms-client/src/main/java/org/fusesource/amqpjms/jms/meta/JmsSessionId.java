@@ -26,6 +26,11 @@ public final class JmsSessionId implements JmsResourceId, Comparable<JmsSessionI
     protected transient JmsConnectionId parentId;
     protected transient Object hint;
 
+    public JmsSessionId(String connectionId, long value) {
+        this.connectionId = connectionId;
+        this.value = value;
+    }
+
     public JmsSessionId(JmsConnectionId connectionId, long sessionId) {
         this.connectionId = connectionId.getValue();
         this.value = sessionId;

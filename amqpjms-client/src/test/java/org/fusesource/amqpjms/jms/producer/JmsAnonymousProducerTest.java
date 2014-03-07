@@ -16,12 +16,17 @@
  */
 package org.fusesource.amqpjms.jms.producer;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import javax.jms.Connection;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
 import javax.jms.Session;
 
+import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.junit.Test;
 
@@ -31,7 +36,7 @@ import org.junit.Test;
 public class JmsAnonymousProducerTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)
-    public void testCreateAnonymousMessageProducer() throws Exception {
+    public void testCreateProducer() throws Exception {
         Connection connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
@@ -41,6 +46,54 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
         session.createProducer(null);
 
         assertTrue(brokerService.getAdminView().getTotalProducerCount() == 0);
+        connection.close();
+    }
+
+    @Test(timeout = 60000)
+    public void testAnonymousSend() throws Exception {
+        Connection connection = createAmqpConnection();
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.toString());
+        assertNotNull(session);
+        MessageProducer producer = session.createProducer(null);
+
+        Message message = session.createMessage();
+        producer.send(queue, message);
+
+        QueueViewMBean proxy = getProxyToQueue(name.toString());
+        assertEquals(1, proxy.getQueueSize());
+
+        connection.close();
+    }
+
+    @Test(timeout = 60000)
+    public void testAnonymousSendToMultipleDestinations() throws Exception {
+        Connection connection = createAmqpConnection();
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue1 = session.createQueue(name.toString() + 1);
+        Queue queue2 = session.createQueue(name.toString() + 2);
+        Queue queue3 = session.createQueue(name.toString() + 3);
+        assertNotNull(session);
+        MessageProducer producer = session.createProducer(null);
+
+        Message message = session.createMessage();
+        producer.send(queue1, message);
+        producer.send(queue2, message);
+        producer.send(queue3, message);
+
+        QueueViewMBean proxy = getProxyToQueue(name.toString() + 1);
+        assertEquals(1, proxy.getQueueSize());
+        proxy = getProxyToQueue(name.toString() + 2);
+        assertEquals(1, proxy.getQueueSize());
+        proxy = getProxyToQueue(name.toString() + 3);
+        assertEquals(1, proxy.getQueueSize());
+
         connection.close();
     }
 }

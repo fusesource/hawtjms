@@ -42,14 +42,15 @@ public class JoramJmsTest extends TestCase {
 //        suite.addTestSuite(MessageTypeTest.class);
 //        suite.addTestSuite(UnifiedSessionTest.class);
 //        suite.addTestSuite(TemporaryTopicTest.class);
-        suite.addTestSuite(TopicConnectionTest.class);
 //        suite.addTestSuite(SelectorSyntaxTest.class);
 //        suite.addTestSuite(QueueSessionTest.class);
 //        suite.addTestSuite(SelectorTest.class);
 //        suite.addTestSuite(TemporaryQueueTest.class);
-        suite.addTestSuite(ConnectionTest.class);
 //        suite.addTestSuite(SessionTest.class);
 //        suite.addTestSuite(JMSXPropertyTest.class);
+
+        suite.addTestSuite(TopicConnectionTest.class);
+        suite.addTestSuite(ConnectionTest.class);
         suite.addTestSuite(MessageBodyTest.class);
         suite.addTestSuite(MessageDefaultTest.class);
         suite.addTestSuite(MessagePropertyConversionTest.class);

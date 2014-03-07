@@ -41,7 +41,6 @@ import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 import org.fusesource.amqpjms.provider.AsyncResult;
-import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.fusesource.amqpjms.util.IOExceptionSupport;
 import org.fusesource.hawtbuf.Buffer;
 import org.slf4j.Logger;
@@ -140,9 +139,10 @@ public class AmqpFixedProducer extends AmqpProducer {
 
             if (Accepted.getInstance().equals(state)) {
                 @SuppressWarnings("unchecked")
-                ProviderRequest<Void> request = (ProviderRequest<Void>) delivery.getContext();
-                request.onSuccess(null);
+                AsyncResult<Void> request = (AsyncResult<Void>) delivery.getContext();
+                toRemove.add(delivery);
                 returnTag(delivery.getTag());
+                request.onSuccess(null);
             } else {
                 // TODO - figure out how to handle not accepted.
                 LOG.info("Message send failed: {}", state);

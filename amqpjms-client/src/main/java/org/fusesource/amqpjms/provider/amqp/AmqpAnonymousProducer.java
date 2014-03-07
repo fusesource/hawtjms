@@ -18,12 +18,16 @@ package org.fusesource.amqpjms.provider.amqp;
 
 import java.io.IOException;
 
+import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Link;
-import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
+import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.provider.AsyncResult;
+import org.fusesource.amqpjms.util.IdGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Handles the case of anonymous JMS MessageProducers.
@@ -33,8 +37,19 @@ import org.fusesource.amqpjms.provider.AsyncResult;
  */
 public class AmqpAnonymousProducer extends AmqpProducer {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpAnonymousProducer.class);
+    private static final IdGenerator producerIdGenerator = new IdGenerator();
+
+    private final String producerIdKey = producerIdGenerator.generateId();
+    private long producerIdCount;
+
     /**
+     * Creates the Anonymous Producer object.
+     *
+     * @param session
+     *        the session that owns this producer
      * @param info
+     *        the JmsProducerInfo for this producer.
      */
     public AmqpAnonymousProducer(AmqpSession session, JmsProducerInfo info) {
         super(session, info);
@@ -43,13 +58,23 @@ public class AmqpAnonymousProducer extends AmqpProducer {
     @Override
     public void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException {
 
-        JmsDestination destination = envelope.getDestination();
+        LOG.trace("Started send chain for anonymous producer: {}", getProducerId());
+
+        // Create a new ProducerInfo for the short lived producer that's created to perform the
+        // send to the given AMQP target.
+        JmsProducerInfo info = new JmsProducerInfo(getNextProducerId());
+        info.setDestination(envelope.getDestination());
+
+        // We open a Fixed Producer instance with the target destination.  Once it opens
+        // it will trigger the open event which will in turn trigger the send event and
+        // when that succeeds it will trigger a close which completes the send chain.
         AmqpFixedProducer producer = new AmqpFixedProducer(session, info);
+        AnonymousOpenRequest open = new AnonymousOpenRequest(request, producer, envelope);
+        producer.open(open);
     }
 
     @Override
     public void processUpdates() {
-        // TODO Auto-generated method stub
     }
 
     @Override
@@ -89,14 +114,85 @@ public class AmqpAnonymousProducer extends AmqpProducer {
         return true;
     }
 
-    private class AnonymousSendRequest implements AsyncResult<Void> {
+    @Override
+    public EndpointState getLocalState() {
+        return EndpointState.ACTIVE;
+    }
 
+    @Override
+    public EndpointState getRemoteState() {
+        return EndpointState.ACTIVE;
+    }
+
+    private JmsProducerId getNextProducerId() {
+        return new JmsProducerId(producerIdKey, -1, producerIdCount++);
+    }
+
+    private abstract class AnonymousRequest<T> implements AsyncResult<T> {
+
+        protected final AsyncResult<Void> sendResult;
+        protected final AmqpProducer producer;
+        protected final JmsOutboundMessageDispatch envelope;
+
+        public AnonymousRequest(AsyncResult<Void> sendResult, AmqpProducer producer, JmsOutboundMessageDispatch envelope) {
+            this.sendResult = sendResult;
+            this.producer = producer;
+            this.envelope = envelope;
+        }
+
+        /**
+         * In all cases of the chain of events that make up the send for an anonymous
+         * producer a failure will trigger the original send request to fail.
+         */
         @Override
         public void onFailure(Throwable result) {
+            LOG.debug("Send failed during {} step in chain: {}", this.getClass().getName(), getProducerId());
+            sendResult.onFailure(result);
+        }
+    }
+
+    private final class AnonymousOpenRequest extends AnonymousRequest<JmsResource> {
+
+        public AnonymousOpenRequest(AsyncResult<Void> sendResult, AmqpProducer producer, JmsOutboundMessageDispatch envelope) {
+            super(sendResult, producer, envelope);
+        }
+
+        @Override
+        public void onSuccess(JmsResource result) {
+            LOG.trace("Open phase of anonymous send complete: {} ", getProducerId());
+            AnonymousSendRequest send = new AnonymousSendRequest(this);
+            try {
+                producer.send(envelope, send);
+            } catch (IOException e) {
+                sendResult.onFailure(e);
+            }
+        }
+    }
+
+    private final class AnonymousSendRequest extends AnonymousRequest<Void> {
+
+        public AnonymousSendRequest(AnonymousOpenRequest open) {
+            super(open.sendResult, open.producer, open.envelope);
         }
 
         @Override
         public void onSuccess(Void result) {
+            LOG.trace("Send phase of anonymous send complete: {} ", getProducerId());
+            AnonymousCloseRequest close = new AnonymousCloseRequest(this);
+            producer.close(close);
+        }
+    }
+
+    private final class AnonymousCloseRequest extends AnonymousRequest<Void> {
+
+        public AnonymousCloseRequest(AnonymousSendRequest send) {
+            super(send.sendResult, send.producer, send.envelope);
+        }
+
+        @Override
+        public void onSuccess(Void result) {
+            LOG.trace("Close phase of anonymous send complete: {} ", getProducerId());
+            sendResult.onSuccess(null);
         }
     }
 }

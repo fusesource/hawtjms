@@ -41,6 +41,12 @@ public final class JmsProducerId implements JmsResourceId, Comparable<JmsProduce
         this.parentId = id.getParentId();
     }
 
+    public JmsProducerId(String connectionId, long sessionId, long producerId) {
+        this.connectionId = connectionId;
+        this.sessionId = sessionId;
+        this.value = producerId;
+    }
+
     public JmsProducerId(String producerKey) {
         // Parse off the producerId
         int p = producerKey.lastIndexOf(":");
