@@ -312,8 +312,13 @@ public class JmsMessageProducer implements MessageProducer {
         }
     }
 
-    public void onConnectionRecovery(BlockingProvider provider) {
-        // TODO - Attempt to create this Producer again using this
-        //        consumer's JmsProducerInfo
+    protected void onConnectionInterrupted() {
+    }
+
+    protected void onConnectionRecovery(BlockingProvider provider) throws Exception{
+        provider.create(producerInfo);
+    }
+
+    protected void onConnectionRestored() {
     }
 }

@@ -932,9 +932,21 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         }
     }
 
-    public void onConnectionRecovery(BlockingProvider provider) {
+    protected void onConnectionInterrupted() {
+        for (JmsMessageProducer producer : producers) {
+            producer.onConnectionInterrupted();
+        }
+
+        for (JmsMessageConsumer consumer : consumers.values()) {
+            consumer.onConnectionInterrupted();
+        }
+    }
+
+    protected void onConnectionRecovery(BlockingProvider provider) throws Exception {
 
         // TODO - Recover or Rollback TX ?
+
+        provider.create(sessionInfo);
 
         for (JmsMessageProducer producer : producers) {
             producer.onConnectionRecovery(provider);
@@ -942,6 +954,16 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
         for (JmsMessageConsumer consumer : consumers.values()) {
             consumer.onConnectionRecovery(provider);
+        }
+    }
+
+    protected void onConnectionRestored() {
+        for (JmsMessageProducer producer : producers) {
+            producer.onConnectionRestored();
+        }
+
+        for (JmsMessageConsumer consumer : consumers.values()) {
+            consumer.onConnectionRestored();
         }
     }
 

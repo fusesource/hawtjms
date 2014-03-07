@@ -371,8 +371,13 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         return this.consumerInfo.isNoLocal();
     }
 
-    public void onConnectionRecovery(BlockingProvider provider) {
-        // TODO - Attempt to create this Consumer again using this
-        //        consumer's JmsConsumerInfo
+    protected void onConnectionInterrupted() {
+    }
+
+    protected void onConnectionRecovery(BlockingProvider provider) throws Exception {
+        provider.create(consumerInfo);
+    }
+
+    protected void onConnectionRestored() {
     }
 }

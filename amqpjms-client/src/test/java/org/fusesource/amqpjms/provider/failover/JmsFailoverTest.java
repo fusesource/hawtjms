@@ -16,6 +16,7 @@
  */
 package org.fusesource.amqpjms.provider.failover;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
@@ -25,9 +26,14 @@ import java.util.concurrent.TimeUnit;
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
 
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
+import org.fusesource.amqpjms.util.Wait;
 import org.junit.Test;
 
 /**
@@ -73,5 +79,39 @@ public class JmsFailoverTest extends AmqpTestSupport {
         stopBroker();
 
         assertTrue("No async exception", failed.await(15, TimeUnit.SECONDS));
+    }
+
+    @SuppressWarnings("unused")
+    @Test(timeout=60000)
+    public void testBasicStateRestoration() throws Exception {
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=1000");
+
+        Connection connection = createAmqpConnection(brokerURI);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.toString());
+        MessageProducer producer = session.createProducer(queue);
+        MessageConsumer consumer = session.createConsumer(queue);
+
+        assertEquals(1, brokerService.getAdminView().getQueueSubscribers().length);
+        assertEquals(1, brokerService.getAdminView().getQueueProducers().length);
+
+        stopBroker();
+        TimeUnit.SECONDS.sleep(2);
+        startBroker();
+
+        assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
+            }
+        }));
+
+        assertEquals(1, brokerService.getAdminView().getQueueSubscribers().length);
+        assertEquals(1, brokerService.getAdminView().getQueueProducers().length);
+
+        connection.close();
     }
 }

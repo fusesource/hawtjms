@@ -49,8 +49,11 @@ public interface ProviderListener {
      * @param provider
      *        The new Provider instance that will become active after the state
      *        has been recovered.
+     *
+     * @throws Exception if an error occurs during recovery attempt, this will fail
+     *         the Provider that's being used for recovery.
      */
-    void onConnectionRecovery(BlockingProvider provider);
+    void onConnectionRecovery(BlockingProvider provider) throws Exception;
 
     /**
      * Called to signal that all recovery operations are now complete and the Provider

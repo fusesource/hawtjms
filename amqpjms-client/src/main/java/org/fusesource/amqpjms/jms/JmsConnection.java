@@ -786,6 +786,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onConnectionInterrupted() {
+        for (JmsSession session : sessions) {
+            session.onConnectionInterrupted();
+        }
+
         // TODO Auto-generated method stub
         for (JmsConnectionListener listener : connectionListeners) {
             listener.onConnectionInterrupted();
@@ -793,9 +797,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     @Override
-    public void onConnectionRecovery(BlockingProvider provider) {
+    public void onConnectionRecovery(BlockingProvider provider) throws Exception {
         // TODO - Recover Advisory Consumer ?
         //        Recover Temporary Destinations ?
+
+        LOG.debug("Connection {} is starting recovery.", connectionInfo.getConnectionId());
+
+        provider.create(connectionInfo);
+
         for (JmsSession session : sessions) {
             session.onConnectionRecovery(provider);
         }
@@ -803,6 +812,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onConnectionRestored() {
+        for (JmsSession session : sessions) {
+            session.onConnectionRestored();
+        }
+
         // TODO Auto-generated method stub
         for (JmsConnectionListener listener : connectionListeners) {
             listener.onConnectionRestored();
