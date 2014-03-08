@@ -34,8 +34,11 @@ import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Sasl;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.provider.AsyncResult;
+import org.fusesource.amqpjms.util.IOExceptionSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +52,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     private final AmqpProvider provider;
     private boolean connected;
     private AmqpSaslAuthenticator authenticator;
+    private final AmqpSession connectionSession;
 
     private final List<AmqpResource> pendingOpen = new LinkedList<AmqpResource>();
     private final List<AmqpResource> pendingClose = new LinkedList<AmqpResource>();
@@ -76,6 +80,11 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         this.tempTopicPrefix = info.getTempTopicPrefix();
 
         // TODO check info to see if we can meet all the requested options.
+
+        // Create a Session for this connection that is used for Temporary Destinations
+        // and perhaps later on management and advisory monitoring.
+        JmsSessionInfo sessionInfo = new JmsSessionInfo(this.info, -1);
+        this.connectionSession = new AmqpSession(this, sessionInfo);
     }
 
     @Override
@@ -94,7 +103,8 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     }
 
     public AmqpTemporaryDestination createTemporaryDestination(JmsDestination destination) {
-        AmqpTemporaryDestination temporary = new AmqpTemporaryDestination(this, destination);
+        AmqpTemporaryDestination temporary = new AmqpTemporaryDestination(connectionSession, destination);
+
         return temporary;
     }
 
@@ -104,8 +114,21 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         processSaslHandshake();
 
         if (!connected && isOpen()) {
-            opened();
-            connected = true;
+            connectionSession.open(new AsyncResult<JmsResource>() {
+
+                @Override
+                public void onSuccess(JmsResource result) {
+                    LOG.debug("AMQP Connection Session opened: {}", result);
+                    opened();
+                    connected = true;
+                }
+
+                @Override
+                public void onFailure(Throwable result) {
+                    LOG.debug("AMQP Connection Session failed to open.");
+                    failed(IOExceptionSupport.create(result));
+                }
+            });
         }
 
         // We are opened and something on the remote end has closed us, signal an error.
