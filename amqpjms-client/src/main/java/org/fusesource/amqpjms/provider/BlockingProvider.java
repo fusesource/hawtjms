@@ -86,6 +86,25 @@ public interface BlockingProvider {
     JmsResource create(JmsResource resource) throws IOException;
 
     /**
+     * Starts the Provider version of the given JmsResource.
+     *
+     * For some JMS Resources it is necessary or advantageous to have a started state that
+     * must be triggered prior to it's normal use.
+     *
+     * An example of this would be a MessageConsumer which should not receive any incoming
+     * messages until the JMS layer is in a state to handle them.  One such time would be
+     * after connection recovery.  A JMS consumer should normally recover with it's prefetc
+     * value set to zero, or an AMQP link credit of zero and only open up the credit window
+     * once all Connection resources are restored.
+     *
+     * @param resource
+     *        The JmsResouce instance that indicates what is being started.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    void start(JmsResource resource) throws IOException;
+
+    /**
      * Instruct the Provider to dispose of a given JmsResource.
      *
      * The provider is given a JmsResource which it should use to remove any associated

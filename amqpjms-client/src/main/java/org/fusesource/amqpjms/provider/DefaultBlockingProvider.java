@@ -66,6 +66,13 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
+    public void start(JmsResource resource) throws IOException {
+        ProviderRequest<Void> request = new ProviderRequest<Void>();
+        next.start(resource, request);
+        request.getResponse();
+    }
+
+    @Override
     public void destroy(JmsResource resource) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.destroy(resource, request);

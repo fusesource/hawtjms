@@ -193,6 +193,19 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     @Override
+    public void start(final JmsResource resource, final AsyncResult<Void> request) throws IOException {
+        checkClosed();
+        final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
+            @Override
+            public void doTask() throws IOException {
+                provider.start(resource, this);
+            }
+        };
+
+        serializer.execute(pending);
+    }
+
+    @Override
     public void destroy(final JmsResource resourceId, AsyncResult<Void> request) throws IOException {
         checkClosed();
         final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {

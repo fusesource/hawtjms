@@ -86,6 +86,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
 
     public void init() throws JMSException {
         session.add(this);
+        session.getConnection().startResource(consumerInfo);
     }
 
     public boolean isDurableSubscription() {
@@ -378,6 +379,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         provider.create(consumerInfo);
     }
 
-    protected void onConnectionRestored() {
+    protected void onConnectionRestored() throws Exception {
+        session.getConnection().startResource(consumerInfo);
     }
 }

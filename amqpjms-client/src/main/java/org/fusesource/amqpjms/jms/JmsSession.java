@@ -270,6 +270,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkDestination(destination);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
         JmsMessageConsumer result = new JmsMessageConsumer(getNextConsumerId(), this, dest, "", false);
+        result.init();
         return result;
     }
 
@@ -288,6 +289,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
         JmsMessageConsumer result = new JmsMessageConsumer(getNextConsumerId(), this, dest, messageSelector, false);
+        result.init();
         return result;
     }
 
@@ -307,6 +309,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
         JmsTopicSubscriber result = new JmsTopicSubscriber(getNextConsumerId(), this, dest, NoLocal, messageSelector);
+        result.init();
         return result;
     }
 
@@ -322,6 +325,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkDestination(queue);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, queue);
         JmsQueueReceiver result = new JmsQueueReceiver(getNextConsumerId(), this, dest, "");
+        result.init();
         return result;
     }
 
@@ -340,6 +344,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, queue);
         JmsQueueReceiver result = new JmsQueueReceiver(getNextConsumerId(), this, dest, messageSelector);
+        result.init();
         return result;
     }
 
@@ -387,6 +392,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkDestination(topic);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
         JmsTopicSubscriber result = new JmsTopicSubscriber(getNextConsumerId(), this, dest, false, "");
+        result.init();
         return result;
     }
 
@@ -406,6 +412,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
         JmsTopicSubscriber result = new JmsTopicSubscriber(getNextConsumerId(), this, dest, noLocal, messageSelector);
+        result.init();
         return result;
     }
 
@@ -423,6 +430,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkDestination(topic);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
         JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, false, "");
+        result.init();
         return result;
     }
 
@@ -443,6 +451,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
         JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, false, messageSelector);
+        result.init();
         return result;
     }
 
@@ -957,7 +966,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         }
     }
 
-    protected void onConnectionRestored() {
+    protected void onConnectionRestored() throws Exception {
         for (JmsMessageProducer producer : producers) {
             producer.onConnectionRestored();
         }

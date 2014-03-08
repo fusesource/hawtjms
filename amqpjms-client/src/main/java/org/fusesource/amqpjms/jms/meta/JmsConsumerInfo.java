@@ -23,7 +23,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
 
     protected final JmsConsumerId consumerId;
     protected JmsDestination destination;
-    protected int prefetchSize;
+    protected int prefetchSize = 1;  // TODO - Set by prefetch policy.
     protected boolean browser;
     protected String selector;
     protected String clientId;

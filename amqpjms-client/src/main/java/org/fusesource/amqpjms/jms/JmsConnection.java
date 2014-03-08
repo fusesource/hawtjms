@@ -541,6 +541,21 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
+    void startResource(JmsResource resource) throws JMSException {
+        connect();
+
+        // TODO - We don't currently have a way to say that an operation
+        //        should be done asynchronously.  For a session dispose
+        //        we only care that the request hits the wire, not that
+        //        any response comes back.
+
+        try {
+            provider.start(resource);
+        } catch (Exception ioe) {
+            throw JmsExceptionSupport.create(ioe);
+        }
+    }
+
     void destroyResource(JmsResource resource) throws JMSException {
         connect();
 
@@ -811,7 +826,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     @Override
-    public void onConnectionRestored() {
+    public void onConnectionRestored() throws Exception {
         for (JmsSession session : sessions) {
             session.onConnectionRestored();
         }

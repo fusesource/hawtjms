@@ -319,6 +319,6 @@ public class JmsMessageProducer implements MessageProducer {
         provider.create(producerInfo);
     }
 
-    protected void onConnectionRestored() {
+    protected void onConnectionRestored() throws Exception {
     }
 }

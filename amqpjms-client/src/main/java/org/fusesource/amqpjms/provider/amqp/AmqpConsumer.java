@@ -38,6 +38,7 @@ import org.fusesource.amqpjms.jms.message.JmsMessage;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsMessageId;
+import org.fusesource.amqpjms.provider.AsyncResult;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderListener;
 import org.fusesource.hawtbuf.Buffer;
@@ -61,8 +62,19 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         super(info);
         this.session = session;
 
+        // TODO - Zero Prefetch ?  Can we pull by setting flow to 1 ?
+
         // Add a shortcut back to this Consumer for quicker lookups
         this.info.getConsumerId().setProviderHint(this);
+    }
+
+    /**
+     * Starts the consumer by setting the link credit to the given prefetch value.
+     */
+    public void start(AsyncResult<Void> request) {
+        this.endpoint.flow(info.getPrefetchSize());
+        // TODO - Can we tell if this succeeds or fails in-band ?
+        request.onSuccess(null);
     }
 
     @Override
@@ -138,9 +150,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     @Override
     public void opened() {
-        // TODO - this may be better applied in a start method.
-        // this.endpoint.flow(info.getPrefetchSize());
-        this.endpoint.flow(1);
         super.opened();
     }
 

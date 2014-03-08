@@ -37,6 +37,9 @@ public interface ProviderListener {
      * Called from a fault tolerant Provider instance to signal that the underlying
      * connection to the Broker has been lost.  The Provider will attempt to reconnect
      * following this event unless closed.
+     *
+     * It is considered a programming error to allow any exceptions to be thrown from
+     * this notification method.
      */
     void onConnectionInterrupted();
 
@@ -58,8 +61,11 @@ public interface ProviderListener {
     /**
      * Called to signal that all recovery operations are now complete and the Provider
      * is again in a normal connected state.
+     *
+     * @throws Exception if an error occurs during restore completion, this will fail
+     *         the Provider that's being used for recovery.
      */
-    void onConnectionRestored();
+    void onConnectionRestored() throws Exception;
 
     /**
      * Called to indicate that the underlying connection to the Broker has been lost and

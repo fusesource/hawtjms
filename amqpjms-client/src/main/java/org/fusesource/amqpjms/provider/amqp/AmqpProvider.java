@@ -40,6 +40,7 @@ import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
+import org.fusesource.amqpjms.jms.meta.JmsDefaultResourceVisitor;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
@@ -235,6 +236,33 @@ public class AmqpProvider implements AsyncProvider {
                             // TODO - only report success for non-temporary dests, for now we just say
                             //        that they all worked.
                             request.onSuccess(destination);
+                        }
+                    });
+
+                    pumpToProtonTransport();
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void start(final JmsResource resource, final AsyncResult<Void> request) throws IOException {
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    resource.visit(new JmsDefaultResourceVisitor() {
+
+                        @Override
+                        public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
+                            AmqpSession session = connection.getSession(consumerInfo.getParentId());
+                            AmqpConsumer consumer = session.getConsumer(consumerInfo);
+                            consumer.start(request);
                         }
                     });
 
