@@ -375,16 +375,17 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
                             request.run();
                         }
                     } else {
-                        listener.onConnectionRecovery(new DefaultBlockingProvider(provider));
+                        LOG.debug("Signalling connection recovery: {}", provider);
                         FailoverProvider.this.provider = provider;
                         provider.setProviderListener(FailoverProvider.this);
+                        listener.onConnectionRecovery(new DefaultBlockingProvider(provider));
+                        listener.onConnectionRestored();
 
                         List<FailoverRequest<?>> pending = new ArrayList<FailoverRequest<?>>(requests.values());
                         for (FailoverRequest<?> request : pending) {
                             request.run();
                         }
 
-                        listener.onConnectionRestored();
                         reconnectDelay = initialReconnectDelay;
                         reconnectAttempts = 0;
                     }
@@ -602,17 +603,19 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
         @Override
         public void run() {
+            LOG.debug("Attempting execution of Failover Task: {}", this);
             requests.put(id, this);
             if (provider == null) {
+                LOG.debug("Provider is offline, should wait? {}", this);
                 if (failureWhenOffline()) {
-                    watcher.onFailure(new IOException("Provider disconnected"));
                     requests.remove(id);
+                    watcher.onFailure(new IOException("Provider disconnected"));
                 } else if (succeedsWhenOffline()) {
                     onSuccess(null);
                 }
             } else {
                 try {
-                    LOG.debug("Executing Failover Task:");
+                    LOG.debug("Executing Failover Task: {}", this);
                     doTask();
                 } catch (IOException e) {
                     LOG.debug("Caught exception while executing task: {}", e.getMessage());
