@@ -141,13 +141,11 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
             AmqpLink candidate = linkIterator.next();
             Link protonLink = candidate.getProtonLink();
 
-            LOG.info("Checking link {} for open status: ", candidate);
+            LOG.debug("Checking link {} for open status: ", candidate);
 
             EndpointState linkRemoteState = protonLink.getRemoteState();
             if (linkRemoteState == EndpointState.ACTIVE || linkRemoteState == EndpointState.CLOSED) {
                 if (linkRemoteState == EndpointState.ACTIVE && candidate.getRemoteTerminus() != null) {
-                    candidate.opened();
-
                     if (candidate instanceof AmqpConsumer) {
                         AmqpConsumer consumer = (AmqpConsumer) candidate;
                         consumers.put(consumer.getConsumerId(), consumer);
@@ -156,7 +154,10 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
                         producers.put(producer.getProducerId(), producer);
                     }
 
+                    LOG.debug("Link {} is now open: ", candidate);
+                    candidate.opened();
                 } else {
+                    LOG.warn("Open of link {} failed: ", candidate);
                     // TODO - Can we derive an exception from here.
                     candidate.failed();
                 }
