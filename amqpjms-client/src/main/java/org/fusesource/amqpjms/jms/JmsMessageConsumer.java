@@ -72,6 +72,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         this.consumerInfo.setDestination(destination);
         this.consumerInfo.setAcknowledgementMode(acknowledgementMode);
         this.consumerInfo.setNoLocal(noLocal);
+        this.consumerInfo.setBrowser(isBrowser());
 
         // We are ready for dispatching
         this.session.add(this);

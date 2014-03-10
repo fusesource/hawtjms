@@ -16,11 +16,13 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.jms.JMSException;
 
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
@@ -73,57 +75,15 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
      */
     public void start(AsyncResult<Void> request) {
         this.endpoint.flow(info.getPrefetchSize());
-        // TODO - Can we tell if this succeeds or fails in-band ?
         request.onSuccess(null);
     }
 
     @Override
     public void processUpdates() {
-
         Delivery incoming = endpoint.current();
         if (incoming != null && incoming.isReadable() && !incoming.isPartial()) {
             LOG.debug("{} has incoming Message(s).", this);
-
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
-            int count;
-            byte data[] = new byte[1024 * 4];
-            while ((count = endpoint.recv(data, 0, data.length)) > 0) {
-                stream.write(data, 0, count);
-            }
-
-            endpoint.advance();
-            Buffer buffer = stream.toBuffer();
-
-            EncodedMessage em = new EncodedMessage(incoming.getMessageFormat(), buffer.data, buffer.offset, buffer.length);
-            JmsMessage message = null;
-            try {
-                message = (JmsMessage) inboundTransformer.transform(em);
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                LOG.warn("Error on transform: {}", e.getMessage());
-            }
-
-            LOG.info("Received incoming message: {}", message);
-
-            try {
-                message.setJMSDestination(info.getDestination());
-            } catch (JMSException e) {
-                // TODO Auto-generated catch block
-                LOG.warn("Error on transform: {}", e.getMessage());
-            }
-
-            message.getMessageId().setProviderHint(incoming);
-
-            JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch();
-            envelope.setMessage(message);
-            envelope.setConsumerId(info.getConsumerId());
-
-            ProviderListener listener = session.getProvider().getProviderListener();
-            if (listener != null) {
-                LOG.trace("Dispatching received message: {}", message.getMessageId());
-                listener.onMessage(envelope);
-            }
+            processDelivery(incoming);
         }
     }
 
@@ -134,6 +94,9 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
         Source source = new Source();
         source.setAddress(subscription);
+        if (info.isBrowser()) {
+            source.setDistributionMode(Symbol.getSymbol("copy"));
+        }
         Target target = new Target();
 
         endpoint = session.getProtonSession().receiver(subscription);
@@ -181,6 +144,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         if (messageId.getProviderHint() instanceof Delivery) {
             delivery = (Delivery) messageId.getProviderHint();
         } else {
+            // TODO - If not in hint search for it in pending.
             LOG.warn("Received Ack for unknown message: {}", envelope.getMessage().getMessageId());
             return;
         }
@@ -203,9 +167,59 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             LOG.warn("Unsupporeted Ack Type for message: {}", messageId);
         }
 
-        // TODO - If not in hint search for it in pending.
         // TODO - based on ack mode we might need to ack all previous.
         // TODO - handle the other ack modes, poisoned, redelivered
+    }
+
+    protected void processDelivery(Delivery incoming) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Buffer buffer;
+
+        try {
+            int count;
+            byte data[] = new byte[1024 * 4];
+            while ((count = endpoint.recv(data, 0, data.length)) > 0) {
+                stream.write(data, 0, count);
+            }
+
+            endpoint.advance();
+            buffer = stream.toBuffer();
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+            }
+        }
+
+        EncodedMessage em = new EncodedMessage(incoming.getMessageFormat(), buffer.data, buffer.offset, buffer.length);
+        JmsMessage message = null;
+        try {
+            message = (JmsMessage) inboundTransformer.transform(em);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            LOG.warn("Error on transform: {}", e.getMessage());
+        }
+
+        LOG.info("Received incoming message: {}", message);
+
+        try {
+            message.setJMSDestination(info.getDestination());
+        } catch (JMSException e) {
+            // TODO Auto-generated catch block
+            LOG.warn("Error on transform: {}", e.getMessage());
+        }
+
+        message.getMessageId().setProviderHint(incoming);
+
+        JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch();
+        envelope.setMessage(message);
+        envelope.setConsumerId(info.getConsumerId());
+
+        ProviderListener listener = session.getProvider().getProviderListener();
+        if (listener != null) {
+            LOG.trace("Dispatching received message: {}", message.getMessageId());
+            listener.onMessage(envelope);
+        }
     }
 
     @Override

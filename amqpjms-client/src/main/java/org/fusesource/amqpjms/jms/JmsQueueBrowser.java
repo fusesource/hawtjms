@@ -95,13 +95,7 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
                 if (envelope.getMessage() == null) {
                     browseDone.set(true);
                 } else {
-                    // TODO
-//                    AsciiBuffer browser = message.getFrame().headerMap().get(BROWSER);
-//                    if (browser != null && END.equals(browser)) {
-//                        browseDone.set(true);
-//                    } else {
-//                        super.onMessage(message);
-//                    }
+                    super.onMessage(envelope);
                 }
                 notifyMessageAvailable();
             }
