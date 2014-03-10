@@ -130,7 +130,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
 
-        final int MSG_COUNT = 15;
+        final int MSG_COUNT = 10;
         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
         final MessageProducer producer = session.createProducer(queue);

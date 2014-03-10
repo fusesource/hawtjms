@@ -91,6 +91,7 @@ public class AmqpTestSupport {
         brokerService.setAdvisorySupport(isAdvisorySupport());
         brokerService.setDeleteAllMessagesOnStartup(deleteAllMessages);
         brokerService.setUseJmx(true);
+        brokerService.setDataDirectory("target/");
 
         ArrayList<BrokerPlugin> plugins = new ArrayList<BrokerPlugin>();
         BrokerPlugin authenticationPlugin = configureAuthentication();
