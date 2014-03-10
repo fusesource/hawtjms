@@ -826,12 +826,20 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     @Override
-    public void onConnectionRestored() throws Exception {
+    public void onConnectionRecovered(BlockingProvider provider) throws Exception {
+        LOG.debug("Connection {} is finalizing recovery.", connectionInfo.getConnectionId());
+
+        for (JmsSession session : sessions) {
+            session.onConnectionRecovered(provider);
+        }
+    }
+
+    @Override
+    public void onConnectionRestored() {
         for (JmsSession session : sessions) {
             session.onConnectionRestored();
         }
 
-        // TODO Auto-generated method stub
         for (JmsConnectionListener listener : connectionListeners) {
             listener.onConnectionRestored();
         }

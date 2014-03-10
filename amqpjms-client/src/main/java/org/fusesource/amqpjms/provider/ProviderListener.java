@@ -59,13 +59,29 @@ public interface ProviderListener {
     void onConnectionRecovery(BlockingProvider provider) throws Exception;
 
     /**
+     * Called to indicate that a connection to the Broker has been reestablished and
+     * that all recovery operations have succeeded and the connection will now be
+     * transitioned to a recovered state.  This method gives the listener a chance
+     * so send any necessary post recovery commands such as consumer start or message
+     * pull for a zero prefetch consumer etc.
+     *
+     * @param provider
+     *        The new Provider instance that will become active after the state
+     *        has been recovered.
+     *
+     * @throws Exception if an error occurs during recovery attempt, this will fail
+     *         the Provider that's being used for recovery.
+     */
+    void onConnectionRecovered(BlockingProvider provider) throws Exception;
+
+    /**
      * Called to signal that all recovery operations are now complete and the Provider
      * is again in a normal connected state.
      *
-     * @throws Exception if an error occurs during restore completion, this will fail
-     *         the Provider that's being used for recovery.
+     * It is considered a programming error to allow any exceptions to be thrown from
+     * this notification method.
      */
-    void onConnectionRestored() throws Exception;
+    void onConnectionRestored();
 
     /**
      * Called to indicate that the underlying connection to the Broker has been lost and

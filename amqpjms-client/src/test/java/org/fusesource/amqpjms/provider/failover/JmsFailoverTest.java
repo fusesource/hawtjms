@@ -34,7 +34,6 @@ import javax.jms.Session;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.fusesource.amqpjms.util.Wait;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -82,7 +81,6 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("No async exception", failed.await(15, TimeUnit.SECONDS));
     }
 
-    @Ignore
     @SuppressWarnings("unused")
     @Test(timeout=200000)
     public void testBasicStateRestoration() throws Exception {

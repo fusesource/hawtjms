@@ -378,7 +378,13 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
                         LOG.debug("Signalling connection recovery: {}", provider);
                         FailoverProvider.this.provider = provider;
                         provider.setProviderListener(FailoverProvider.this);
+
+                        // Stage 1: Recovery all JMS Framework resources
                         listener.onConnectionRecovery(new DefaultBlockingProvider(provider));
+
+                        // Stage 2: Restart consumers, send pull commands, etc.
+                        listener.onConnectionRecovered(new DefaultBlockingProvider(provider));
+
                         listener.onConnectionRestored();
 
                         List<FailoverRequest<?>> pending = new ArrayList<FailoverRequest<?>>(requests.values());

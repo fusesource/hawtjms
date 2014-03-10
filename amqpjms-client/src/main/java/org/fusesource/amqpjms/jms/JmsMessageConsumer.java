@@ -380,7 +380,10 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         provider.create(consumerInfo);
     }
 
-    protected void onConnectionRestored() throws Exception {
-        session.getConnection().startResource(consumerInfo);
+    protected void onConnectionRecovered(BlockingProvider provider) throws Exception {
+        provider.start(consumerInfo);
+    }
+
+    protected void onConnectionRestored() {
     }
 }

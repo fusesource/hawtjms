@@ -966,7 +966,18 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         }
     }
 
-    protected void onConnectionRestored() throws Exception {
+    protected void onConnectionRecovered(BlockingProvider provider) throws Exception {
+
+        for (JmsMessageProducer producer : producers) {
+            producer.onConnectionRecovered(provider);
+        }
+
+        for (JmsMessageConsumer consumer : consumers.values()) {
+            consumer.onConnectionRecovered(provider);
+        }
+    }
+
+    protected void onConnectionRestored() {
         for (JmsMessageProducer producer : producers) {
             producer.onConnectionRestored();
         }

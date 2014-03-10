@@ -42,6 +42,10 @@ public class DefaultProviderListener implements ProviderListener {
     }
 
     @Override
+    public void onConnectionRecovered(BlockingProvider provider) {
+    }
+
+    @Override
     public void onConnectionRestored() {
     }
 }
