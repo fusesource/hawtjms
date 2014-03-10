@@ -24,8 +24,11 @@ import org.objectweb.jtests.jms.conform.connection.ConnectionTest;
 import org.objectweb.jtests.jms.conform.connection.TopicConnectionTest;
 import org.objectweb.jtests.jms.conform.message.MessageBodyTest;
 import org.objectweb.jtests.jms.conform.message.MessageDefaultTest;
+import org.objectweb.jtests.jms.conform.message.headers.MessageHeaderTest;
 import org.objectweb.jtests.jms.conform.message.properties.MessagePropertyConversionTest;
 import org.objectweb.jtests.jms.conform.message.properties.MessagePropertyTest;
+import org.objectweb.jtests.jms.conform.queue.TemporaryQueueTest;
+import org.objectweb.jtests.jms.conform.topic.TemporaryTopicTest;
 
 public class JoramJmsTest extends TestCase {
 
@@ -37,18 +40,18 @@ public class JoramJmsTest extends TestCase {
         // https://issues.apache.org/jira/browse/PROTON-154
         // suite.addTestSuite(TopicSessionTest.class);
 
-//        suite.addTestSuite(MessageHeaderTest.class);
 //        suite.addTestSuite(QueueBrowserTest.class);
 //        suite.addTestSuite(MessageTypeTest.class);
 //        suite.addTestSuite(UnifiedSessionTest.class);
-//        suite.addTestSuite(TemporaryTopicTest.class);
 //        suite.addTestSuite(SelectorSyntaxTest.class);
 //        suite.addTestSuite(QueueSessionTest.class);
 //        suite.addTestSuite(SelectorTest.class);
-//        suite.addTestSuite(TemporaryQueueTest.class);
 //        suite.addTestSuite(SessionTest.class);
 //        suite.addTestSuite(JMSXPropertyTest.class);
 
+        suite.addTestSuite(MessageHeaderTest.class);
+        suite.addTestSuite(TemporaryTopicTest.class);
+        suite.addTestSuite(TemporaryQueueTest.class);
         suite.addTestSuite(TopicConnectionTest.class);
         suite.addTestSuite(ConnectionTest.class);
         suite.addTestSuite(MessageBodyTest.class);
