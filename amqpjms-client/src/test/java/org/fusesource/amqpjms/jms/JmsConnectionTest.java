@@ -68,6 +68,16 @@ public class JmsConnectionTest extends AmqpTestSupport {
         connection2.close();
     }
 
+    @Test(expected = JMSException.class)
+    public void testSetClientIdAfterStartedFails() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection.setClientID("Test");
+        connection.start();
+        connection.setClientID("NewTest");
+        connection.close();
+    }
+
     @Test(timeout=30000)
     public void testCreateConnectionAsSystemAdmin() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
