@@ -230,12 +230,11 @@ public class AmqpProvider implements AsyncProvider {
                         @Override
                         public void processDestination(JmsDestination destination) throws Exception {
                             if (destination.isTemporary()) {
-                                //AmqpTemporaryDestination temporary = connection.createTemporaryDestination(destination);
-                                //temporary.open(request);
+                                AmqpTemporaryDestination temporary = connection.createTemporaryDestination(destination);
+                                temporary.open(request);
+                            } else {
+                                request.onSuccess(destination);
                             }
-                            // TODO - only report success for non-temporary dests, for now we just say
-                            //        that they all worked.
-                            request.onSuccess(destination);
                         }
                     });
 

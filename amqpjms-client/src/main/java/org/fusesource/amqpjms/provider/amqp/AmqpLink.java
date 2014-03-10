@@ -29,14 +29,10 @@ public interface AmqpLink extends AmqpResource {
     Link getProtonLink();
 
     /**
-     * @return the Proton Terminus that defines this Link's remote state (Source or Target).
-     */
-    Object getRemoteTerminus();
-
-    /**
      * Instructs the Link to process any state changes on the remote end in order
      * to close out any pending work.
      */
+    @Override
     void processUpdates();
 
 }

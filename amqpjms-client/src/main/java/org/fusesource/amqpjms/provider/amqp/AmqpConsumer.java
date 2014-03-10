@@ -134,9 +134,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
         Source source = new Source();
         source.setAddress(subscription);
-        if (destination.isQueue()) {
-            source.setDynamic(destination.isTemporary());
-        }
         Target target = new Target();
 
         endpoint = session.getProtonSession().receiver(subscription);
@@ -146,11 +143,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
         this.session.addPedingLinkOpen(this);
-    }
-
-    @Override
-    public void opened() {
-        super.opened();
     }
 
     /**
@@ -224,11 +216,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     @Override
     public Link getProtonLink() {
         return this.endpoint;
-    }
-
-    @Override
-    public Object getRemoteTerminus() {
-        return this.endpoint.getSource();
     }
 
     public AmqpSession getSession() {

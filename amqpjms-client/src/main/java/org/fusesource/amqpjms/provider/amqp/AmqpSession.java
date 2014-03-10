@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.qpid.proton.engine.EndpointState;
-import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Session;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
@@ -134,36 +132,27 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
             return;
         }
 
-        // TODO - revisit and clean this up, it's a bit ugly right now.
-
         Iterator<AmqpLink> linkIterator = pendingOpenLinks.iterator();
         while (linkIterator.hasNext()) {
             AmqpLink candidate = linkIterator.next();
-            Link protonLink = candidate.getProtonLink();
-
-            LOG.debug("Checking link {} for open status: ", candidate);
-
-            EndpointState linkRemoteState = protonLink.getRemoteState();
-            if (linkRemoteState == EndpointState.ACTIVE || linkRemoteState == EndpointState.CLOSED) {
-                if (linkRemoteState == EndpointState.ACTIVE && candidate.getRemoteTerminus() != null) {
-                    if (candidate instanceof AmqpConsumer) {
-                        AmqpConsumer consumer = (AmqpConsumer) candidate;
-                        consumers.put(consumer.getConsumerId(), consumer);
-                    } else {
-                        AmqpProducer producer = (AmqpProducer) candidate;
-                        producers.put(producer.getProducerId(), producer);
-                    }
-
-                    LOG.debug("Link {} is now open: ", candidate);
-                    candidate.opened();
+            if (candidate.isOpen()) {
+                if (candidate instanceof AmqpConsumer) {
+                    AmqpConsumer consumer = (AmqpConsumer) candidate;
+                    consumers.put(consumer.getConsumerId(), consumer);
                 } else {
-                    LOG.warn("Open of link {} failed: ", candidate);
-                    // TODO - Can we derive an exception from here.
-                    candidate.failed();
+                    AmqpProducer producer = (AmqpProducer) candidate;
+                    producers.put(producer.getProducerId(), producer);
                 }
 
-                linkIterator.remove();
+                LOG.debug("Link {} is now open: ", candidate);
+                candidate.opened();
+            } else if (candidate.isClosed()) {
+                LOG.warn("Open of link {} failed: ", candidate);
+                // TODO - Can we derive an exception from here.
+                candidate.failed();
             }
+
+            linkIterator.remove();
         }
 
         linkIterator = pendingCloseLinks.iterator();
@@ -176,18 +165,21 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
         }
     }
 
+    /**
+     * Adds Topic or Queue qualifiers to the destination target.  We don't add qualifiers to
+     * Temporary Topics and Queues since AMQP works a bit differently.
+     *
+     * @param destination
+     *        The destination to Qualify.
+     *
+     * @return the qualified destination name.
+     */
     public String getQualifiedName(JmsDestination destination) {
-        String result = null;
+        String result = destination.getName();
 
-        if (destination.isTopic()) {
-            if (destination.isTemporary()) {
-                result = connection.getTempTopicPrefix() + destination.getName();
-            } else {
+        if (!destination.isTemporary()) {
+            if (destination.isTopic()) {
                 result = connection.getTopicPrefix() + destination.getName();
-            }
-        } else {
-            if (destination.isTemporary()) {
-                result = connection.getTempQueuePrefix() + destination.getName();
             } else {
                 result = connection.getQueuePrefix() + destination.getName();
             }

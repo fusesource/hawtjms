@@ -104,7 +104,6 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
 
     public AmqpTemporaryDestination createTemporaryDestination(JmsDestination destination) {
         AmqpTemporaryDestination temporary = new AmqpTemporaryDestination(connectionSession, destination);
-
         return temporary;
     }
 
@@ -164,6 +163,10 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
 
         for (AmqpSession session : this.sessions.values()) {
             session.processUpdates();
+        }
+
+        for (AmqpTemporaryDestination tempDest : this.tempDests.values()) {
+            tempDest.processUpdates();
         }
 
         // Transition cleanly to closed state.

@@ -25,6 +25,7 @@ import javax.jms.TemporaryTopic;
 
 import org.fusesource.amqpjms.jms.consumer.JmsMessageConsumerTest;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,8 @@ public class JmsTemporaryTopicTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsMessageConsumerTest.class);
 
+    // Temp Topics not yet supported on the Broker.
+    @Ignore
     @Test(timeout = 60000)
     public void testCreateTemporaryQueue() throws Exception {
         Connection connection = createAmqpConnection();

@@ -56,6 +56,7 @@ public class AmqpFixedProducer extends AmqpProducer {
     private static final Logger LOG = LoggerFactory.getLogger(AmqpFixedProducer.class);
 
     private long nextTagId;
+    private boolean dynamic;
     private final Set<byte[]> tagCache = new LinkedHashSet<byte[]>();
     private final Set<Delivery> pending = new LinkedHashSet<Delivery>();
 
@@ -162,9 +163,7 @@ public class AmqpFixedProducer extends AmqpProducer {
         source.setAddress(sourceAddress);
         Target target = new Target();
         target.setAddress(destnationName);
-        if (destination.isQueue()) {
-            target.setDynamic(destination.isTemporary());
-        }
+        target.setDynamic(isDynamic());
 
         String senderName = destnationName + "<-" + sourceAddress;
         endpoint = session.getProtonSession().sender(senderName);
@@ -179,11 +178,6 @@ public class AmqpFixedProducer extends AmqpProducer {
     @Override
     protected void doClose() {
         this.session.addPedingLinkClose(this);
-    }
-
-    @Override
-    public Object getRemoteTerminus() {
-        return this.endpoint.getTarget();
     }
 
     @Override
@@ -202,5 +196,13 @@ public class AmqpFixedProducer extends AmqpProducer {
     @Override
     public boolean isAnonymous() {
         return false;
+    }
+
+    public boolean isDynamic() {
+        return dynamic;
+    }
+
+    public void setDynamic(boolean dynamic) {
+        this.dynamic = dynamic;
     }
 }

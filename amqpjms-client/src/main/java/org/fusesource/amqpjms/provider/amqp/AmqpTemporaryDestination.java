@@ -16,8 +16,6 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
-import java.util.UUID;
-
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
@@ -25,6 +23,10 @@ import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Sender;
 import org.fusesource.amqpjms.jms.JmsDestination;
+import org.fusesource.amqpjms.jms.JmsTemporaryQueue;
+import org.fusesource.amqpjms.jms.JmsTemporaryTopic;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Manages a Temporary Destination linked to a given Connection.
@@ -40,6 +42,8 @@ import org.fusesource.amqpjms.jms.JmsDestination;
  */
 public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestination, Sender> implements AmqpLink {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpTemporaryDestination.class);
+
     private final AmqpConnection connection;
     private final AmqpSession session;
 
@@ -51,21 +55,25 @@ public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestinatio
 
     @Override
     public void processUpdates() {
-        // TODO Auto-generated method stub
+        // TODO - We might want to check on our producer to see if it becomes closed
+        //        which might indicate that the broker purged the temp dest.
     }
 
     @Override
     protected void doOpen() {
 
-        String destnationName = session.getQualifiedName(info);
-        String sourceAddress = UUID.randomUUID().toString();
+        String sourceAddress = info.getName();
+        if (info.isQueue()) {
+            sourceAddress = connection.getTempQueuePrefix() + sourceAddress;
+        } else {
+            sourceAddress = connection.getTempQueuePrefix() + sourceAddress;
+        }
         Source source = new Source();
         source.setAddress(sourceAddress);
         Target target = new Target();
-        target.setAddress(destnationName);
         target.setDynamic(true);
 
-        String senderName = destnationName + "<-" + sourceAddress;
+        String senderName = sourceAddress;
         endpoint = session.getProtonSession().sender(senderName);
         endpoint.setSource(source);
         endpoint.setTarget(target);
@@ -76,6 +84,27 @@ public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestinatio
     }
 
     @Override
+    public void opened() {
+
+        // Once our producer is opened we can read the updated name from the target address.
+        // We must replace our info object with a correctly named JmsDestination and provide
+        // that back to the caller.
+        JmsDestination oldInfo = info;
+
+        String destinationName = this.endpoint.getRemoteTarget().getAddress();
+
+        if (info.isQueue()) {
+            this.info = new JmsTemporaryQueue(destinationName);
+        } else {
+            this.info = new JmsTemporaryTopic(destinationName);
+        }
+
+        LOG.trace("Updated temp destination to: {} from: {}", info, oldInfo);
+
+        super.opened();
+    }
+
+    @Override
     protected void doClose() {
         this.connection.addToPendingClose(this);
     }
@@ -83,11 +112,6 @@ public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestinatio
     @Override
     public Link getProtonLink() {
         return this.endpoint;
-    }
-
-    @Override
-    public Object getRemoteTerminus() {
-        return this.endpoint.getTarget();
     }
 
     public AmqpConnection getConnection() {

@@ -105,11 +105,6 @@ public class AmqpAnonymousProducer extends AmqpProducer {
     }
 
     @Override
-    public Object getRemoteTerminus() {
-        return null;
-    }
-
-    @Override
     public boolean isAnonymous() {
         return true;
     }

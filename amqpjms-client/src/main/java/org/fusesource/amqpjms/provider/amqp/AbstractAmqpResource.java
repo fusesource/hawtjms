@@ -36,7 +36,7 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
     protected AsyncResult<Void> closeRequest;
 
     protected E endpoint;
-    protected final R info;
+    protected R info;
 
     /**
      * Creates a new AbstractAmqpResource instance with the JmsResource provided, and
