@@ -131,33 +131,57 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      */
     @Override
     public void close() throws JMSException {
-        if (closed.compareAndSet(false, true)) {
-            try {
+        boolean interrupted = Thread.interrupted();
+
+        try {
+
+            if (!closed.get() && !failed.get()) {
+                // do not fail if already closed as specified by the JMS specification.
+                doStop(false);
+            }
+
+            synchronized (this) {
+
+                if (closed.get()) {
+                    return;
+                }
+
+                closing.set(true);
+
                 for (JmsSession session : this.sessions) {
                     session.shutdown();
                 }
+
                 this.sessions.clear();
+                this.tempDestinations.clear();
 
-                if (provider != null) {
-                    try {
-                        provider.destroy(connectionInfo);
-                    } catch (IOException e) {
-                        LOG.trace("Cuaght exception while closing remote connection: {}", e.getMessage());
-                    }
+                if (isConnected() && !failed.get()) {
+                    provider.destroy(connectionInfo);
+                }
 
-                    provider.close();
-                    provider = null;
+                connected.set(false);
+                started.set(false);
+                closing.set(false);
+                closed.set(true);
+            }
+        } catch (Exception e) {
+            throw JmsExceptionSupport.create(e);
+        } finally {
+            try {
+                if (executor != null) {
+                    ThreadPoolUtils.shutdown(executor);
                 }
-            } catch (Exception e) {
-                throw JmsExceptionSupport.create(e);
-            } finally {
-                try {
-                    if (executor != null) {
-                        ThreadPoolUtils.shutdown(executor);
-                    }
-                } catch (Throwable e) {
-                    LOG.warn("Error shutting down thread pool: " + executor + ". This exception will be ignored.", e);
-                }
+            } catch (Throwable e) {
+                LOG.warn("Error shutting down thread pool: " + executor + ". This exception will be ignored.", e);
+            }
+
+            if (provider != null) {
+                provider.close();
+                provider = null;
+            }
+
+            if (interrupted) {
+                Thread.currentThread().interrupt();
             }
         }
     }
@@ -173,10 +197,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
             session.shutdown();
         }
 
-        if (isConnected()) {
-            if (!failed.get() && !closing.get()) {
-                destroyResource(connectionInfo);
-            }
+        if (isConnected() && !failed.get() && !closing.get()) {
+            destroyResource(connectionInfo);
             connected.set(false);
         }
 
@@ -315,15 +337,25 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      */
     @Override
     public void stop() throws JMSException {
-        checkClosedOrFailed();
-        connect();
-        if (this.started.compareAndSet(true, false)) {
-            try {
+        doStop(true);
+    }
+
+    /**
+     * @see #stop()
+     * @param checkClosed <tt>true</tt> to check for already closed and throw
+     *                    {@link java.lang.IllegalStateException} if already closed,
+     *                    <tt>false</tt> to skip this check
+     * @throws JMSException if the JMS provider fails to stop message delivery due to some internal error.
+     */
+    void doStop(boolean checkClosed) throws JMSException {
+        if (checkClosed) {
+            checkClosedOrFailed();
+        }
+        if (started.compareAndSet(true, false)) {
+            synchronized(sessions) {
                 for (JmsSession s : this.sessions) {
                     s.stop();
                 }
-            } catch (Exception e) {
-                throw JmsExceptionSupport.create(e);
             }
         }
     }
@@ -776,8 +808,16 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.provider = provider;
     }
 
-    boolean isConnected() {
+    public boolean isConnected() {
         return this.connected.get();
+    }
+
+    public boolean isStarted() {
+        return this.started.get();
+    }
+
+    public boolean isClosed() {
+        return this.closed.get();
     }
 
     @Override
