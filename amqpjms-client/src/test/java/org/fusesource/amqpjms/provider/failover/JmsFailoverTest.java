@@ -17,6 +17,7 @@
 package org.fusesource.amqpjms.provider.failover;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
@@ -24,6 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
+import javax.jms.DeliveryMode;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
@@ -31,6 +33,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
+import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.fusesource.amqpjms.util.Wait;
@@ -40,6 +43,11 @@ import org.junit.Test;
  * Basic tests for the FailoverProvider implementation
  */
 public class JmsFailoverTest extends AmqpTestSupport {
+
+    @Override
+    protected boolean isPersistent() {
+        return true;
+    }
 
     @Test(timeout=60000)
     public void testFailoverConnects() throws Exception {
@@ -82,7 +90,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
     }
 
     @SuppressWarnings("unused")
-    @Test(timeout=200000)
+    @Test(timeout=60000)
     public void testBasicStateRestoration() throws Exception {
         URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=1000");
 
@@ -112,6 +120,66 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertEquals(1, brokerService.getAdminView().getQueueSubscribers().length);
         assertEquals(1, brokerService.getAdminView().getQueueProducers().length);
 
+        connection.close();
+    }
+
+    @Test(timeout=90000)
+    public void testProducerBlocksAndRecovers() throws Exception {
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=1000");
+
+        Connection connection = createAmqpConnection(brokerURI);
+        connection.start();
+
+        final int MSG_COUNT = 15;
+        final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+        final MessageProducer producer = session.createProducer(queue);
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+        final CountDownLatch failed = new CountDownLatch(1);
+
+        assertEquals(1, brokerService.getAdminView().getQueueProducers().length);
+
+        Thread producerThread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    for (int i = 0; i < MSG_COUNT; ++i) {
+                        producer.send(session.createTextMessage("Message: " + i));
+                        TimeUnit.SECONDS.sleep(1);
+                    }
+                } catch (Exception e) {
+                }
+            }
+        });
+        producerThread.start();
+
+        TimeUnit.SECONDS.sleep(3);
+        stopBroker();
+        TimeUnit.SECONDS.sleep(3);
+        restartBroker();
+
+        assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
+            }
+        }));
+
+        assertEquals(1, brokerService.getAdminView().getQueueProducers().length);
+
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+
+        assertTrue("Should have all messages sent.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return proxy.getQueueSize() == MSG_COUNT;
+            }
+        }));
+
+        assertFalse(failed.getCount() == 0);
         connection.close();
     }
 }

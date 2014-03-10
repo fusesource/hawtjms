@@ -18,9 +18,12 @@ package org.fusesource.amqpjms.jms.producer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import javax.jms.Connection;
+import javax.jms.DeliveryMode;
 import javax.jms.Message;
+import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -89,6 +92,34 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         producer.send(message);
 
         assertEquals(1, proxy.getQueueSize());
+        connection.close();
+    }
+
+    @Test
+    public void testPersistentSendsAreMarkedPersistent() throws Exception {
+        Connection connection = createAmqpConnection();
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageProducer producer = session.createProducer(queue);
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
+
+        Message message = session.createMessage();
+        producer.send(message);
+
+        assertEquals(1, proxy.getQueueSize());
+
+        MessageConsumer consumer = session.createConsumer(queue);
+        message = consumer.receive(5000);
+        assertNotNull(message);
+        assertTrue(message.getJMSDeliveryMode() == DeliveryMode.PERSISTENT);
+
         connection.close();
     }
 }
