@@ -85,7 +85,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     public void processUpdates() {
         Delivery incoming = endpoint.current();
         if (incoming != null && incoming.isReadable() && !incoming.isPartial()) {
-            LOG.debug("{} has incoming Message(s).", this);
+            LOG.trace("{} has incoming Message(s).", this);
             processDelivery(incoming);
         }
     }
@@ -210,8 +210,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             // TODO Auto-generated catch block
             LOG.warn("Error on transform: {}", e.getMessage());
         }
-
-        LOG.info("Received incoming message: {}", message);
 
         try {
             message.setJMSDestination(info.getDestination());
