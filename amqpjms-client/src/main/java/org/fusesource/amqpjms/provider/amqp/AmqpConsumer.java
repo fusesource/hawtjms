@@ -27,6 +27,7 @@ import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
+import org.apache.qpid.proton.amqp.messaging.TerminusExpiryPolicy;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
@@ -54,6 +55,7 @@ import org.slf4j.LoggerFactory;
  */
 public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver> implements AmqpLink {
 
+    private static final Symbol COPY = Symbol.getSymbol("copy");
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConsumer.class);
 
     private final AmqpSession session;
@@ -96,10 +98,15 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         Source source = new Source();
         source.setAddress(subscription);
         if (info.isBrowser()) {
-            source.setDistributionMode(Symbol.getSymbol("copy"));
+            source.setDistributionMode(COPY);
         }
         if (info.getSubscriptionName() != null) {
+            source.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
             source.setDurable(TerminusDurability.UNSETTLED_STATE);
+            source.setDistributionMode(COPY);
+        } else {
+            source.setDurable(TerminusDurability.NONE);
+            source.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
         }
         Target target = new Target();
 
