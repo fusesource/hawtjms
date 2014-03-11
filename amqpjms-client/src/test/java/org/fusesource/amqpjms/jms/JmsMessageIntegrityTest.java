@@ -68,7 +68,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
     public void testTextMessage() throws Exception {
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Destination destination = session.createQueue(name.toString());
+        Destination destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         MessageProducer producer = session.createProducer(destination);
 
@@ -90,7 +90,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
     public void testBytesMessageLength() throws Exception {
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Destination destination = session.createQueue(name.toString());
+        Destination destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         MessageProducer producer = session.createProducer(destination);
 
@@ -115,7 +115,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
     public void testObjectMessage() throws Exception {
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Destination destination = session.createQueue(name.toString());
+        Destination destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         MessageProducer producer = session.createProducer(destination);
 
@@ -138,7 +138,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
     public void testBytesMessage() throws Exception {
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Destination destination = session.createQueue(name.toString());
+        Destination destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         MessageProducer producer = session.createProducer(destination);
 
@@ -165,7 +165,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
     public void testStreamMessage() throws Exception {
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Destination destination = session.createQueue(name.toString());
+        Destination destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         MessageProducer producer = session.createProducer(destination);
 
@@ -201,7 +201,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
     public void testMapMessage() throws Exception {
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Destination destination = session.createQueue(name.toString());
+        Destination destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         MessageProducer producer = session.createProducer(destination);
 
@@ -465,7 +465,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
     public void testForeignMessage() throws Exception {
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Destination destination = session.createQueue(name.toString());
+        Destination destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         MessageProducer producer = session.createProducer(destination);
 

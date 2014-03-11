@@ -43,11 +43,11 @@ public class JmsQueueSenderTest extends AmqpTestSupport {
 
         QueueSession session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         QueueSender sender = session.createSender(queue);
         assertNotNull(sender);
 
-        QueueViewMBean proxy = getProxyToQueue(name.toString());
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(0, proxy.getQueueSize());
         connection.close();
     }

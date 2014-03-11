@@ -37,7 +37,7 @@ public class JmsMessageConsumerFailedTest extends JmsMessageConsumerClosedTest {
         final CountDownLatch latch = new CountDownLatch(1);
         connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue("test");
+        Queue destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         connection.setExceptionListener(new ExceptionListener() {
 

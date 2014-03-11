@@ -98,7 +98,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         MessageConsumer consumer = session.createConsumer(queue);
 

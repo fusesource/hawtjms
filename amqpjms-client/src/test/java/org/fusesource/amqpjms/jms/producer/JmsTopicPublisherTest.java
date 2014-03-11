@@ -43,11 +43,11 @@ public class JmsTopicPublisherTest extends AmqpTestSupport {
 
         TopicSession session = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Topic topic = session.createTopic(name.toString());
+        Topic topic = session.createTopic(name.getMethodName());
         TopicPublisher publisher = session.createPublisher(topic);
         assertNotNull(publisher);
 
-        TopicViewMBean proxy = getProxyToTopic(name.toString());
+        TopicViewMBean proxy = getProxyToTopic(name.getMethodName());
         assertEquals(0, proxy.getEnqueueCount());
         connection.close();
     }

@@ -48,12 +48,12 @@ public class JmsAutoAckTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(queue);
 
         sendToAmqQueue(1);
 
-        final QueueViewMBean proxy = getProxyToQueue(name.toString());
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
         assertNotNull("Failed to receive any message.", consumer.receive(2000));
@@ -75,12 +75,12 @@ public class JmsAutoAckTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(queue);
 
         sendToAmqQueue(1);
 
-        final QueueViewMBean proxy = getProxyToQueue(name.toString());
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
         consumer.setMessageListener(new MessageListener() {

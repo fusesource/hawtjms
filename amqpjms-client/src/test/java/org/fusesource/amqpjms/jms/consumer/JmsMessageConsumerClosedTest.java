@@ -38,7 +38,7 @@ public class JmsMessageConsumerClosedTest extends AmqpTestSupport {
     protected MessageConsumer createConsumer() throws Exception {
         connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue("test");
+        Queue destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         consumer.close();
         return consumer;

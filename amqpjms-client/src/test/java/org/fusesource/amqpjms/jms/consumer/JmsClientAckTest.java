@@ -48,11 +48,11 @@ public class JmsClientAckTest extends AmqpTestSupport {
         Connection connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         producer.send(session.createTextMessage("Hello"));
 
-        final QueueViewMBean proxy = getProxyToQueue(name.toString());
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
         // Consume the message...
@@ -77,13 +77,13 @@ public class JmsClientAckTest extends AmqpTestSupport {
         Connection connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         producer.send(session.createTextMessage("Hello"));
         producer.send(session.createTextMessage("Hello2"));
         producer.send(session.createTextMessage("Hello3"));
 
-        final QueueViewMBean proxy = getProxyToQueue(name.toString());
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(3, proxy.getQueueSize());
 
         // Consume the message...
@@ -112,11 +112,11 @@ public class JmsClientAckTest extends AmqpTestSupport {
         Connection connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         producer.send(session.createTextMessage("Hello"));
 
-        final QueueViewMBean proxy = getProxyToQueue(name.toString());
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
         // Consume the message...but don't ack it.
@@ -150,11 +150,11 @@ public class JmsClientAckTest extends AmqpTestSupport {
         Connection connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         producer.send(session.createTextMessage("Hello"));
 
-        final QueueViewMBean proxy = getProxyToQueue(name.toString());
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
         // Consume the message...
@@ -187,11 +187,11 @@ public class JmsClientAckTest extends AmqpTestSupport {
         Connection connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         producer.send(session.createTextMessage("Hello"));
 
-        final QueueViewMBean proxy = getProxyToQueue(name.toString());
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
         // Consume the message...

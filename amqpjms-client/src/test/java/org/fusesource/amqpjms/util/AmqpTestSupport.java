@@ -277,14 +277,14 @@ public class AmqpTestSupport {
     protected void sendToAmqQueue(int count) throws Exception {
         Connection activemqConnection = createActiveMQConnection();
         Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue amqTestQueue = amqSession.createQueue(name.toString());
+        Queue amqTestQueue = amqSession.createQueue(name.getMethodName());
         sendMessages(activemqConnection, amqTestQueue, count);
     }
 
     protected void sendToAmqTopic(int count) throws Exception {
         Connection activemqConnection = createActiveMQConnection();
         Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic amqTestTopic = amqSession.createTopic(name.toString());
+        Topic amqTestTopic = amqSession.createTopic(name.getMethodName());
         sendMessages(activemqConnection, amqTestTopic, count);
     }
 

@@ -49,13 +49,13 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         session.createConsumer(queue).close();
 
         QueueBrowser browser = session.createBrowser(queue);
         assertNotNull(browser);
 
-        QueueViewMBean proxy = getProxyToQueue(name.toString());
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(0, proxy.getQueueSize());
         connection.close();
     }
@@ -69,13 +69,13 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         session.createConsumer(queue).close();
 
         QueueBrowser browser = session.createBrowser(queue);
         assertNotNull(browser);
 
-        QueueViewMBean proxy = getProxyToQueue(name.toString());
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(0, proxy.getQueueSize());
 
         Enumeration enumeration = browser.getEnumeration();
@@ -93,10 +93,10 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         sendToAmqQueue(5);
 
-        QueueViewMBean proxy = getProxyToQueue(name.toString());
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(5, proxy.getQueueSize());
 
         QueueBrowser browser = session.createBrowser(queue);

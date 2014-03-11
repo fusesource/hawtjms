@@ -56,14 +56,14 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         assertNotNull(session);
         MessageProducer producer = session.createProducer(null);
 
         Message message = session.createMessage();
         producer.send(queue, message);
 
-        QueueViewMBean proxy = getProxyToQueue(name.toString());
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
         connection.close();
@@ -76,9 +76,9 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue1 = session.createQueue(name.toString() + 1);
-        Queue queue2 = session.createQueue(name.toString() + 2);
-        Queue queue3 = session.createQueue(name.toString() + 3);
+        Queue queue1 = session.createQueue(name.getMethodName() + 1);
+        Queue queue2 = session.createQueue(name.getMethodName() + 2);
+        Queue queue3 = session.createQueue(name.getMethodName() + 3);
         assertNotNull(session);
         MessageProducer producer = session.createProducer(null);
 
@@ -87,11 +87,11 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
         producer.send(queue2, message);
         producer.send(queue3, message);
 
-        QueueViewMBean proxy = getProxyToQueue(name.toString() + 1);
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName() + 1);
         assertEquals(1, proxy.getQueueSize());
-        proxy = getProxyToQueue(name.toString() + 2);
+        proxy = getProxyToQueue(name.getMethodName() + 2);
         assertEquals(1, proxy.getQueueSize());
-        proxy = getProxyToQueue(name.toString() + 3);
+        proxy = getProxyToQueue(name.getMethodName() + 3);
         assertEquals(1, proxy.getQueueSize());
 
         connection.close();

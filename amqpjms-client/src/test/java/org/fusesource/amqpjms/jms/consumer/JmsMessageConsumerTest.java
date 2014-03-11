@@ -56,10 +56,10 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         session.createConsumer(queue);
 
-        QueueViewMBean proxy = getProxyToQueue(name.toString());
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(0, proxy.getQueueSize());
         connection.close();
     }
@@ -71,12 +71,12 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(queue);
 
         sendToAmqQueue(1);
 
-        final QueueViewMBean proxy = getProxyToQueue(name.toString());
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
         assertNotNull("Failed to receive any message.", consumer.receive(2000));
@@ -98,12 +98,12 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Topic topic = session.createTopic(name.toString());
+        Topic topic = session.createTopic(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(topic);
 
         sendToAmqTopic(1);
 
-        final TopicViewMBean proxy = getProxyToTopic(name.toString());
+        final TopicViewMBean proxy = getProxyToTopic(name.getMethodName());
         //assertEquals(1, proxy.getQueueSize());
 
         assertNotNull("Failed to receive any message.", consumer.receive(2000));
@@ -133,7 +133,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         connection.start();
 
         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        final Queue queue = session.createQueue(name.toString());
+        final Queue queue = session.createQueue(name.getMethodName());
 
         Thread t = new Thread() {
             @Override
@@ -165,7 +165,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(name.toString());
+        Queue destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
 
         consumer.setMessageListener(new MessageListener() {
@@ -197,7 +197,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(name.toString());
+        Queue destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         sendToAmqQueue(msgCount);
 
@@ -222,7 +222,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
     public void testNoReceivedMessagesWhenConnectionNotStarted() throws Exception {
         Connection connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(name.toString());
+        Queue destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         sendToAmqQueue(3);
         assertNull(consumer.receive(2000));

@@ -45,10 +45,10 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         session.createProducer(queue);
 
-        QueueViewMBean proxy = getProxyToQueue(name.toString());
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(0, proxy.getQueueSize());
         connection.close();
     }
@@ -60,10 +60,10 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
 
-        QueueViewMBean proxy = getProxyToQueue(name.toString());
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(0, proxy.getQueueSize());
 
         Message message = session.createMessage();
@@ -81,10 +81,10 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.toString());
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
 
-        QueueViewMBean proxy = getProxyToQueue(name.toString());
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(0, proxy.getQueueSize());
         connection.stop();
 
