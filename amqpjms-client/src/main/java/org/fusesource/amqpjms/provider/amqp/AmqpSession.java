@@ -135,6 +135,7 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
         Iterator<AmqpLink> linkIterator = pendingOpenLinks.iterator();
         while (linkIterator.hasNext()) {
             AmqpLink candidate = linkIterator.next();
+            LOG.trace("Checking Link {} for open state: {}", candidate, candidate.isOpen());
             if (candidate.isOpen()) {
                 if (candidate instanceof AmqpConsumer) {
                     AmqpConsumer consumer = (AmqpConsumer) candidate;
