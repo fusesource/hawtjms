@@ -429,7 +429,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkClosed();
         checkDestination(topic);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
-        JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, false, "");
+        JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, name, false, "");
         result.init();
         return result;
     }
@@ -450,7 +450,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkDestination(topic);
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
-        JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, false, messageSelector);
+        JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, name, false, messageSelector);
         result.init();
         return result;
     }

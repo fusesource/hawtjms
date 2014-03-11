@@ -21,12 +21,23 @@ import javax.jms.JMSException;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 
 /**
- * Implementation of a TopicSubscriber
+ * Implementation of a TopicSubscriber that is Durable
  */
 public class JmsDurableTopicSubscriber extends JmsTopicSubscriber {
 
-    public JmsDurableTopicSubscriber(JmsConsumerId id, JmsSession s, JmsDestination destination, boolean noLocal, String selector) throws JMSException {
-        super(id, s, destination, noLocal, selector);
+    /**
+     * Creates a durable TopicSubscriber
+     *
+     * @param id
+     * @param s
+     * @param destination
+     * @param name
+     * @param noLocal
+     * @param selector
+     * @throws JMSException
+     */
+    public JmsDurableTopicSubscriber(JmsConsumerId id, JmsSession s, JmsDestination destination, String name, boolean noLocal, String selector) throws JMSException {
+        super(id, s, destination, name, noLocal, selector);
     }
 
     @Override

@@ -26,6 +26,7 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
+import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
@@ -96,6 +97,9 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         source.setAddress(subscription);
         if (info.isBrowser()) {
             source.setDistributionMode(Symbol.getSymbol("copy"));
+        }
+        if (info.getSubscriptionName() != null) {
+            source.setDurable(TerminusDurability.UNSETTLED_STATE);
         }
         Target target = new Target();
 

@@ -54,8 +54,34 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     protected final Lock lock = new ReentrantLock();
     protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
 
+    /**
+     * Create a non-durable MessageConsumer
+     *
+     * @param consumerId
+     * @param session
+     * @param destination
+     * @param selector
+     * @param noLocal
+     * @throws JMSException
+     */
     protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination,
-                                 String selector, boolean noLocal) throws JMSException {
+        String selector, boolean noLocal) throws JMSException {
+        this(consumerId, session, destination, null, selector, noLocal);
+    }
+
+    /**
+     * Create a MessageConsumer which could be durable.
+     *
+     * @param consumerId
+     * @param session
+     * @param destination
+     * @param name
+     * @param selector
+     * @param noLocal
+     * @throws JMSException
+     */
+    protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination,
+                                 String name, String selector, boolean noLocal) throws JMSException {
         this.session = session;
         this.connection = session.getConnection();
         this.acknowledgementMode = session.acknowledgementMode();
@@ -68,7 +94,9 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         }
 
         this.consumerInfo = new JmsConsumerInfo(consumerId);
+        this.consumerInfo.setClientId(connection.getClientID());
         this.consumerInfo.setSelector(selector);
+        this.consumerInfo.setSubscriptionName(name);
         this.consumerInfo.setDestination(destination);
         this.consumerInfo.setAcknowledgementMode(acknowledgementMode);
         this.consumerInfo.setNoLocal(noLocal);
