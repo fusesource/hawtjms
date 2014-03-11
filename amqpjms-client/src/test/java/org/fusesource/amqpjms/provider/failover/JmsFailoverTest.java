@@ -32,6 +32,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.Topic;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
@@ -119,6 +120,39 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
         assertEquals(1, brokerService.getAdminView().getQueueSubscribers().length);
         assertEquals(1, brokerService.getAdminView().getQueueProducers().length);
+
+        connection.close();
+    }
+
+    @SuppressWarnings("unused")
+    @Test(timeout=60000)
+    public void testDurableSubscriberRestores() throws Exception {
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=1000");
+
+        Connection connection = createAmqpConnection(brokerURI);
+        connection.setClientID(name.getMethodName());
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = session.createTopic(name.getMethodName());
+        MessageConsumer consumer = session.createDurableSubscriber(topic, name.getMethodName());
+
+        assertEquals(1, brokerService.getAdminView().getDurableTopicSubscribers().length);
+
+        stopBroker();
+        TimeUnit.SECONDS.sleep(2);
+        startBroker();
+
+        assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
+            }
+        }));
+
+        assertEquals(0, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
+        assertEquals(1, brokerService.getAdminView().getDurableTopicSubscribers().length);
 
         connection.close();
     }
