@@ -16,6 +16,7 @@
  */
 package org.fusesource.amqpjms.util;
 
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ import org.apache.activemq.security.AuthorizationPlugin;
 import org.apache.activemq.security.DefaultAuthorizationMap;
 import org.apache.activemq.security.SimpleAuthenticationPlugin;
 import org.apache.activemq.security.TempDestinationAuthorizationEntry;
+import org.apache.activemq.store.kahadb.KahaDBStore;
 import org.apache.activemq.util.JMXSupport;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.junit.After;
@@ -60,6 +62,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AmqpTestSupport {
+
+    public static final String KAHADB_DIRECTORY = "target/activemq-data";
 
     @Rule public TestName name = new TestName();
 
@@ -86,12 +90,17 @@ public class AmqpTestSupport {
     }
 
     protected void createBroker(boolean deleteAllMessages) throws Exception {
+        KahaDBStore kaha = new KahaDBStore();
+        kaha.setDirectory(new File(KAHADB_DIRECTORY));
+
         brokerService = new BrokerService();
         brokerService.setPersistent(isPersistent());
         brokerService.setAdvisorySupport(isAdvisorySupport());
         brokerService.setDeleteAllMessagesOnStartup(deleteAllMessages);
         brokerService.setUseJmx(true);
         brokerService.setDataDirectory("target/");
+        brokerService.setPersistenceAdapter(kaha);
+        brokerService.setStoreOpenWireVersion(10);
 
         ArrayList<BrokerPlugin> plugins = new ArrayList<BrokerPlugin>();
         BrokerPlugin authenticationPlugin = configureAuthentication();

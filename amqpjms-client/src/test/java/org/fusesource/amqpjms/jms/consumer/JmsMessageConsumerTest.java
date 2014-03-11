@@ -26,18 +26,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Connection;
+import javax.jms.DeliveryMode;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 import javax.jms.Topic;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.activemq.broker.jmx.TopicViewMBean;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.fusesource.amqpjms.util.Wait;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +51,11 @@ import org.slf4j.LoggerFactory;
 public class JmsMessageConsumerTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsMessageConsumerTest.class);
+
+    @Override
+    public boolean isPersistent() {
+        return true;
+    }
 
     @Test(timeout = 60000)
     public void testCreateMessageConsumer() throws Exception {
@@ -227,5 +235,102 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         sendToAmqQueue(3);
         assertNull(consumer.receive(2000));
         connection.close();
+    }
+
+    @Test(timeout = 60000)
+    public void testMessagesAreAckedAMQProducer() throws Exception {
+        int messagesSent = 3;
+        assertTrue(brokerService.isPersistent());
+
+        Connection connection = createActiveMQConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageProducer p = session.createProducer(queue);
+        TextMessage message = null;
+        for (int i=0; i < messagesSent; i++) {
+            message = session.createTextMessage();
+            String messageText = "Hello " + i + " sent at " + new java.util.Date().toString();
+            message.setText(messageText);
+            LOG.debug(">>>> Sent [{}]", messageText);
+            p.send(message);
+        }
+
+        // After the first restart we should get all messages sent above
+        restartBroker();
+        int messagesReceived = readAllMessages();
+        assertEquals(messagesSent, messagesReceived);
+
+        // This time there should be no messages on this queue
+        restartBroker();
+        messagesReceived = readAllMessages();
+        assertEquals(0, messagesReceived);
+    }
+
+    @Ignore  // TODO - ActiveMQ bug can't handle parsable MessageIds
+    @Test(timeout = 60000)
+    public void testMessagesAreAckedAMQPProducer() throws Exception {
+        int messagesSent = 3;
+
+        Connection connection = createAmqpConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageProducer producer = session.createProducer(queue);
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+        TextMessage message = null;
+        for (int i=0; i < messagesSent; i++) {
+            message = session.createTextMessage();
+            String messageText = "Hello " + i + " sent at " + new java.util.Date().toString();
+            message.setText(messageText);
+            LOG.debug(">>>> Sent [{}]", messageText);
+            producer.send(message);
+        }
+
+        connection.close();
+
+        // After the first restart we should get all messages sent above
+        restartBroker();
+        int messagesReceived = readAllMessages();
+        assertEquals(messagesSent, messagesReceived);
+
+        // This time there should be no messages on this queue
+        restartBroker();
+        messagesReceived = readAllMessages();
+        assertEquals(0, messagesReceived);
+    }
+
+    private int readAllMessages() throws Exception {
+        return readAllMessages(null);
+    }
+
+    private int readAllMessages(String selector) throws Exception {
+        Connection connection = createAmqpConnection();
+        connection.start();
+        try {
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue(name.getMethodName());
+            int messagesReceived = 0;
+            MessageConsumer consumer;
+
+            if (selector == null) {
+                consumer = session.createConsumer(queue);
+            } else {
+                consumer = session.createConsumer(queue, selector);
+            }
+
+            Message msg = consumer.receive(5000);
+            while (msg != null) {
+                assertNotNull(msg);
+                assertTrue(msg instanceof TextMessage);
+                TextMessage textMessage = (TextMessage) msg;
+                LOG.debug(">>>> Received [{}]", textMessage.getText());
+                messagesReceived++;
+                msg = consumer.receive(5000);
+            }
+
+            consumer.close();
+            return messagesReceived;
+        } finally {
+            connection.close();
+        }
     }
 }
