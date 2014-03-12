@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
+import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.Message;
@@ -408,7 +409,6 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertTrue(msg instanceof TextMessage);
         assertEquals("hello + 9", ((TextMessage) msg).getText());
         assertNull(consumer.receive(1000));
-
         connection.close();
     }
 
@@ -419,6 +419,16 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue("USERS." + name.getMethodName());
         session.createConsumer(queue);
+        connection.close();
+    }
+
+    @Test(timeout=90000, expected=InvalidSelectorException.class)
+    public void testInvalidSelector() throws Exception{
+        Connection connection = createAmqpConnection();
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+        session.createConsumer(queue, "3+5");
         connection.close();
     }
 }
