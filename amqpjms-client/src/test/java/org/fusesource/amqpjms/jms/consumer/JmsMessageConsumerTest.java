@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -191,6 +193,52 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
         TimeUnit.SECONDS.sleep(1);
         assertEquals(msgCount, counter.get());
+        connection.close();
+    }
+
+    @Test
+    public void testSyncReceiveFailsWhenListenerSet() throws Exception {
+
+        final int msgCount = 4;
+
+        final Connection connection = createAmqpConnection();
+        final AtomicInteger counter = new AtomicInteger(0);
+        final CountDownLatch done = new CountDownLatch(1);
+
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue destination = session.createQueue(name.getMethodName());
+        MessageConsumer consumer = session.createConsumer(destination);
+
+        consumer.setMessageListener(new MessageListener() {
+            @Override
+            public void onMessage(Message m) {
+                LOG.debug("Async consumer got Message: {}", m);
+                counter.incrementAndGet();
+                if (counter.get() == msgCount) {
+                    done.countDown();
+                }
+            }
+        });
+
+        try {
+            consumer.receive();
+            fail("Should have thrown an exception.");
+        } catch (JMSException ex) {
+        }
+
+        try {
+            consumer.receive(1000);
+            fail("Should have thrown an exception.");
+        } catch (JMSException ex) {
+        }
+
+        try {
+            consumer.receiveNoWait();
+            fail("Should have thrown an exception.");
+        } catch (JMSException ex) {
+        }
+
         connection.close();
     }
 
