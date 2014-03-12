@@ -200,7 +200,7 @@ public class AmqpTestSupport {
     }
 
     public Connection createAmqpConnection(URI brokerURI) throws Exception {
-        return createAmqpConnection(getBrokerAmqpConnectionURI(), null, null);
+        return createAmqpConnection(brokerURI, null, null);
     }
 
     public Connection createAmqpConnection(URI brokerURI, String username, String password) throws Exception {
