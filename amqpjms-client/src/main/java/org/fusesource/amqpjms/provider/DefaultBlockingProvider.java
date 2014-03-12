@@ -21,6 +21,7 @@ import java.net.URI;
 
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
@@ -118,6 +119,13 @@ public class DefaultBlockingProvider implements BlockingProvider {
     public void unsubscribe(String subscription) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.unsubscribe(subscription, request);
+        request.getResponse();
+    }
+
+    @Override
+    public void pull(JmsConsumerId consumerId, long timeout) throws IOException {
+        ProviderRequest<Void> request = new ProviderRequest<Void>();
+        next.pull(consumerId, timeout, request);
         request.getResponse();
     }
 

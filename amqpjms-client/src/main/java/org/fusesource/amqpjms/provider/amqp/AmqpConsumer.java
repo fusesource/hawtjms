@@ -207,6 +207,20 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         // TODO - handle the other ack modes, poisoned, redelivered
     }
 
+
+    /**
+     * For a consumer whose prefetch value is set to zero this method will attempt to solicite
+     * a new message dispatch from the broker.
+     *
+     * @param timeout
+     */
+    public void pull(long timeout) {
+        if (info.getPrefetchSize() == 0 && endpoint.getCredit() == 0) {
+            // expand the credit window by one.
+            endpoint.flow(1);
+        }
+    }
+
     protected void processDelivery(Delivery incoming) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Buffer buffer;

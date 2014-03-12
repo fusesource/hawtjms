@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
@@ -290,6 +291,19 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
             @Override
             public void doTask() throws IOException {
                 provider.unsubscribe(subscription, this);
+            }
+        };
+
+        serializer.execute(pending);
+    }
+
+    @Override
+    public void pull(final JmsConsumerId consumerId, final long timeout, final AsyncResult<Void> request) throws IOException {
+        checkClosed();
+        final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
+            @Override
+            public void doTask() throws IOException {
+                provider.pull(consumerId, timeout, this);
             }
         };
 

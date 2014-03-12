@@ -19,7 +19,6 @@ package org.fusesource.amqpjms.provider.amqp;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -78,7 +77,6 @@ public class AmqpProvider implements AsyncProvider {
     private static final Logger TRACE_FRAMES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".FRAMES");
 
     private final URI remoteURI;
-    private final Map<String, String> extraOptions;
     private AmqpConnection connection;
     private AmqpTransport transport;
     private ProviderListener listener;
@@ -108,14 +106,7 @@ public class AmqpProvider implements AsyncProvider {
      */
     public AmqpProvider(URI remoteURI, Map<String, String> extraOptions) {
         this.remoteURI = remoteURI;
-        if (extraOptions != null) {
-            this.extraOptions = extraOptions;
-        } else {
-            this.extraOptions = Collections.emptyMap();
-        }
-
         updateTracer();
-
         this.serializer = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
             @Override
@@ -449,6 +440,34 @@ public class AmqpProvider implements AsyncProvider {
             public void run() {
                 try {
                     checkClosed();
+                    pumpToProtonTransport();
+                    request.onSuccess(null);
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void pull(final JmsConsumerId consumerId, final long timeout, final AsyncResult<Void> request) throws IOException {
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    AmqpConsumer consumer = null;
+
+                    if (consumerId.getProviderHint() instanceof AmqpConsumer) {
+                        consumer = (AmqpConsumer) consumerId.getProviderHint();
+                    } else {
+                        AmqpSession session = connection.getSession(consumerId.getParentId());
+                        consumer = session.getConsumer(consumerId);
+                    }
+
+                    consumer.pull(timeout);
                     pumpToProtonTransport();
                     request.onSuccess(null);
                 } catch (Exception error) {

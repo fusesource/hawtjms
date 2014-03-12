@@ -21,6 +21,7 @@ import java.net.URI;
 
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
+import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
@@ -192,6 +193,25 @@ public interface AsyncProvider {
      * @throws IOException if an error occurs or the Provider is already closed.
      */
     void unsubscribe(String subscription, AsyncResult<Void> request) throws IOException;
+
+    /**
+     * Request a remote peer send a Message to this client.  A message pull request is
+     * usually only needed in the case where the client sets a zero prefetch limit on the
+     * consumer.  If the consumer has a set prefetch that's greater than zero this method
+     * should just return without performing and action.
+     *
+     * Some protocols will not be able to honor the timeout value given, in this case it
+     * should still initiate the message pull if possible even if this leaves the pull
+     * window open indefinitely.
+     *
+     * @param timeout
+     *        the amount of time to tell the remote peer to keep this pull request valid.
+     * @param request
+     *        The request object that should be signaled when this operation completes.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    void pull(JmsConsumerId consumerId, long timeout, AsyncResult<Void> request) throws IOException;
 
     /**
      * Sets the listener of events from this Provider instance.
