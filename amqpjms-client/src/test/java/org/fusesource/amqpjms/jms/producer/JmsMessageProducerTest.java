@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
+import javax.jms.JMSSecurityException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -161,6 +162,16 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertEquals(messageSize, textMessage.getText().length());
         assertEquals(messageText, textMessage.getText());
 
+        connection.close();
+    }
+
+    @Test(timeout=90000, expected=JMSSecurityException.class)
+    public void testProducerNotAuthorized() throws Exception{
+        Connection connection = createAmqpConnection("guest", "password");
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue("USERS." + name.getMethodName());
+        session.createProducer(queue);
         connection.close();
     }
 }
