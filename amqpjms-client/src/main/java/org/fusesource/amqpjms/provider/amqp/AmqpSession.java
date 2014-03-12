@@ -149,8 +149,8 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
                 candidate.opened();
             } else if (candidate.isClosed()) {
                 LOG.warn("Open of link {} failed: ", candidate);
-                // TODO - Can we derive an exception from here.
-                candidate.failed();
+                Exception remoteError = candidate.getRemoteError();
+                candidate.failed(remoteError);
             }
 
             linkIterator.remove();

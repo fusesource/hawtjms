@@ -17,7 +17,11 @@
 package org.fusesource.amqpjms.provider.amqp;
 
 import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 
+import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.transport.AmqpError;
+import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Endpoint;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
@@ -142,6 +146,33 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
             return EndpointState.UNINITIALIZED;
         }
         return this.endpoint.getRemoteState();
+    }
+
+    @Override
+    public Exception getRemoteError() {
+        String message = getRemoteErrorMessage();
+        Exception remoteError = null;
+        Symbol error = endpoint.getRemoteCondition().getCondition();
+        if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
+            remoteError = new JMSSecurityException(message);
+        } else {
+            remoteError = new JMSException(message);
+        }
+
+        return remoteError;
+    }
+
+    @Override
+    public String getRemoteErrorMessage() {
+        String message = "Received unkown error from remote peer";
+        if (endpoint.getRemoteCondition() != null) {
+            ErrorCondition error = endpoint.getRemoteCondition();
+            if (error.getDescription() != null && !error.getDescription().isEmpty()) {
+                message = error.getDescription();
+            }
+        }
+
+        return message;
     }
 
     protected abstract void doOpen();

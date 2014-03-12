@@ -89,4 +89,14 @@ public interface AmqpResource {
      */
     void processUpdates();
 
+    /**
+     * @return an Exception derived from the error state of the endpoint's Remote Condition.
+     */
+    Exception getRemoteError();
+
+    /**
+     * @return an Error message derived from the error state of the endpoint's Remote Condition.
+     */
+    String getRemoteErrorMessage();
+
 }

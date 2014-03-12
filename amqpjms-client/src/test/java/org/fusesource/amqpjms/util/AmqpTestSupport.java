@@ -195,8 +195,22 @@ public class AmqpTestSupport {
         return createAmqpConnection(getBrokerAmqpConnectionURI());
     }
 
+    public Connection createAmqpConnection(String username, String password) throws Exception {
+        return createAmqpConnection(getBrokerAmqpConnectionURI(), username, password);
+    }
+
     public Connection createAmqpConnection(URI brokerURI) throws Exception {
-        ConnectionFactory factory = new JmsConnectionFactory(brokerURI);
+        return createAmqpConnection(getBrokerAmqpConnectionURI(), null, null);
+    }
+
+    public Connection createAmqpConnection(URI brokerURI, String username, String password) throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
+        if (username != null) {
+            factory.setUsername(username);
+        }
+        if (password != null) {
+            factory.setPassword(password);
+        }
         return factory.createConnection();
     }
 

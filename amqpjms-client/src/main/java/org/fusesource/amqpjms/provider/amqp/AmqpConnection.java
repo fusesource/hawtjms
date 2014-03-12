@@ -23,12 +23,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 
-import org.apache.qpid.proton.amqp.Symbol;
-import org.apache.qpid.proton.amqp.transport.AmqpError;
-import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Sasl;
@@ -137,24 +133,11 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
 
             if (endpoint.getRemoteCondition().getCondition() != null) {
                 LOG.info("Error condition detected on Connection open {}.", endpoint.getRemoteCondition().getCondition());
-
-                String message = getRemoteErrorMessage();
-                if (message == null) {
-                    message = "Remote perr closed connection unexpectedly.";
-                }
-
-                Throwable thrown = null;
-                Symbol error = endpoint.getRemoteCondition().getCondition();
-                if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
-                    thrown = new JMSSecurityException(message);
-                } else {
-                    thrown = new JMSException(message);
-                }
-
+                Exception remoteError = getRemoteError();
                 if (openRequest != null) {
-                    openRequest.onFailure(thrown);
+                    openRequest.onFailure(remoteError);
                 } else {
-                    provider.fireProviderException(thrown);
+                    provider.fireProviderException(remoteError);
                 }
             }
         }
@@ -233,17 +216,6 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
                 resource.closed();
             }
         }
-    }
-
-    private String getRemoteErrorMessage() {
-        if (endpoint.getRemoteCondition() != null) {
-            ErrorCondition error = endpoint.getRemoteCondition();
-            if (error.getDescription() != null && !error.getDescription().isEmpty()) {
-                return error.getDescription();
-            }
-        }
-
-        return null;
     }
 
     void addToPendingOpen(AmqpResource session) {

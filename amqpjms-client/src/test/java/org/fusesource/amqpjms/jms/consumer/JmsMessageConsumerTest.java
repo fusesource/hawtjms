@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -382,7 +383,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         }
     }
 
-    @Test(timeout=90000)
+    @Test(timeout=30000)
     public void testSelectors() throws Exception{
         Connection connection = createAmqpConnection();
         connection.start();
@@ -408,6 +409,16 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertEquals("hello + 9", ((TextMessage) msg).getText());
         assertNull(consumer.receive(1000));
 
+        connection.close();
+    }
+
+    @Test(timeout=90000, expected=JMSSecurityException.class)
+    public void testConsumerNotAuthorized() throws Exception{
+        Connection connection = createAmqpConnection("guest", "password");
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue("USERS." + name.getMethodName());
+        session.createConsumer(queue);
         connection.close();
     }
 }
