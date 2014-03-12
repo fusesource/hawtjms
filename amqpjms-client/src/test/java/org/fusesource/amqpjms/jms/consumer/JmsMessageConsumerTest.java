@@ -333,4 +333,33 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
             connection.close();
         }
     }
+
+    @Test(timeout=90000)
+    public void testSelectors() throws Exception{
+        Connection connection = createAmqpConnection();
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageProducer p = session.createProducer(queue);
+
+        TextMessage message = session.createTextMessage();
+        message.setText("hello");
+        p.send(message, DeliveryMode.PERSISTENT, 5, 0);
+
+        message = session.createTextMessage();
+        message.setText("hello + 9");
+        p.send(message, DeliveryMode.PERSISTENT, 9, 0);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(2, proxy.getQueueSize());
+
+        MessageConsumer consumer = session.createConsumer(queue, "JMSPriority > 8");
+        Message msg = consumer.receive(5000);
+        assertNotNull(msg);
+        assertTrue(msg instanceof TextMessage);
+        assertEquals("hello + 9", ((TextMessage) msg).getText());
+        assertNull(consumer.receive(1000));
+
+        connection.close();
+    }
 }

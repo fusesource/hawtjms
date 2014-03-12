@@ -17,11 +17,13 @@
 package org.fusesource.amqpjms.provider.amqp;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.jms.JMSException;
 
+import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Source;
@@ -55,8 +57,11 @@ import org.slf4j.LoggerFactory;
  */
 public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver> implements AmqpLink {
 
-    private static final Symbol COPY = Symbol.getSymbol("copy");
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConsumer.class);
+
+    private static final Symbol COPY = Symbol.getSymbol("copy");
+    private static final Symbol JMS_NO_LOCAL_SYMBOL = Symbol.valueOf("no-local");
+    private static final Symbol JMS_SELECTOR_SYMBOL = Symbol.valueOf("jms-selector");
 
     private final AmqpSession session;
     private final InboundTransformer inboundTransformer =
@@ -97,18 +102,9 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
         Source source = new Source();
         source.setAddress(subscription);
-        if (info.isBrowser()) {
-            source.setDistributionMode(COPY);
-        }
-        if (info.getSubscriptionName() != null) {
-            source.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
-            source.setDurable(TerminusDurability.UNSETTLED_STATE);
-            source.setDistributionMode(COPY);
-        } else {
-            source.setDurable(TerminusDurability.NONE);
-            source.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
-        }
         Target target = new Target();
+
+        configureSource(source);
 
         endpoint = session.getProtonSession().receiver(subscription);
         endpoint.setSource(source);
@@ -117,6 +113,35 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
         this.session.addPedingLinkOpen(this);
+    }
+
+    protected void configureSource(Source source) {
+        Map<Symbol, DescribedType> filters = new HashMap<Symbol, DescribedType>();
+
+        if (info.isBrowser()) {
+            source.setDistributionMode(COPY);
+        }
+
+        if (info.getSubscriptionName() != null) {
+            source.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
+            source.setDurable(TerminusDurability.UNSETTLED_STATE);
+            source.setDistributionMode(COPY);
+        } else {
+            source.setDurable(TerminusDurability.NONE);
+            source.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
+        }
+
+        if (info.isNoLocal()) {
+            filters.put(JMS_NO_LOCAL_SYMBOL, AmqpJmsNoLocalType.NO_LOCAL);
+        }
+
+        if (info.getSelector() != null && !info.getSelector().trim().equals("")) {
+            filters.put(JMS_SELECTOR_SYMBOL, new AmqpJmsSelectorType(info.getSelector()));
+        }
+
+        if (!filters.isEmpty()) {
+            source.setFilter(filters);
+        }
     }
 
     /**

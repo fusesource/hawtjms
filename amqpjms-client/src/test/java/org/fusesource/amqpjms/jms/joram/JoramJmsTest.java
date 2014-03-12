@@ -28,6 +28,7 @@ import org.objectweb.jtests.jms.conform.message.headers.MessageHeaderTest;
 import org.objectweb.jtests.jms.conform.message.properties.MessagePropertyConversionTest;
 import org.objectweb.jtests.jms.conform.message.properties.MessagePropertyTest;
 import org.objectweb.jtests.jms.conform.queue.TemporaryQueueTest;
+import org.objectweb.jtests.jms.conform.selector.SelectorTest;
 import org.objectweb.jtests.jms.conform.topic.TemporaryTopicTest;
 
 public class JoramJmsTest extends TestCase {
@@ -45,10 +46,10 @@ public class JoramJmsTest extends TestCase {
 //        suite.addTestSuite(UnifiedSessionTest.class);
 //        suite.addTestSuite(SelectorSyntaxTest.class);
 //        suite.addTestSuite(QueueSessionTest.class);
-//        suite.addTestSuite(SelectorTest.class);
 //        suite.addTestSuite(SessionTest.class);
 //        suite.addTestSuite(JMSXPropertyTest.class);
 
+        suite.addTestSuite(SelectorTest.class);
         suite.addTestSuite(MessageHeaderTest.class);
         suite.addTestSuite(TemporaryTopicTest.class);
         suite.addTestSuite(TemporaryQueueTest.class);
