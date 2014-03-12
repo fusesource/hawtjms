@@ -142,6 +142,13 @@ public class PropertyExpression {
                 return message.getGroupId();
             }
         });
+        JMS_PROPERTY_EXPRESSIONS.put("JMSXGroupSeq", new SubExpression() {
+
+            @Override
+            public Object evaluate(JmsMessage message) {
+                return new Integer(message.getGroupSequence());
+            }
+        });
         JMS_PROPERTY_EXPRESSIONS.put("JMSXUserID", new SubExpression() {
 
             @Override
