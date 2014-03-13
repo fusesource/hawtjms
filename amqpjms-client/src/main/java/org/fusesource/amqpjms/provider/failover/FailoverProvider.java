@@ -19,8 +19,6 @@ package org.fusesource.amqpjms.provider.failover;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,8 +63,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
     private ProviderListener listener;
     private AsyncProvider provider;
-    private final List<URI> uris = new ArrayList<URI>();
-    private final Map<String, String> nestedOptions;
+    private final FailoverUriPool uris;
 
     private final ExecutorService serializer;
     private final ScheduledExecutorService connectionHub;
@@ -96,12 +93,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     public FailoverProvider(URI[] uris, Map<String, String> nestedOptions) {
-        this.uris.addAll(Arrays.asList(uris));
-        if (nestedOptions != null) {
-            this.nestedOptions = nestedOptions;
-        } else {
-            this.nestedOptions = Collections.emptyMap();
-        }
+        this.uris = new FailoverUriPool(uris, nestedOptions);
 
         this.serializer = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
@@ -436,6 +428,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
                         reconnectDelay = initialReconnectDelay;
                         reconnectAttempts = 0;
+                        uris.connected();
                     }
                 } catch (Throwable error) {
                     handleProviderFailure(IOExceptionSupport.create(error));
@@ -465,14 +458,15 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
                 }
 
                 Throwable failure = null;
+                URI target = uris.getNext();
 
                 reconnectAttempts++;
                 try {
-                    AsyncProvider provider = ProviderFactory.createAsync(uris.get(0));
+                    AsyncProvider provider = ProviderFactory.createAsync(target);
                     initializeNewConnection(provider);
                     return;
                 } catch (Throwable e) {
-                    LOG.info("Connection attempt to: {} failed.", uris.get(0));
+                    LOG.info("Connection attempt to: {} failed.", target);
                     failure = e;
                 }
 
@@ -558,6 +552,14 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     //--------------- Property Getters and Setters ---------------------------//
+
+    public boolean isRandomize() {
+        return uris.isRandomize();
+    }
+
+    public void setRandomize(boolean value) {
+        this.uris.setRandomize(value);
+    }
 
     public long getInitialReconnectDealy() {
         return initialReconnectDelay;

@@ -58,6 +58,15 @@ public class JmsFailoverTest extends AmqpTestSupport {
         connection.close();
     }
 
+    @Test(timeout=60000)
+    public void testFailoverConnectsWithMultipleURIs() throws Exception {
+        URI brokerURI = new URI("failover://(amqp://127.0.0.1:61616,amqp://localhost:5777," +
+                                getBrokerAmqpConnectionURI() + ")?maxReconnectDelay=500");
+        Connection connection = createAmqpConnection(brokerURI);
+        connection.start();
+        connection.close();
+    }
+
     @Test(timeout=60000, expected=JMSException.class)
     public void testStartupReconnectAttempts() throws Exception {
         URI brokerURI = new URI("failover://(amqp://localhost:61616)" +
