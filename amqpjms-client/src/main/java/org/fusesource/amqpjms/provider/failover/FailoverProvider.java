@@ -66,7 +66,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     private ProviderListener listener;
     private AsyncProvider provider;
     private final List<URI> uris = new ArrayList<URI>();
-    private final Map<String, String> extraOptions;
+    private final Map<String, String> nestedOptions;
 
     private final ExecutorService serializer;
     private final ScheduledExecutorService connectionHub;
@@ -95,12 +95,12 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
         this(uris, null);
     }
 
-    public FailoverProvider(URI[] uris, Map<String, String> extraOptions) {
+    public FailoverProvider(URI[] uris, Map<String, String> nestedOptions) {
         this.uris.addAll(Arrays.asList(uris));
-        if (extraOptions != null) {
-            this.extraOptions = extraOptions;
+        if (nestedOptions != null) {
+            this.nestedOptions = nestedOptions;
         } else {
-            this.extraOptions = Collections.emptyMap();
+            this.nestedOptions = Collections.emptyMap();
         }
 
         this.serializer = Executors.newSingleThreadExecutor(new ThreadFactory() {
@@ -214,6 +214,12 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
             public void doTask() throws IOException {
                 provider.destroy(resourceId, this);
             }
+
+            @Override
+            public boolean succeedsWhenOffline() {
+                // Allow this to succeed, acks would be stale.
+                return true;
+            }
         };
 
         serializer.execute(pending);
@@ -240,6 +246,12 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
             public void doTask() throws IOException {
                 provider.acknowledge(sessionId, this);
             }
+
+            @Override
+            public boolean succeedsWhenOffline() {
+                // Allow this to succeed, acks would be stale.
+                return true;
+            }
         };
 
         serializer.execute(pending);
@@ -252,6 +264,12 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
             @Override
             public void doTask() throws IOException {
                 provider.acknowledge(envelope, ackType, this);
+            }
+
+            @Override
+            public boolean succeedsWhenOffline() {
+                // Allow this to succeed, acks would be stale.
+                return true;
             }
         };
 
@@ -266,6 +284,11 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
             public void doTask() throws IOException {
                 provider.commit(txId, this);
             }
+
+            @Override
+            public boolean failureWhenOffline() {
+                return true;
+            }
         };
 
         serializer.execute(pending);
@@ -278,6 +301,11 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
             @Override
             public void doTask() throws IOException {
                 provider.rollback(txId, this);
+            }
+
+            @Override
+            public boolean failureWhenOffline() {
+                return true;
             }
         };
 
