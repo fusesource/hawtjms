@@ -86,13 +86,21 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         request.onSuccess(null);
     }
 
+    /**
+     * Process all incoming deliveries that have been fully read.
+     */
     @Override
     public void processUpdates() {
-        Delivery incoming = endpoint.current();
-        if (incoming != null && incoming.isReadable() && !incoming.isPartial()) {
-            LOG.trace("{} has incoming Message(s).", this);
-            processDelivery(incoming);
-        }
+        Delivery incoming = null;
+        do {
+            incoming = endpoint.current();
+            if (incoming != null && incoming.isReadable() && !incoming.isPartial()) {
+                LOG.trace("{} has incoming Message(s).", this);
+                processDelivery(incoming);
+            } else {
+                incoming = null;
+            }
+        } while (incoming != null);
     }
 
     @Override
@@ -186,7 +194,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         }
 
         if (ackType.equals(ACK_TYPE.DELIVERED)) {
-            LOG.info("Delivered Ack of message: {}", messageId);
+            LOG.debug("Delivered Ack of message: {}", messageId);
             delivered.put(messageId, delivery);
             endpoint.flow(1);
         } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
@@ -195,8 +203,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             if (delivered.remove(messageId) == null) {
                 endpoint.flow(1);
             }
-
-            LOG.info("Consumed Ack of message: {}", messageId);
+            LOG.debug("Consumed Ack of message: {}", messageId);
             delivery.disposition(Accepted.getInstance());
             delivery.settle();
         } else {
@@ -265,7 +272,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
         ProviderListener listener = session.getProvider().getProviderListener();
         if (listener != null) {
-            LOG.trace("Dispatching received message: {}", message.getMessageId());
+            LOG.debug("Dispatching received message: {}", message.getMessageId());
             listener.onMessage(envelope);
         }
     }

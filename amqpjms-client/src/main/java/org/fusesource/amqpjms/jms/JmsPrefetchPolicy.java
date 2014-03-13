@@ -40,7 +40,6 @@ public class JmsPrefetchPolicy extends Object implements Serializable {
     private int queueBrowserPrefetch;
     private int topicPrefetch;
     private int durableTopicPrefetch;
-    private int maximumPendingMessageLimit;
 
     /**
      * Initialize default prefetch policies
@@ -123,21 +122,6 @@ public class JmsPrefetchPolicy extends Object implements Serializable {
      */
     public void setTopicPrefetch(int topicPrefetch) {
         this.topicPrefetch = getMaxPrefetchLimit(topicPrefetch);
-    }
-
-    public int getMaximumPendingMessageLimit() {
-        return maximumPendingMessageLimit;
-    }
-
-    /**
-     * Sets how many messages a broker will keep around, above the prefetch
-     * limit, for non-durable topics before starting to discard older messages.
-     *
-     * @param maximumPendingMessageLimit
-     *        The maximum allowed limit for any prefetch value in this policy.
-     */
-    public void setMaximumPendingMessageLimit(int maximumPendingMessageLimit) {
-        this.maximumPendingMessageLimit = maximumPendingMessageLimit;
     }
 
     /**

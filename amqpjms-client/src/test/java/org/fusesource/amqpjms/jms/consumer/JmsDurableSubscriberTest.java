@@ -104,6 +104,8 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         connection.setClientID("DURABLE-AMQP");
         connection.start();
 
+        final int MSG_COUNT = 5;
+
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
         Topic topic = session.createTopic(name.getMethodName());
@@ -111,22 +113,23 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         subscriber.close();
 
         MessageProducer producer = session.createProducer(topic);
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < MSG_COUNT; i++) {
             producer.send(session.createTextMessage("Message: " + i));
         }
         producer.close();
 
         subscriber = session.createDurableSubscriber(topic, name.getMethodName() + "-subscriber");
-        final CountDownLatch messages = new CountDownLatch(5);
+        final CountDownLatch messages = new CountDownLatch(MSG_COUNT);
         subscriber.setMessageListener(new MessageListener() {
 
             @Override
             public void onMessage(Message message) {
+                LOG.info("Consumer got a message: {}", message);
                 messages.countDown();
             }
         });
 
-        assertTrue("Didn't get all messages:", messages.await(10, TimeUnit.SECONDS));
+        assertTrue("Only recieved messages: " + messages.getCount(), messages.await(30, TimeUnit.SECONDS));
 
         connection.close();
     }

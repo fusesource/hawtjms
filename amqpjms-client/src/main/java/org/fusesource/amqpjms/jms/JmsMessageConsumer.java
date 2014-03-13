@@ -93,6 +93,8 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
             this.messageQueue = new MessageQueue(session.getConsumerMessageBufferSize());
         }
 
+        JmsPrefetchPolicy policy = this.connection.getPrefetchPolicy();
+
         this.consumerInfo = new JmsConsumerInfo(consumerId);
         this.consumerInfo.setClientId(connection.getClientID());
         this.consumerInfo.setSelector(selector);
@@ -101,21 +103,23 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         this.consumerInfo.setAcknowledgementMode(acknowledgementMode);
         this.consumerInfo.setNoLocal(noLocal);
         this.consumerInfo.setBrowser(isBrowser());
-
-        // We are ready for dispatching
-        this.session.add(this);
+        this.consumerInfo.setPrefetchSize(getConfiguredPrefetch(destination, policy));
 
         try {
             this.consumerInfo = session.getConnection().createResource(consumerInfo);
         } catch (JMSException ex) {
-            this.session.remove(this);
             throw ex;
         }
     }
 
     public void init() throws JMSException {
         session.add(this);
-        session.getConnection().startResource(consumerInfo);
+        try {
+            session.getConnection().startResource(consumerInfo);
+        } catch (JMSException ex) {
+            session.remove(this);
+            throw ex;
+        }
     }
 
     public boolean isDurableSubscription() {
@@ -176,6 +180,14 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     public String getMessageSelector() throws JMSException {
         checkClosed();
         return this.consumerInfo.getSelector();
+    }
+
+    /**
+     * Gets the configured prefetch size for this consumer.
+     * @return the prefetch size configuration for this consumer.
+     */
+    public int getPrefetchSize() {
+        return this.consumerInfo.getPrefetchSize();
     }
 
     /**
@@ -277,7 +289,11 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     }
 
     /**
+     * Called from the session when a new Message has been dispatched to this Consumer
+     * from the connection.
+     *
      * @param message
+     *        the newly arrived message.
      */
     @Override
     public void onMessage(final JmsInboundMessageDispatch envelope) {
@@ -321,7 +337,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
      * @return the id
      */
     public JmsConsumerId getConsumerId() {
-        // TODO should we check closed?
         return this.consumerInfo.getConsumerId();
     }
 
@@ -329,7 +344,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
      * @return the Destination
      */
     public JmsDestination getDestination() {
-        // TODO should we check closed?
         return this.consumerInfo.getDestination();
     }
 
@@ -402,6 +416,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     }
 
     protected void onConnectionInterrupted() {
+        messageQueue.clear();
     }
 
     protected void onConnectionRecovery(BlockingProvider provider) throws Exception {
@@ -413,5 +428,24 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     }
 
     protected void onConnectionRestored() {
+    }
+
+    private int getConfiguredPrefetch(JmsDestination destination, JmsPrefetchPolicy policy) {
+        int prefetch = 0;
+        if (destination.isTopic()) {
+            if (isDurableSubscription()) {
+                prefetch = policy.getDurableTopicPrefetch();
+            } else {
+                prefetch = policy.getTopicPrefetch();
+            }
+        } else {
+            if (isBrowser()) {
+                prefetch = policy.getQueueBrowserPrefetch();
+            } else {
+                prefetch = policy.getQueuePrefetch();
+            }
+        }
+
+        return prefetch;
     }
 }

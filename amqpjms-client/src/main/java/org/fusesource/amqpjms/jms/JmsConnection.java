@@ -562,6 +562,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return new JmsSessionId(connectionInfo.getConnectionId(), sessionIdGenerator.incrementAndGet());
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    // Provider interface methods
+    ////////////////////////////////////////////////////////////////////////////
+
     @SuppressWarnings("unchecked")
     <T extends JmsResource> T createResource(T resource) throws JMSException {
         checkClosedOrFailed();
@@ -646,6 +650,22 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             provider.acknowledge(sessionId);
+        } catch (Exception ioe) {
+            throw JmsExceptionSupport.create(ioe);
+        }
+    }
+
+    void unsubscribe(String name) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+
+        // TODO - We don't currently have a way to say that an operation
+        //        should be done asynchronously.  For a some acknowledgments
+        //        we only care that the request hits the wire, not that
+        //        any response comes back.
+
+        try {
+            provider.unsubscribe(name);
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }

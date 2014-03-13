@@ -266,12 +266,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      */
     @Override
     public MessageConsumer createConsumer(Destination destination) throws JMSException {
-        checkClosed();
-        checkDestination(destination);
-        JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
-        JmsMessageConsumer result = new JmsMessageConsumer(getNextConsumerId(), this, dest, "", false);
-        result.init();
-        return result;
+        return createConsumer(destination, null);
     }
 
     /**
@@ -284,13 +279,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      */
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException {
-        checkClosed();
-        checkDestination(destination);
-        messageSelector = checkSelector(messageSelector);
-        JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
-        JmsMessageConsumer result = new JmsMessageConsumer(getNextConsumerId(), this, dest, messageSelector, false);
-        result.init();
-        return result;
+        return createConsumer(destination, messageSelector, false);
     }
 
     /**
@@ -356,11 +345,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      */
     @Override
     public QueueBrowser createBrowser(Queue destination) throws JMSException {
-        checkClosed();
-        checkDestination(destination);
-        JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
-        JmsQueueBrowser result = new JmsQueueBrowser(getNextConsumerId(), this, dest, "");
-        return result;
+        return createBrowser(destination, null);
     }
 
     /**
@@ -388,12 +373,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      */
     @Override
     public TopicSubscriber createSubscriber(Topic topic) throws JMSException {
-        checkClosed();
-        checkDestination(topic);
-        JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
-        JmsTopicSubscriber result = new JmsTopicSubscriber(getNextConsumerId(), this, dest, false, "");
-        result.init();
-        return result;
+        return createSubscriber(topic, null, false);
     }
 
     /**
@@ -426,12 +406,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      */
     @Override
     public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException {
-        checkClosed();
-        checkDestination(topic);
-        JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
-        JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, name, false, "");
-        result.init();
-        return result;
+        return createDurableSubscriber(topic, name, null, false);
     }
 
     /**
@@ -463,9 +438,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public void unsubscribe(String name) throws JMSException {
         checkClosed();
-        // TODO - Ask Provider to un-subscribe a durable subscription name
-        //        The code should find the durable subscriber with this name
-        //        and close if prior to attempting the unsubscrive.
+        this.connection.unsubscribe(name);
     }
 
     //////////////////////////////////////////////////////////////////////////
