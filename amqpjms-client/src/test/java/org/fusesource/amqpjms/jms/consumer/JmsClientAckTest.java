@@ -20,6 +20,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -213,6 +217,58 @@ public class JmsClientAckTest extends AmqpTestSupport {
         Message msg = consumer.receive(2000);
         assertNotNull(msg);
         msg.acknowledge();
+
+        assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return proxy.getQueueSize() == 0;
+            }
+        }));
+
+        connection.close();
+    }
+
+    @Test(timeout=90000)
+    public void testAckMarksAllConsumerMessageAsConsumed() throws Exception {
+        Connection connection = createAmqpConnection();
+        connection.start();
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+
+        final int MSG_COUNT = 30;
+        final AtomicReference<Message> lastMessage = new AtomicReference<Message>();
+        final CountDownLatch done = new CountDownLatch(MSG_COUNT);
+
+        MessageListener myListener = new MessageListener() {
+
+            @Override
+            public void onMessage(Message message) {
+                lastMessage.set(message);
+                done.countDown();
+            }
+        };
+
+        MessageConsumer consumer1 = session.createConsumer(queue);
+        consumer1.setMessageListener(myListener);
+        MessageConsumer consumer2 = session.createConsumer(queue);
+        consumer2.setMessageListener(myListener);
+        MessageConsumer consumer3 = session.createConsumer(queue);
+        consumer3.setMessageListener(myListener);
+
+        MessageProducer producer = session.createProducer(queue);
+        for (int i = 0; i < MSG_COUNT; ++i) {
+            producer.send(session.createTextMessage("Hello: " + i));
+        }
+
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(MSG_COUNT, proxy.getQueueSize());
+
+        assertTrue("Failed to consume all messages.", done.await(20, TimeUnit.SECONDS));
+        assertNotNull(lastMessage.get());
+        assertEquals(MSG_COUNT, proxy.getInFlightCount());
+
+        lastMessage.get().acknowledge();
 
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 

@@ -114,7 +114,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
         configureSource(source);
 
-        endpoint = session.getProtonSession().receiver(subscription);
+        endpoint = session.getProtonSession().receiver(getConsumerId() + ":" + subscription);
         endpoint.setSource(source);
         endpoint.setTarget(target);
         endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
