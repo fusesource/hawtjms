@@ -198,8 +198,8 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             delivered.put(messageId, delivery);
             endpoint.flow(1);
         } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
-            // An Auto Ack consumer won't deliver Ack first it just marks the message
-            // as consumed so we need to increase link credit here for that case.
+            // A Consumer may not always send a delivered ACK so we need to check to
+            // ensure we don't add to much credit to the link.
             if (delivered.remove(messageId) == null) {
                 endpoint.flow(1);
             }
@@ -210,7 +210,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             LOG.warn("Unsupporeted Ack Type for message: {}", messageId);
         }
 
-        // TODO - based on ack mode we might need to ack all previous.
         // TODO - handle the other ack modes, poisoned, redelivered
     }
 
