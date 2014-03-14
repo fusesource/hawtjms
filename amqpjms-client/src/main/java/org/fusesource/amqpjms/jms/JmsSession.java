@@ -678,6 +678,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
         original.setJMSDeliveryMode(deliveryMode);
         original.setJMSPriority(priority);
+        original.setJMSRedelivered(false);
         if (timeToLive > 0) {
             long timeStamp = System.currentTimeMillis();
             original.setJMSTimestamp(timeStamp);
@@ -688,22 +689,25 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         if (!disableMsgId) {
             msgId = getNextMessageId(producer);
         }
-        boolean nativeMessage = original instanceof JmsMessage;
-        if (nativeMessage) {
+
+        boolean isJmsMessageType = original instanceof JmsMessage;
+        if (isJmsMessageType) {
             ((JmsMessage) original).setConnection(connection);
             if (!disableMsgId) {
                 ((JmsMessage) original).setMessageId(msgId);
             }
             original.setJMSDestination(destination);
-        } else {
-            if (!disableMsgId) {
-                original.setJMSMessageID(msgId.toString());
-            }
         }
 
         JmsMessage copy = JmsMessageTransformation.transformMessage(connection, original);
 
-        if (!nativeMessage) {
+        // Ensure original message gets the destination and message ID as per spec.
+        if (!isJmsMessageType) {
+            if (!disableMsgId) {
+                original.setJMSMessageID(msgId.toString());
+                copy.setMessageId(msgId);
+            }
+            original.setJMSDestination(destination);
             copy.setJMSDestination(destination);
         }
 

@@ -41,7 +41,6 @@ import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
 
 import org.fusesource.amqpjms.util.AmqpTestSupport;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -460,7 +459,6 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
     }
 
     // TODO - implement proper handling of foreign JMS Message and Destination types.
-    @Ignore
     @Test
     public void testForeignMessage() throws Exception {
         connection.start();
