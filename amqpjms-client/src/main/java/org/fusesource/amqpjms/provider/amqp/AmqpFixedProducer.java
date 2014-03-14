@@ -22,7 +22,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Source;
@@ -158,14 +157,14 @@ public class AmqpFixedProducer extends AmqpProducer {
         JmsDestination destination = info.getDestination();
 
         String destnationName = session.getQualifiedName(destination);
-        String sourceAddress = UUID.randomUUID().toString();
+        String sourceAddress = getProducerId().toString();
         Source source = new Source();
         source.setAddress(sourceAddress);
         Target target = new Target();
         target.setAddress(destnationName);
         target.setDynamic(isDynamic());
 
-        String senderName = destnationName + "<-" + sourceAddress;
+        String senderName = sourceAddress + ":" + destnationName;
         endpoint = session.getProtonSession().sender(senderName);
         endpoint.setSource(source);
         endpoint.setTarget(target);
