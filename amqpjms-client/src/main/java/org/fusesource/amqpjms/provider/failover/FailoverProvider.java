@@ -656,7 +656,6 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
             LOG.debug("Attempting execution of Failover Task: {}", this);
             requests.put(id, this);
             if (provider == null) {
-                LOG.debug("Provider is offline, should wait? {}", this);
                 if (failureWhenOffline()) {
                     requests.remove(id);
                     watcher.onFailure(new IOException("Provider disconnected"));
