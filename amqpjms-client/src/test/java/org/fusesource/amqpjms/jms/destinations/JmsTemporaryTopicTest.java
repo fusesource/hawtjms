@@ -40,7 +40,7 @@ public class JmsTemporaryTopicTest extends AmqpTestSupport {
     // Temp Topics not yet supported on the Broker.
     @Ignore
     @Test(timeout = 60000)
-    public void testCreateTemporaryQueue() throws Exception {
+    public void testCreateTemporaryTopic() throws Exception {
         Connection connection = createAmqpConnection();
         connection.start();
 
