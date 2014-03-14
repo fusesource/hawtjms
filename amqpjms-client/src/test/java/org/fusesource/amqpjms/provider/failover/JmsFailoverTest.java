@@ -52,7 +52,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
     @Test(timeout=60000)
     public void testFailoverConnects() throws Exception {
-        URI brokerURI = new URI("failover:" + getBrokerAmqpConnectionURI());
+        URI brokerURI = new URI(getAmqpFailoverURI());
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
         connection.close();
@@ -78,8 +78,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
     @Test(timeout=60000)
     public void testStartFailureWithAsyncExceptionListener() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")" +
-                                "?maxReconnectDelay=1000&maxReconnectAttempts=5");
+        URI brokerURI = new URI(getAmqpFailoverURI() + "?maxReconnectDelay=1000&maxReconnectAttempts=5");
 
         final CountDownLatch failed = new CountDownLatch(1);
         JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
@@ -102,7 +101,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
     @SuppressWarnings("unused")
     @Test(timeout=60000)
     public void testBasicStateRestoration() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=1000");
+        URI brokerURI = new URI(getAmqpFailoverURI() + "?maxReconnectDelay=1000");
 
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
@@ -136,7 +135,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
     @SuppressWarnings("unused")
     @Test(timeout=60000)
     public void testDurableSubscriberRestores() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=1000");
+        URI brokerURI = new URI(getAmqpFailoverURI() + "?maxReconnectDelay=1000");
 
         Connection connection = createAmqpConnection(brokerURI);
         connection.setClientID(name.getMethodName());

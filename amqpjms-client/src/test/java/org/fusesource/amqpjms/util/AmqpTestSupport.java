@@ -183,7 +183,6 @@ public class AmqpTestSupport {
         brokers.add(brokerService);
     }
 
-
     public BrokerService restartBroker(BrokerService brokerService) throws Exception {
         String name = brokerService.getBrokerName();
         int amqpPort = brokerService.getTransportConnectorByName("amqp").getConnectUri().getPort();
@@ -227,6 +226,20 @@ public class AmqpTestSupport {
         } catch (URISyntaxException e) {
             throw new RuntimeException();
         }
+    }
+
+    public String getAmqpFailoverURI() throws Exception {
+        StringBuilder uri = new StringBuilder();
+        uri.append("failover://(");
+        uri.append(brokerService.getTransportConnectorByName("amqp").getPublishableConnectString());
+
+        for (BrokerService broker : brokers) {
+            uri.append(broker.getTransportConnectorByName("amqp").getPublishableConnectString());
+        }
+
+        uri.append(")");
+
+        return uri.toString();
     }
 
     public Connection createAmqpConnection() throws Exception {
