@@ -114,7 +114,14 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
         configureSource(source);
 
-        endpoint = session.getProtonSession().receiver(getConsumerId() + ":" + subscription);
+        String receiverName = getConsumerId() + ":" + subscription;
+        if (info.getSubscriptionName() != null && !info.getSubscriptionName().isEmpty()) {
+            // In the case of Durable Topic Subscriptions the client must use the same
+            // receiver name which is derived from the subscription name property.
+            receiverName = info.getSubscriptionName();
+        }
+
+        endpoint = session.getProtonSession().receiver(receiverName);
         endpoint.setSource(source);
         endpoint.setTarget(target);
         endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
@@ -130,7 +137,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             source.setDistributionMode(COPY);
         }
 
-        if (info.getSubscriptionName() != null) {
+        if (info.getSubscriptionName() != null && !info.getSubscriptionName().isEmpty()) {
             source.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
             source.setDurable(TerminusDurability.UNSETTLED_STATE);
             source.setDistributionMode(COPY);
