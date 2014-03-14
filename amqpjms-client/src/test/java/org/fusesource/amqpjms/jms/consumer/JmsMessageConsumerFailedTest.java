@@ -47,7 +47,7 @@ public class JmsMessageConsumerFailedTest extends JmsMessageConsumerClosedTest {
             }
         });
         connection.start();
-        stopBroker();
+        stopPrimaryBroker();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
         return consumer;
     }

@@ -69,7 +69,8 @@ public class AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(AmqpTestSupport.class);
     protected BrokerService brokerService;
-    protected Vector<Throwable> exceptions = new Vector<Throwable>();
+    protected final List<BrokerService> brokers = new ArrayList<BrokerService>();
+    protected final Vector<Throwable> exceptions = new Vector<Throwable>();
     protected int numberOfMessages;
     protected int amqpPort;
     protected int openwirePort;
@@ -77,7 +78,7 @@ public class AmqpTestSupport {
     @Before
     public void setUp() throws Exception {
         exceptions.clear();
-        startBroker();
+        startPrimaryBroker();
         this.numberOfMessages = 2000;
     }
 
@@ -89,16 +90,17 @@ public class AmqpTestSupport {
         return false;
     }
 
-    protected void createBroker(boolean deleteAllMessages) throws Exception {
+    protected BrokerService createBroker(String name, boolean deleteAllMessages, int amqpPort, int openwirePort) throws Exception {
         KahaDBStore kaha = new KahaDBStore();
-        kaha.setDirectory(new File(KAHADB_DIRECTORY));
+        kaha.setDirectory(new File(KAHADB_DIRECTORY + "/" + name));
 
-        brokerService = new BrokerService();
+        BrokerService brokerService = new BrokerService();
+        brokerService.setBrokerName(name);
         brokerService.setPersistent(isPersistent());
         brokerService.setAdvisorySupport(isAdvisorySupport());
         brokerService.setDeleteAllMessagesOnStartup(deleteAllMessages);
         brokerService.setUseJmx(true);
-        brokerService.setDataDirectory("target/");
+        brokerService.setDataDirectory("target/" + name);
         brokerService.setPersistenceAdapter(kaha);
         brokerService.setStoreOpenWireVersion(10);
 
@@ -118,8 +120,10 @@ public class AmqpTestSupport {
             brokerService.setPlugins(plugins.toArray(array));
         }
 
-        addAMQPConnector();
-        addOpenWireConnector();
+        addAMQPConnector(brokerService, amqpPort);
+        addOpenWireConnector(brokerService, openwirePort);
+
+        return brokerService;
     }
 
     protected BrokerPlugin configureAuthentication() throws Exception {
@@ -133,46 +137,80 @@ public class AmqpTestSupport {
         return authenticationPlugin;
     }
 
-    protected void addAMQPConnector() throws Exception {
-        TransportConnector connector = brokerService.addConnector("amqp://0.0.0.0:" + amqpPort);
+    protected void addAMQPConnector(BrokerService brokerService, int port) throws Exception {
+        TransportConnector connector = brokerService.addConnector("amqp://0.0.0.0:" + port);
+        connector.setName("amqp");
         amqpPort = connector.getConnectUri().getPort();
-        LOG.debug("Using amqp port " + amqpPort);
+        LOG.debug("Using amqp port: {}", port);
     }
 
-    protected void addOpenWireConnector() throws Exception {
-        TransportConnector connector = brokerService.addConnector("tcp://0.0.0.0:" + openwirePort);
+    protected void addOpenWireConnector(BrokerService brokerService, int port) throws Exception {
+        TransportConnector connector = brokerService.addConnector("tcp://0.0.0.0:" + port);
+        connector.setName("openwire");
         openwirePort = connector.getConnectUri().getPort();
-        LOG.debug("Using amqp port " + openwirePort);
+        LOG.debug("Using openwire port: {}", port);
     }
 
-    public void startBroker() throws Exception {
-        if (brokerService != null) {
+    public void startPrimaryBroker() throws Exception {
+        if (brokerService != null && brokerService.isStarted()) {
             throw new IllegalStateException("Broker is already created.");
         }
 
-        createBroker(true);
+        brokerService = createBroker("localhost", true, amqpPort, openwirePort);
         brokerService.start();
         brokerService.waitUntilStarted();
     }
 
-    public void restartBroker() throws Exception {
-        stopBroker();
-        createBroker(false);
-        brokerService.start();
-        brokerService.waitUntilStarted();
+    public void restartPrimaryBroker() throws Exception {
+        stopBroker(brokerService);
+        brokerService = restartBroker(brokerService);
     }
 
-    public void stopBroker() throws Exception {
-        if (brokerService != null) {
-            brokerService.stop();
-            brokerService.waitUntilStopped();
-            brokerService = null;
+    public void stopPrimaryBroker() throws Exception {
+        stopBroker(brokerService);
+    }
+
+    public void startNewBroker() throws Exception {
+        int offset = brokers.size() + 1;
+        String brokerName = "localhost" + offset;
+        int amqpPort = this.amqpPort + offset;
+        int openwirePort = this.openwirePort + offset;
+
+        BrokerService brokerService = createBroker(brokerName, true, amqpPort, openwirePort);
+        brokerService.start();
+        brokerService.waitUntilStarted();
+
+        brokers.add(brokerService);
+    }
+
+
+    public BrokerService restartBroker(BrokerService brokerService) throws Exception {
+        String name = brokerService.getBrokerName();
+        int amqpPort = brokerService.getTransportConnectorByName("amqp").getConnectUri().getPort();
+        int openwirePort = brokerService.getTransportConnectorByName("openwire").getConnectUri().getPort();
+
+        stopBroker(brokerService);
+        BrokerService broker = createBroker(name, false, amqpPort, openwirePort);
+        broker.start();
+        broker.waitUntilStarted();
+        return broker;
+    }
+
+    public void stopBroker(BrokerService broker) throws Exception {
+        if (broker != null) {
+            broker.stop();
+            broker.waitUntilStopped();
         }
     }
 
     @After
     public void tearDown() throws Exception {
-        stopBroker();
+        stopPrimaryBroker();
+        for (BrokerService broker : brokers) {
+            try {
+                stopBroker(broker);
+            } catch (Exception ex) {}
+        }
     }
 
     public URI getBrokerAmqpConnectionURI() {
@@ -237,19 +275,25 @@ public class AmqpTestSupport {
     }
 
     protected BrokerViewMBean getProxyToBroker() throws MalformedObjectNameException, JMSException {
-        ObjectName brokerViewMBean = new ObjectName(
-            "org.apache.activemq:type=Broker,brokerName=localhost");
+        return getProxyToBroker(brokerService);
+    }
+
+    protected BrokerViewMBean getProxyToBroker(BrokerService broker) throws MalformedObjectNameException, JMSException {
+        ObjectName brokerViewMBean = broker.getBrokerObjectName();
         BrokerViewMBean proxy = (BrokerViewMBean) brokerService.getManagementContext()
                 .newProxyInstance(brokerViewMBean, BrokerViewMBean.class, true);
         return proxy;
     }
 
     protected ConnectorViewMBean getProxyToConnectionView(String connectionType) throws Exception {
+        return getProxyToConnectionView(connectionType);
+    }
+
+    protected ConnectorViewMBean getProxyToConnectionView(BrokerService broker, String connectionType) throws Exception {
         ObjectName connectorQuery = new ObjectName(
-            "org.apache.activemq:type=Broker,brokerName=localhost,connector=clientConnectors,connectorName="+connectionType+"_//*");
+            broker.getBrokerObjectName() + ",connector=clientConnectors,connectorName="+connectionType+"_//*");
 
         Set<ObjectName> results = brokerService.getManagementContext().queryNames(connectorQuery, null);
-
         if (results == null || results.isEmpty() || results.size() > 1) {
             throw new Exception("Unable to find the exact Connector instance.");
         }
@@ -260,38 +304,50 @@ public class AmqpTestSupport {
     }
 
     protected QueueViewMBean getProxyToQueue(String name) throws MalformedObjectNameException, JMSException {
+        return getProxyToQueue(brokerService, name);
+    }
+
+    protected QueueViewMBean getProxyToQueue(BrokerService broker, String name) throws MalformedObjectNameException, JMSException {
         ObjectName queueViewMBeanName = new ObjectName(
-            "org.apache.activemq:type=Broker,brokerName=localhost," +
-            "destinationType=Queue,destinationName=" + name);
+            broker.getBrokerObjectName() + ",destinationType=Queue,destinationName=" + name);
         QueueViewMBean proxy = (QueueViewMBean) brokerService.getManagementContext()
                 .newProxyInstance(queueViewMBeanName, QueueViewMBean.class, true);
         return proxy;
     }
 
     protected QueueViewMBean getProxyToTemporaryQueue(String name) throws MalformedObjectNameException, JMSException {
+        return getProxyToTemporaryQueue(brokerService, name);
+    }
+
+    protected QueueViewMBean getProxyToTemporaryQueue(BrokerService broker, String name) throws MalformedObjectNameException, JMSException {
         name = JMXSupport.encodeObjectNamePart(name);
         ObjectName queueViewMBeanName = new ObjectName(
-            "org.apache.activemq:type=Broker,brokerName=localhost," +
-            "destinationType=TempQueue,destinationName=" + name);
+            broker.getBrokerObjectName() + ",destinationType=TempQueue,destinationName=" + name);
         QueueViewMBean proxy = (QueueViewMBean) brokerService.getManagementContext()
                 .newProxyInstance(queueViewMBeanName, QueueViewMBean.class, true);
         return proxy;
     }
 
     protected TopicViewMBean getProxyToTopic(String name) throws MalformedObjectNameException, JMSException {
+        return getProxyToTopic(brokerService, name);
+    }
+
+    protected TopicViewMBean getProxyToTopic(BrokerService broker, String name) throws MalformedObjectNameException, JMSException {
         ObjectName topicViewMBeanName = new ObjectName(
-            "org.apache.activemq:type=Broker,brokerName=localhost," +
-            "destinationType=Topic,destinationName=" + name);
+            broker.getBrokerObjectName() + ",destinationType=Topic,destinationName=" + name);
         TopicViewMBean proxy = (TopicViewMBean) brokerService.getManagementContext()
                 .newProxyInstance(topicViewMBeanName, TopicViewMBean.class, true);
         return proxy;
     }
 
     protected TopicViewMBean getProxyToTemporaryTopic(String name) throws MalformedObjectNameException, JMSException {
+        return getProxyToTemporaryTopic(brokerService, name);
+    }
+
+    protected TopicViewMBean getProxyToTemporaryTopic(BrokerService broker, String name) throws MalformedObjectNameException, JMSException {
         name = JMXSupport.encodeObjectNamePart(name);
         ObjectName topicViewMBeanName = new ObjectName(
-            "org.apache.activemq:type=Broker,brokerName=localhost," +
-            "destinationType=TempTopic,destinationName=" + name);
+            broker.getBrokerObjectName() + ",destinationType=TempTopic,destinationName=" + name);
         TopicViewMBean proxy = (TopicViewMBean) brokerService.getManagementContext()
             .newProxyInstance(topicViewMBeanName, TopicViewMBean.class, true);
         return proxy;

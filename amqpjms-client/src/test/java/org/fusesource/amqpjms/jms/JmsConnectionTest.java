@@ -133,7 +133,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
 
-        stopBroker();
+        stopPrimaryBroker();
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
 

@@ -94,7 +94,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         Connection connection = factory.createConnection();
         connection.start();
 
-        stopBroker();
+        stopPrimaryBroker();
 
         assertTrue("No async exception", failed.await(15, TimeUnit.SECONDS));
     }
@@ -115,9 +115,9 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertEquals(1, brokerService.getAdminView().getQueueSubscribers().length);
         assertEquals(1, brokerService.getAdminView().getQueueProducers().length);
 
-        stopBroker();
+        stopPrimaryBroker();
         TimeUnit.SECONDS.sleep(2);
-        startBroker();
+        startPrimaryBroker();
 
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 
@@ -148,9 +148,9 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
         assertEquals(1, brokerService.getAdminView().getDurableTopicSubscribers().length);
 
-        stopBroker();
+        stopPrimaryBroker();
         TimeUnit.SECONDS.sleep(2);
-        startBroker();
+        startPrimaryBroker();
 
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 
@@ -198,9 +198,9 @@ public class JmsFailoverTest extends AmqpTestSupport {
         producerThread.start();
 
         TimeUnit.SECONDS.sleep(3);
-        stopBroker();
+        stopPrimaryBroker();
         TimeUnit.SECONDS.sleep(3);
-        restartBroker();
+        restartPrimaryBroker();
 
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 

@@ -306,12 +306,12 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         }
 
         // After the first restart we should get all messages sent above
-        restartBroker();
+        restartPrimaryBroker();
         int messagesReceived = readAllMessages();
         assertEquals(messagesSent, messagesReceived);
 
         // This time there should be no messages on this queue
-        restartBroker();
+        restartPrimaryBroker();
         messagesReceived = readAllMessages();
         assertEquals(0, messagesReceived);
     }
@@ -338,12 +338,12 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         connection.close();
 
         // After the first restart we should get all messages sent above
-        restartBroker();
+        restartPrimaryBroker();
         int messagesReceived = readAllMessages();
         assertEquals(messagesSent, messagesReceived);
 
         // This time there should be no messages on this queue
-        restartBroker();
+        restartPrimaryBroker();
         messagesReceived = readAllMessages();
         assertEquals(0, messagesReceived);
     }
