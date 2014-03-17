@@ -156,16 +156,12 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *      java.lang.String)
      */
     @Override
-    public TopicConnection createTopicConnection(String userName, String password) throws JMSException {
+    public TopicConnection createTopicConnection(String username, String password) throws JMSException {
         try {
             String connectionId = getConnectionIdGenerator().generateId();
             BlockingProvider provider = createProvider(brokerURI);
             JmsTopicConnection result = new JmsTopicConnection(connectionId, provider, getClientIdGenerator());
-            PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
-            result.setExceptionListener(exceptionListener);
-            result.setUsername(userName);
-            result.setPassword(password);
-            return result;
+            return configureConnection(result, username, password);
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
         }
@@ -189,16 +185,12 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      * @see javax.jms.ConnectionFactory#createConnection(java.lang.String, java.lang.String)
      */
     @Override
-    public Connection createConnection(String userName, String password) throws JMSException {
+    public Connection createConnection(String username, String password) throws JMSException {
         try {
             String connectionId = getConnectionIdGenerator().generateId();
             BlockingProvider provider = createProvider(brokerURI);
             JmsConnection result = new JmsConnection(connectionId, provider, getClientIdGenerator());
-            PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
-            result.setExceptionListener(exceptionListener);
-            result.setUsername(userName);
-            result.setPassword(password);
-            return result;
+            return configureConnection(result, username, password);
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
         }
@@ -223,16 +215,24 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *      java.lang.String)
      */
     @Override
-    public QueueConnection createQueueConnection(String userName, String password) throws JMSException {
+    public QueueConnection createQueueConnection(String username, String password) throws JMSException {
         try {
             String connectionId = getConnectionIdGenerator().generateId();
             BlockingProvider provider = createProvider(brokerURI);
             JmsQueueConnection result = new JmsQueueConnection(connectionId, provider, getClientIdGenerator());
-            PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
-            result.setExceptionListener(exceptionListener);
-            result.setUsername(userName);
-            result.setPassword(password);
-            return result;
+            return configureConnection(result, username, password);
+        } catch (Exception e) {
+            throw JmsExceptionSupport.create(e);
+        }
+    }
+
+    protected <T extends JmsConnection> T configureConnection(T connection, String username, String password) throws JMSException {
+        try {
+            PropertyUtil.setProperties(connection, PropertyUtil.getProperties(this));
+            connection.setExceptionListener(exceptionListener);
+            connection.setUsername(username);
+            connection.setPassword(password);
+            return connection;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
         }
