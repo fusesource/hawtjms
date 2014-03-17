@@ -402,8 +402,6 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
             @Override
             public void run() {
                 try {
-                    JmsSslContext.setCurrentSslContext(sslContext);
-
                     if (firstConnection) {
                         firstConnection = false;
                         FailoverProvider.this.provider = provider;
@@ -467,6 +465,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
                 reconnectAttempts++;
                 try {
+                    JmsSslContext.setCurrentSslContext(sslContext);
                     AsyncProvider provider = ProviderFactory.createAsync(target);
                     initializeNewConnection(provider);
                     return;

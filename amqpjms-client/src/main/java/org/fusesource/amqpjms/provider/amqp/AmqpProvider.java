@@ -491,7 +491,7 @@ public class AmqpProvider implements AsyncProvider {
      */
     protected AmqpTransport createTransport(URI remoteLocation) {
         AmqpTransport result = null;
-        if (remoteLocation.getScheme().equalsIgnoreCase("amqs")) {
+        if (remoteLocation.getScheme().equalsIgnoreCase("amqp")) {
             result = new AmqpTcpTransport(this, remoteLocation);
         } else if (remoteLocation.getScheme().equalsIgnoreCase("amqps")) {
             result = new AmqpSslTransport(this, remoteLocation, sslContext);
