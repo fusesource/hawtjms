@@ -18,8 +18,6 @@ package org.fusesource.amqpjms.provider.amqp;
 
 import java.net.URI;
 
-import javax.net.ssl.SSLContext;
-
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.DefaultBlockingProvider;
@@ -31,12 +29,12 @@ import org.fusesource.amqpjms.provider.ProviderFactory;
 public class AmqpProviderFactory extends ProviderFactory {
 
     @Override
-    public BlockingProvider createProvider(URI remoteURI, SSLContext sslContext) {
+    public BlockingProvider createProvider(URI remoteURI) {
         return new DefaultBlockingProvider(new AmqpProvider(remoteURI));
     }
 
     @Override
-    public AsyncProvider createAsyncProvider(URI remoteURI, SSLContext sslContext) throws Exception {
+    public AsyncProvider createAsyncProvider(URI remoteURI) throws Exception {
         return new AmqpProvider(remoteURI);
     }
 

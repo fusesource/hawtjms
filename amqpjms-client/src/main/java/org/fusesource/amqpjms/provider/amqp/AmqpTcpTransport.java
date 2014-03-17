@@ -69,6 +69,8 @@ public class AmqpTcpTransport implements AmqpTransport {
     public void connect() throws IOException {
         final CountDownLatch connectLatch = new CountDownLatch(1);
 
+        configureNetClient(client);
+
         try {
             client.connect(remoteLocation.getPort(), remoteLocation.getHost(), new AsyncResultHandler<NetSocket>() {
                 @Override
@@ -116,6 +118,7 @@ public class AmqpTcpTransport implements AmqpTransport {
         try {
             connectLatch.await();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
 
         if (connectionError.get() != null) {
@@ -145,15 +148,18 @@ public class AmqpTcpTransport implements AmqpTransport {
         vertx.eventBus().send(socket.writeHandlerID(), sendBuffer);
     }
 
+    /**
+     * Allows a subclass to configure the NetClient beyond what this transport might do.
+     *
+     * @throws IOException if an error occurs.
+     */
+    protected void configureNetClient(NetClient client) throws IOException {
+
+    }
+
     private void checkConnected() throws IOException {
         if (!connected.get()) {
             throw new IOException("Cannot send to a non-connected transport.");
-        }
-    }
-
-    private void checkClosed() throws IOException {
-        if (closed.get()) {
-            throw new IOException("Transport is already closed.");
         }
     }
 }

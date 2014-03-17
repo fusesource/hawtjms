@@ -30,8 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.net.ssl.SSLContext;
-
+import org.fusesource.amqpjms.jms.JmsSslContext;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
@@ -74,7 +73,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     private final AtomicLong requestId = new AtomicLong();
     private final Map<Long, FailoverRequest<?>> requests = new LinkedHashMap<Long, FailoverRequest<?>>();
     private final DefaultProviderListener closedListener = new DefaultProviderListener();
-    private final SSLContext sslContext;
+    private final JmsSslContext sslContext;
 
     // Current state of connection / reconnection
     private boolean firstConnection = true;
@@ -92,16 +91,12 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     private int warnAfterReconnectAttempts = 10;
 
     public FailoverProvider(URI[] uris) {
-        this(uris, null, null);
+        this(uris, null);
     }
 
     public FailoverProvider(URI[] uris, Map<String, String> nestedOptions) {
-        this(uris, nestedOptions, null);
-    }
-
-    public FailoverProvider(URI[] uris, Map<String, String> nestedOptions, SSLContext sslContext) {
         this.uris = new FailoverUriPool(uris, nestedOptions);
-        this.sslContext = sslContext;
+        this.sslContext = JmsSslContext.getCurrentSslContext();
 
         this.serializer = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
@@ -407,6 +402,8 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
             @Override
             public void run() {
                 try {
+                    JmsSslContext.setCurrentSslContext(sslContext);
+
                     if (firstConnection) {
                         firstConnection = false;
                         FailoverProvider.this.provider = provider;
@@ -470,7 +467,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
                 reconnectAttempts++;
                 try {
-                    AsyncProvider provider = ProviderFactory.createAsync(target, sslContext);
+                    AsyncProvider provider = ProviderFactory.createAsync(target);
                     initializeNewConnection(provider);
                     return;
                 } catch (Throwable e) {

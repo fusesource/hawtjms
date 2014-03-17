@@ -30,7 +30,6 @@ import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.jms.TopicConnection;
 import javax.jms.TopicConnectionFactory;
-import javax.net.ssl.SSLContext;
 
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.jndi.JNDIStorable;
@@ -54,7 +53,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private URI localURI;
     private String username;
     private String password;
-    private SSLContext sslContext;
     private boolean forceAsyncSend;
     private boolean omitHost;
     private String queuePrefix = "queue://";
@@ -238,11 +236,11 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         }
     }
 
-    private BlockingProvider createProvider(URI brokerURI) throws Exception {
+    protected BlockingProvider createProvider(URI brokerURI) throws Exception {
         BlockingProvider result = null;
 
         try {
-            result = ProviderFactory.createBlocking(brokerURI, sslContext);
+            result = ProviderFactory.createBlocking(brokerURI);
         } catch (Exception ex) {
             LOG.error("Failed to create JMS Provider instance for: {}", brokerURI.getScheme());
             LOG.trace("Error: ", ex);
@@ -252,7 +250,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         return result;
     }
 
-    private static URI createURI(String name) {
+    protected static URI createURI(String name) {
         if (name != null && name.trim().isEmpty() == false) {
             try {
                 return new URI(name);
@@ -440,14 +438,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     public void setPrefetchPolicy(JmsPrefetchPolicy prefetchPolicy) {
         this.prefetchPolicy = prefetchPolicy;
-    }
-
-    public SSLContext getSslContext() {
-        return sslContext;
-    }
-
-    public void setSslContext(SSLContext sslContext) {
-        this.sslContext = sslContext;
     }
 
     public String getClientIDPrefix() {

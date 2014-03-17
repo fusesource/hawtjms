@@ -34,6 +34,7 @@ import org.apache.qpid.proton.engine.impl.ProtocolTracer;
 import org.apache.qpid.proton.engine.impl.TransportImpl;
 import org.apache.qpid.proton.framing.TransportFrame;
 import org.fusesource.amqpjms.jms.JmsDestination;
+import org.fusesource.amqpjms.jms.JmsSslContext;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
@@ -76,6 +77,7 @@ public class AmqpProvider implements AsyncProvider {
     private static final Logger TRACE_BYTES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".BYTES");
     private static final Logger TRACE_FRAMES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".FRAMES");
 
+    private final JmsSslContext sslContext;
     private final URI remoteURI;
     private AmqpConnection connection;
     private AmqpTransport transport;
@@ -106,6 +108,7 @@ public class AmqpProvider implements AsyncProvider {
      */
     public AmqpProvider(URI remoteURI, Map<String, String> extraOptions) {
         this.remoteURI = remoteURI;
+        this.sslContext = JmsSslContext.getCurrentSslContext();
         updateTracer();
         this.serializer = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
@@ -487,7 +490,14 @@ public class AmqpProvider implements AsyncProvider {
      * @return the newly created transport instance.
      */
     protected AmqpTransport createTransport(URI remoteLocation) {
-        return new AmqpTcpTransport(this, remoteLocation);
+        AmqpTransport result = null;
+        if (remoteLocation.getScheme().equalsIgnoreCase("amqs")) {
+            result = new AmqpTcpTransport(this, remoteLocation);
+        } else if (remoteLocation.getScheme().equalsIgnoreCase("amqps")) {
+            result = new AmqpSslTransport(this, remoteLocation, sslContext);
+        }
+
+        return result;
     }
 
     protected void checkClosed() throws IOException {
