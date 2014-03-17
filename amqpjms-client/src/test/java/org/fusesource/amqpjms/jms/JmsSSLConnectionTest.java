@@ -18,6 +18,12 @@ package org.fusesource.amqpjms.jms;
 
 import static org.junit.Assert.assertNotNull;
 
+import java.net.URI;
+
+import org.apache.activemq.broker.BrokerService;
+import org.apache.activemq.broker.TransportConnector;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -25,9 +31,49 @@ import org.junit.Test;
  */
 public class JmsSSLConnectionTest {
 
+    private BrokerService brokerService;
+
+    public static final String PASSWORD = "password";
+    public static final String KEYSTORE = "src/test/resources/keystore";
+    public static final String KEYSTORE_TYPE = "jks";
+
+    private URI connectionURI;
+
+    @Before
+    public void setUp() throws Exception {
+        System.setProperty("javax.net.ssl.trustStore", KEYSTORE);
+        System.setProperty("javax.net.ssl.trustStorePassword", PASSWORD);
+        System.setProperty("javax.net.ssl.trustStoreType", KEYSTORE_TYPE);
+        System.setProperty("javax.net.ssl.keyStore", KEYSTORE);
+        System.setProperty("javax.net.ssl.keyStorePassword", PASSWORD);
+        System.setProperty("javax.net.ssl.keyStoreType", KEYSTORE_TYPE);
+
+        brokerService = new BrokerService();
+        brokerService.setPersistent(false);
+        brokerService.setAdvisorySupport(false);
+        brokerService.setDeleteAllMessagesOnStartup(true);
+        brokerService.setUseJmx(true);
+
+        TransportConnector connector = brokerService.addConnector("amqp+ssl://localhost:0");
+        brokerService.start();
+        brokerService.waitUntilStarted();
+
+        connectionURI = connector.getPublishableConnectURI();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        brokerService.stop();
+        brokerService.waitUntilStopped();
+    }
+
+    public String getConnectionURI() throws Exception {
+        return "amqps://" + connectionURI.getHost() + ":" + connectionURI.getPort();
+    }
+
     @Test(timeout=30000)
     public void testCreateConnection() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:5673");
+        JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI());
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
         connection.close();
@@ -35,7 +81,7 @@ public class JmsSSLConnectionTest {
 
     @Test(timeout=30000)
     public void testCreateConnectionAndStart() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:5673");
+        JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI());
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
         connection.start();
