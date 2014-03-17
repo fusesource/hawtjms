@@ -369,6 +369,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
      */
     private void handleProviderFailure(final IOException cause) {
         LOG.debug("handling Provider failure: {}", cause.getMessage());
+        LOG.debug("stack", cause);
 
         this.provider.setProviderListener(closedListener);
         try {

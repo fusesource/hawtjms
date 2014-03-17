@@ -48,6 +48,7 @@ import org.fusesource.amqpjms.jms.meta.JmsResourceVistor;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
+import org.fusesource.amqpjms.jms.meta.JmsTransactionInfo;
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.AsyncResult;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
@@ -230,6 +231,13 @@ public class AmqpProvider implements AsyncProvider {
                                 request.onSuccess(destination);
                             }
                         }
+
+                        @Override
+                        public void processTransactionInfo(JmsTransactionInfo transactionInfo) throws Exception {
+                            AmqpSession session = connection.getSession(transactionInfo.getParentId());
+                            AmqpTransaction transaction = session.createTransaction(transactionInfo);
+                            transaction.open(request);
+                        }
                     });
 
                     pumpToProtonTransport();
@@ -301,6 +309,12 @@ public class AmqpProvider implements AsyncProvider {
                         @Override
                         public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
                             connection.close(request);
+                        }
+
+                        @Override
+                        public void processTransactionInfo(JmsTransactionInfo transactionInfo) throws Exception {
+                            // TODO - Rollback any running transactio.
+                            request.onSuccess(null);
                         }
 
                         @Override

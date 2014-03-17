@@ -44,4 +44,8 @@ public class JmsDefaultResourceVisitor implements JmsResourceVistor{
     @Override
     public void processDestination(JmsDestination destination) throws Exception {
     }
+
+    @Override
+    public void processTransactionInfo(JmsTransactionInfo transactionInfo) throws Exception {
+    }
 }

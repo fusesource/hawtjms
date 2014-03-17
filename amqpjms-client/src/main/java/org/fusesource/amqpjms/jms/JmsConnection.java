@@ -60,6 +60,7 @@ import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
+import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderListener;
@@ -104,6 +105,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         new ConcurrentHashMap<JmsDestination, JmsDestination>();
     private final AtomicLong sessionIdGenerator = new AtomicLong();
     private final AtomicLong tempDestIdGenerator = new AtomicLong();
+    private final AtomicLong transactionIdGenerator = new AtomicLong();
 
     protected JmsConnection(String connectionId, BlockingProvider provider, IdGenerator clientIdGenerator) throws JMSException {
 
@@ -562,6 +564,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return new JmsSessionId(connectionInfo.getConnectionId(), sessionIdGenerator.incrementAndGet());
     }
 
+    protected JmsSessionId get() {
+        return new JmsSessionId(connectionInfo.getConnectionId(), sessionIdGenerator.incrementAndGet());
+    }
+
+    protected JmsTransactionId getNextTransactionId() {
+        return new JmsTransactionId(connectionInfo.getConnectionId(), transactionIdGenerator.incrementAndGet());
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Provider interface methods
     ////////////////////////////////////////////////////////////////////////////
@@ -666,6 +676,39 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             provider.unsubscribe(name);
+        } catch (Exception ioe) {
+            throw JmsExceptionSupport.create(ioe);
+        }
+    }
+
+
+    void commit(JmsTransactionId txId) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+
+        // TODO - We don't currently have a way to say that an operation
+        //        should be done asynchronously.  For a some acknowledgments
+        //        we only care that the request hits the wire, not that
+        //        any response comes back.
+
+        try {
+            provider.commit(txId);
+        } catch (Exception ioe) {
+            throw JmsExceptionSupport.create(ioe);
+        }
+    }
+
+    void rollback(JmsTransactionId txId) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+
+        // TODO - We don't currently have a way to say that an operation
+        //        should be done asynchronously.  For a some acknowledgments
+        //        we only care that the request hits the wire, not that
+        //        any response comes back.
+
+        try {
+            provider.rollback(txId);
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
@@ -838,6 +881,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     public boolean isClosed() {
         return this.closed.get();
+    }
+
+    JmsConnectionId getConnectionId() {
+        return this.connectionInfo.getConnectionId();
     }
 
     @Override

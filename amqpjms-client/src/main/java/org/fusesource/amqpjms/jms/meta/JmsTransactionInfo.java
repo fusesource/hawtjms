@@ -18,30 +18,32 @@ package org.fusesource.amqpjms.jms.meta;
 
 public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTransactionInfo> {
 
-    protected final byte type;
-    protected final JmsConnectionId connectionId;
-    protected final JmsTransactionId transactionId;
+    protected final JmsSessionId sessionId;
+    protected JmsTransactionId transactionId;
 
-    public JmsTransactionInfo(JmsConnectionId connectionId, JmsTransactionId transactionId, byte type) {
-        this.connectionId = connectionId;
+    public JmsTransactionInfo(JmsSessionId sessionId, JmsTransactionId transactionId) {
+        this.sessionId = sessionId;
         this.transactionId = transactionId;
-        this.type = type;
     }
 
     public JmsTransactionInfo copy() {
-        return new JmsTransactionInfo(connectionId, transactionId, type);
+        return new JmsTransactionInfo(sessionId, transactionId);
     }
 
-    public JmsConnectionId getConnectionId() {
-        return connectionId;
+    public JmsSessionId getSessionId() {
+        return sessionId;
     }
 
     public JmsTransactionId getTransactionId() {
         return transactionId;
     }
 
-    public byte getType() {
-        return type;
+    public void setTransactionId(JmsTransactionId transactionId) {
+        this.transactionId = transactionId;
+    }
+
+    public JmsSessionId getParentId() {
+        return this.sessionId;
     }
 
     @Override
@@ -78,6 +80,6 @@ public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTran
 
     @Override
     public void visit(JmsResourceVistor visitor) throws Exception {
-        // TODO Auto-generated method stub
+        visitor.processTransactionInfo(this);
     }
 }

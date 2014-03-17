@@ -74,9 +74,10 @@ import org.fusesource.amqpjms.jms.meta.JmsMessageId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
+import org.fusesource.amqpjms.jms.meta.JmsTransactionInfo;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
-import org.fusesource.hawtbuf.AsciiBuffer;
 
 /**
  * JMS Session implementation
@@ -91,7 +92,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private MessageListener messageListener;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
-    private volatile AsciiBuffer currentTransactionId;
+    private final JmsTransactionInfo currentTransaction;
     private boolean forceAsyncSend;
     private final long consumerMessageBufferSize = 1024 * 64;
     private final LinkedBlockingQueue<JmsInboundMessageDispatch> stoppedMessages =
@@ -108,9 +109,22 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         this.acknowledgementMode = acknowledgementMode;
         this.forceAsyncSend = connection.isForceAsyncSend();
         this.prefetchPolicy = new JmsPrefetchPolicy(connection.getPrefetchPolicy());
+
         this.sessionInfo = new JmsSessionInfo(sessionId);
+        this.sessionInfo.setAcknowledgementMode(acknowledgementMode);
 
         this.sessionInfo = connection.createResource(sessionInfo);
+
+        // TODO - This starts to show that create should not really return the object, it should just
+        //        take what we give it and either complain or accept it.
+        if (this.acknowledgementMode == SESSION_TRANSACTED) {
+            JmsTransactionId txId = connection.getNextTransactionId();
+            JmsTransactionInfo transaction = new JmsTransactionInfo(sessionInfo.getSessionId(), txId);
+
+            this.currentTransaction = connection.createResource(transaction);
+        } else {
+            this.currentTransaction = null;
+        }
     }
 
     int acknowledgementMode() {
@@ -157,19 +171,17 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public void commit() throws JMSException {
         checkClosed();
-        throw new UnsupportedOperationException();
 
-        // TODO
-        //   if (!getTransacted()) {
-        //       throw new javax.jms.IllegalStateException("Not a transacted session");
-        //   }
-        //
-        //   for (JmsMessageConsumer c : consumers.values()) {
-        //       c.commit();
-        //   }
-        //
-        //   provider -> commitTransaction(currentTransactionId);
-        //   this.currentTransactionId = provider -> startTransaction();
+        if (!getTransacted()) {
+           throw new javax.jms.IllegalStateException("Not a transacted session");
+        }
+
+        for (JmsMessageConsumer c : consumers.values()) {
+            c.commit();
+        }
+
+        this.connection.commit(this.currentTransaction.getTransactionId());
+        startNextTransaction();
     }
 
     @Override
@@ -178,22 +190,22 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         if (!getTransacted()) {
             throw new javax.jms.IllegalStateException("Not a transacted session");
         }
-        throw new UnsupportedOperationException();
 
-        // TODO
-        //   for (JmsMessageConsumer c : consumers.values()) {
-        //       c.rollback();
-        //   }
-        //   provider -> rollbackTransaction(currentTransactionId);
-        //   this.currentTransactionId = provider -> startTransaction();
-        //   getExecutor().execute(new Runnable() {
-        //       @Override
-        //       public void run() {
-        //           for (JmsMessageConsumer c : consumers.values()) {
-        //               c.drainMessageQueueToListener();
-        //           }
-        //       }
-        //   });
+        for (JmsMessageConsumer c : consumers.values()) {
+            c.rollback();
+        }
+
+        this.connection.rollback(this.currentTransaction.getTransactionId());
+        startNextTransaction();
+
+        getExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                for (JmsMessageConsumer c : consumers.values()) {
+                    c.drainMessageQueueToListener();
+                }
+            }
+        });
     }
 
     @Override
@@ -204,7 +216,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             throw new RuntimeException(e);
         }
 
-        // TODO
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -802,11 +814,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             while ((message = this.stoppedMessages.poll()) != null) {
                 deliver(message);
             }
-            if (getTransacted() && this.currentTransactionId == null) {
-                // TODO
-                //   this.currentTransactionId = provider -> new transaction
-                //   provider -> start transaction
-            }
             for (JmsMessageConsumer consumer : consumers.values()) {
                 consumer.start();
             }
@@ -875,6 +882,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private <T extends JmsMessage> T init(T message) {
         message.setConnection(connection);
         return message;
+    }
+
+    private void startNextTransaction() throws JMSException {
+        this.currentTransaction.setTransactionId(connection.getNextTransactionId());
+        connection.createResource(this.currentTransaction);
     }
 
     boolean isDestinationInUse(JmsDestination destination) {

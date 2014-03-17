@@ -31,6 +31,8 @@ public interface JmsResourceVistor {
 
     void processProducerInfo(JmsProducerInfo producerInfo) throws Exception;
 
+    void processTransactionInfo(JmsTransactionInfo transactionInfo) throws Exception;
+
     void processDestination(JmsDestination destination) throws Exception;
 
 }

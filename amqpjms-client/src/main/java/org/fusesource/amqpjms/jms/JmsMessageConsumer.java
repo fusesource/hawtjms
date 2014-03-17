@@ -369,13 +369,13 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     }
 
     void rollback() {
+        // TODO
         // ((TxMessageQueue) this.messageQueue).rollback();
-        throw new UnsupportedOperationException();
     }
 
     void commit() {
+        // TODO
         // ((TxMessageQueue) this.messageQueue).commit();
-        throw new UnsupportedOperationException();
     }
 
     void drainMessageQueueToListener() {

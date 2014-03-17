@@ -16,6 +16,8 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
+import javax.jms.Session;
+
 public final class JmsSessionInfo implements JmsResource {
 
     private final JmsSessionId sessionId;
@@ -44,5 +46,9 @@ public final class JmsSessionInfo implements JmsResource {
 
     public void setAcknowledgementMode(int acknowledgementMode) {
         this.acknowledgementMode = acknowledgementMode;
+    }
+
+    public boolean isTransacted() {
+        return this.acknowledgementMode == Session.SESSION_TRANSACTED;
     }
 }

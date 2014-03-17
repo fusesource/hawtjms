@@ -29,6 +29,7 @@ import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsTransactionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +38,7 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     private static final Logger LOG = LoggerFactory.getLogger(AmqpSession.class);
 
     private final AmqpConnection connection;
+    private final AmqpTransaction transaction;
 
     private final Map<JmsConsumerId, AmqpConsumer> consumers = new HashMap<JmsConsumerId, AmqpConsumer>();
     private final Map<JmsProducerId, AmqpProducer> producers = new HashMap<JmsProducerId, AmqpProducer>();
@@ -49,6 +51,11 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
         this.connection = connection;
 
         this.info.getSessionId().setProviderHint(this);
+        if (this.info.isTransacted()) {
+            transaction = new AmqpTransaction(this);
+        } else {
+            transaction = null;
+        }
     }
 
     @Override
@@ -105,6 +112,10 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
             return (AmqpConsumer) consumerId.getProviderHint();
         }
         return this.consumers.get(consumerId);
+    }
+
+    public AmqpTransaction createTransaction(JmsTransactionInfo transactionInfo) {
+        return null;
     }
 
     /**
