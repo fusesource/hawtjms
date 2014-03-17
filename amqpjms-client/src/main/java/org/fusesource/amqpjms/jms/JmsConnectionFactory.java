@@ -242,7 +242,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         BlockingProvider result = null;
 
         try {
-            result = ProviderFactory.createBlocking(brokerURI);
+            result = ProviderFactory.createBlocking(brokerURI, sslContext);
         } catch (Exception ex) {
             LOG.error("Failed to create JMS Provider instance for: {}", brokerURI.getScheme());
             LOG.trace("Error: ", ex);

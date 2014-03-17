@@ -30,6 +30,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.net.ssl.SSLContext;
+
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
@@ -72,6 +74,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     private final AtomicLong requestId = new AtomicLong();
     private final Map<Long, FailoverRequest<?>> requests = new LinkedHashMap<Long, FailoverRequest<?>>();
     private final DefaultProviderListener closedListener = new DefaultProviderListener();
+    private final SSLContext sslContext;
 
     // Current state of connection / reconnection
     private boolean firstConnection = true;
@@ -89,11 +92,16 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     private int warnAfterReconnectAttempts = 10;
 
     public FailoverProvider(URI[] uris) {
-        this(uris, null);
+        this(uris, null, null);
     }
 
     public FailoverProvider(URI[] uris, Map<String, String> nestedOptions) {
+        this(uris, nestedOptions, null);
+    }
+
+    public FailoverProvider(URI[] uris, Map<String, String> nestedOptions, SSLContext sslContext) {
         this.uris = new FailoverUriPool(uris, nestedOptions);
+        this.sslContext = sslContext;
 
         this.serializer = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
@@ -462,7 +470,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
                 reconnectAttempts++;
                 try {
-                    AsyncProvider provider = ProviderFactory.createAsync(target);
+                    AsyncProvider provider = ProviderFactory.createAsync(target, sslContext);
                     initializeNewConnection(provider);
                     return;
                 } catch (Throwable e) {

@@ -18,6 +18,8 @@ package org.fusesource.amqpjms.provider;
 
 import java.net.URI;
 
+import javax.net.ssl.SSLContext;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,12 +36,14 @@ public abstract class ProviderFactory {
      *
      * @param remoteURI
      *        The URI used to connect to a remote Broker.
+     * @param sslContext
+     *        the configured SSL Context if the target Provider is SSL capable.
      *
      * @return a new BlockingProvider instance.
      *
      * @throws Exception if an error occurs while creating the Provider instance.
      */
-    public abstract BlockingProvider createProvider(URI remoteURI) throws Exception;
+    public abstract BlockingProvider createProvider(URI remoteURI, SSLContext sslContext) throws Exception;
 
     /**
      * Creates an instance of the given AsyncProvider and configures it using the
@@ -47,12 +51,14 @@ public abstract class ProviderFactory {
      *
      * @param remoteURI
      *        The URI used to connect to a remote Broker.
+     * @param sslContext
+     *        the configured SSL Context if the target Provider is SSL capable.
      *
      * @return a new AsyncProvider instance.
      *
      * @throws Exception if an error occurs while creating the Provider instance.
      */
-    public abstract AsyncProvider createAsyncProvider(URI remoteURI) throws Exception;
+    public abstract AsyncProvider createAsyncProvider(URI remoteURI, SSLContext sslContext) throws Exception;
 
     /**
      * @return the name of this JMS Provider, e.g. STOMP, AMQP, MQTT...etc
@@ -65,17 +71,19 @@ public abstract class ProviderFactory {
      *
      * @param remoteURI
      *        the URI of the remote peer.
+     * @param sslContext
+     *        the configured SSL Context if the target Provider is SSL capable.
      *
      * @return a new BlockingProvider instance that is ready for use.
      *
      * @throws Exception if an error occurs while creating the BlockingProvider instance.
      */
-    public static BlockingProvider createBlocking(URI remoteURI) throws Exception {
+    public static BlockingProvider createBlocking(URI remoteURI, SSLContext sslContext) throws Exception {
         BlockingProvider result = null;
 
         try {
             ProviderFactory factory = ProviderFactoryFinder.findProviderFactory(remoteURI);
-            result = factory.createProvider(remoteURI);
+            result = factory.createProvider(remoteURI, sslContext);
             result.connect();
         } catch (Exception ex) {
             LOG.error("Failed to create BlockingProvider instance for: {}", remoteURI.getScheme());
@@ -92,17 +100,19 @@ public abstract class ProviderFactory {
      *
      * @param remoteURI
      *        the URI of the remote peer.
+     * @param sslContext
+     *        the configured SSL Context if the target Provider is SSL capable.
      *
      * @return a new AsyncProvider instance that is ready for use.
      *
      * @throws Exception if an error occurs while creating the BlockingProvider instance.
      */
-    public static AsyncProvider createAsync(URI remoteURI) throws Exception {
+    public static AsyncProvider createAsync(URI remoteURI, SSLContext sslContext) throws Exception {
         AsyncProvider result = null;
 
         try {
             ProviderFactory factory = ProviderFactoryFinder.findProviderFactory(remoteURI);
-            result = factory.createAsyncProvider(remoteURI);
+            result = factory.createAsyncProvider(remoteURI, sslContext);
             result.connect();
         } catch (Exception ex) {
             LOG.error("Failed to create BlockingProvider instance for: {}", remoteURI.getScheme());

@@ -19,6 +19,8 @@ package org.fusesource.amqpjms.provider.failover;
 import java.net.URI;
 import java.util.Map;
 
+import javax.net.ssl.SSLContext;
+
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.DefaultBlockingProvider;
@@ -33,13 +35,13 @@ import org.fusesource.amqpjms.util.URISupport.CompositeData;
 public class FailoverProviderFactory extends ProviderFactory {
 
     @Override
-    public BlockingProvider createProvider(URI remoteURI) throws Exception {
+    public BlockingProvider createProvider(URI remoteURI, SSLContext sslContext) throws Exception {
 
         CompositeData composite = URISupport.parseComposite(remoteURI);
         Map<String, String> options = composite.getParameters();
         Map<String, String> nested = PropertyUtil.filterProperties(options, "nested.");
 
-        FailoverProvider failover = new FailoverProvider(composite.getComponents(), nested);
+        FailoverProvider failover = new FailoverProvider(composite.getComponents(), nested, sslContext);
         if (!PropertyUtil.setProperties(failover, options)) {
             String msg = ""
                 + " Not all options could be set on the Failover provider."
@@ -55,7 +57,7 @@ public class FailoverProviderFactory extends ProviderFactory {
     }
 
     @Override
-    public AsyncProvider createAsyncProvider(URI remoteURO) throws Exception {
+    public AsyncProvider createAsyncProvider(URI remoteURI, SSLContext sslContext) throws Exception {
         throw new UnsupportedOperationException();
     }
 
