@@ -24,7 +24,6 @@ import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
-import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 
 /**
@@ -102,16 +101,16 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
-    public void commit(JmsTransactionId txId) throws IOException {
+    public void commit(JmsSessionId sessionId) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
-        next.commit(txId, request);
+        next.commit(sessionId, request);
         request.getResponse();
     }
 
     @Override
-    public void rollback(JmsTransactionId txId) throws IOException {
+    public void rollback(JmsSessionId sessionId) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
-        next.rollback(txId, request);
+        next.rollback(sessionId, request);
         request.getResponse();
     }
 

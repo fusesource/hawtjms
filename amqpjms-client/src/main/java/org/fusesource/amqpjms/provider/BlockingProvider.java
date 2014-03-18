@@ -24,7 +24,6 @@ import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
-import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 
 /**
@@ -159,22 +158,22 @@ public interface BlockingProvider {
     /**
      * Called to commit an open transaction.
      *
-     * @param txId
-     *        the transaction id that should be committed.
+     * @param sessionId
+     *        the session that is committing it's current transaction.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void commit(JmsTransactionId txId) throws IOException;
+    void commit(JmsSessionId sessionId) throws IOException;
 
     /**
      * Called to roll back an open transaction.
      *
-     * @param txId
-     *        the transaction id that should be rolled back.
+     * @param sessionId
+     *        the session that is rolling back it's current transaction.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void rollback(JmsTransactionId txId) throws IOException;
+    void rollback(JmsSessionId sessionId) throws IOException;
 
     /**
      * Remove a durable topic subscription by name.

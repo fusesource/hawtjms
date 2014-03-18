@@ -179,7 +179,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             c.commit();
         }
 
-        this.connection.commit(this.currentTxId);
+        this.connection.commit(getSessionId());
         startNextTransaction();
     }
 
@@ -194,7 +194,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             c.rollback();
         }
 
-        this.connection.rollback(this.currentTxId);
+        this.connection.rollback(getSessionId());
         startNextTransaction();
 
         getExecutor().execute(new Runnable() {
@@ -865,6 +865,10 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     protected JmsSessionInfo getSessionInfo() {
         return this.sessionInfo;
+    }
+
+    protected JmsSessionId getSessionId() {
+        return this.sessionInfo.getSessionId();
     }
 
     protected JmsConsumerId getNextConsumerId() {

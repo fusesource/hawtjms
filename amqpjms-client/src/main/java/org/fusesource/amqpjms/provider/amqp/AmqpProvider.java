@@ -47,7 +47,6 @@ import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsResourceVistor;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
-import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionInfo;
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.AsyncResult;
@@ -413,7 +412,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void commit(final JmsTransactionId txId, final AsyncResult<Void> request) throws IOException {
+    public void commit(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -431,7 +430,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void rollback(final JmsTransactionId txId, final AsyncResult<Void> request) throws IOException {
+    public void rollback(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 

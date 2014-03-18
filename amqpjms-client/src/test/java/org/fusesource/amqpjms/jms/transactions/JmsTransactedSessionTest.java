@@ -24,6 +24,7 @@ import javax.jms.Session;
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -43,6 +44,38 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
         assertTrue(session.getTransacted());
 
         session.close();
+        connection.close();
+    }
+
+    @Ignore
+    @Test(timeout = 60000)
+    public void testCommitOnSessionWithNoWork() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        assertNotNull(session);
+        assertTrue(session.getTransacted());
+
+        session.commit();
+        connection.close();
+    }
+
+    @Ignore
+    @Test(timeout = 60000)
+    public void testRollbackOnSessionWithNoWork() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        assertNotNull(session);
+        assertTrue(session.getTransacted());
+
+        session.rollback();
         connection.close();
     }
 }

@@ -36,7 +36,6 @@ import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
-import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.AsyncResult;
 import org.fusesource.amqpjms.provider.DefaultBlockingProvider;
@@ -272,12 +271,12 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     @Override
-    public void commit(final JmsTransactionId txId, AsyncResult<Void> request) throws IOException {
+    public void commit(final JmsSessionId sessionId, AsyncResult<Void> request) throws IOException {
         checkClosed();
         final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
             public void doTask() throws IOException {
-                provider.commit(txId, this);
+                provider.commit(sessionId, this);
             }
 
             @Override
@@ -290,12 +289,12 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     @Override
-    public void rollback(final JmsTransactionId txId, AsyncResult<Void> request) throws IOException {
+    public void rollback(final JmsSessionId sessionId, AsyncResult<Void> request) throws IOException {
         checkClosed();
         final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
             public void doTask() throws IOException {
-                provider.rollback(txId, this);
+                provider.rollback(sessionId, this);
             }
 
             @Override

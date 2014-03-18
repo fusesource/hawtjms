@@ -682,7 +682,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
 
-    void commit(JmsTransactionId txId) throws JMSException {
+    void commit(JmsSessionId sessionId) throws JMSException {
         checkClosedOrFailed();
         connect();
 
@@ -692,13 +692,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         //        any response comes back.
 
         try {
-            provider.commit(txId);
+            provider.commit(sessionId);
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
     }
 
-    void rollback(JmsTransactionId txId) throws JMSException {
+    void rollback(JmsSessionId sessionId) throws JMSException {
         checkClosedOrFailed();
         connect();
 
@@ -708,7 +708,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         //        any response comes back.
 
         try {
-            provider.rollback(txId);
+            provider.rollback(sessionId);
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }

@@ -24,7 +24,6 @@ import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
-import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 
 /**
@@ -159,26 +158,26 @@ public interface AsyncProvider {
     /**
      * Called to commit an open transaction.
      *
-     * @param txId
-     *        the transaction id that should be committed.
+     * @param sessionId
+     *        the Id of the JmsSession that is committing the current transaction.
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void commit(JmsTransactionId txId, AsyncResult<Void> request) throws IOException;
+    void commit(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException;
 
     /**
      * Called to roll back an open transaction.
      *
-     * @param txId
-     *        the transaction id that should be rolled back.
+     * @param sessionId
+     *        the Id of the JmsSession that is rolling back the current transaction.
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void rollback(JmsTransactionId txId, AsyncResult<Void> request) throws IOException;
+    void rollback(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException;
 
     /**
      * Remove a durable topic subscription by name.

@@ -20,11 +20,13 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.BufferOverflowException;
 
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.transaction.Coordinator;
 import org.apache.qpid.proton.amqp.transaction.Declare;
 import org.apache.qpid.proton.amqp.transaction.Declared;
+import org.apache.qpid.proton.amqp.transaction.Discharge;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
@@ -117,6 +119,46 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
         pendingRequest = request;
         current = txId;
 
+        sendTxCommand(message);
+    }
+
+    public void commit(JmsTransactionId txId, AsyncResult<Void> request) throws IOException {
+        if (current != txId) {
+            throw new IOException("Commit called with wrong Transaction Id.");
+        }
+
+        Message message = session.getMessageFactory().createMessage();
+        Discharge discharge = new Discharge();
+        discharge.setFail(false);
+        discharge.setTxnId((Binary) txId.getProviderHint());
+        message.setBody(new AmqpValue(discharge));
+
+        pendingDelivery = endpoint.delivery(getNextTagId());
+        pendingRequest = request;
+        current = txId;
+
+        sendTxCommand(message);
+    }
+
+    public void rollback(JmsTransactionId txId, AsyncResult<Void> request) throws IOException {
+        if (current != txId) {
+            throw new IOException("Rollback called with wrong Transaction Id.");
+        }
+
+        Message message = session.getMessageFactory().createMessage();
+        Discharge discharge = new Discharge();
+        discharge.setFail(true);
+        discharge.setTxnId((Binary) txId.getProviderHint());
+        message.setBody(new AmqpValue(discharge));
+
+        pendingDelivery = endpoint.delivery(getNextTagId());
+        pendingRequest = request;
+        current = txId;
+
+        sendTxCommand(message);
+    }
+
+    private void sendTxCommand(Message message) throws IOException {
         int encodedSize = 0;
         byte[] buffer = new byte[4 * 1024];
         while (true) {
@@ -130,16 +172,6 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
 
         this.endpoint.send(buffer, 0, encodedSize);
         this.endpoint.advance();
-    }
-
-    public void commit(JmsTransactionId txId, AsyncResult<Void> request) throws IOException {
-        // TODO
-        request.onSuccess();
-    }
-
-    public void rollback(JmsTransactionId txId, AsyncResult<Void> request) throws IOException {
-        // TODO
-        request.onSuccess();
     }
 
     public AmqpSession getSession() {
