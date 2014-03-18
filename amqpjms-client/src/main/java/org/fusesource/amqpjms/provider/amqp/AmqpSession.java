@@ -136,6 +136,8 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     public void processUpdates() {
         processPendingLinks();
 
+        processTransactionState();
+
         // Settle any pending deliveries.
         for (AmqpProducer producer : this.producers.values()) {
             producer.processUpdates();
@@ -143,6 +145,12 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
 
         for (AmqpConsumer consumer : this.consumers.values()) {
             consumer.processUpdates();
+        }
+    }
+
+    private void processTransactionState() {
+        if (this.txContext != null) {
+            this.txContext.processUpdates();
         }
     }
 
