@@ -29,7 +29,6 @@ import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
-import org.fusesource.amqpjms.jms.meta.JmsTransactionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +37,7 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     private static final Logger LOG = LoggerFactory.getLogger(AmqpSession.class);
 
     private final AmqpConnection connection;
-    private final AmqpTransaction transaction;
+    private final AmqpTransactionContext txContext;
 
     private final Map<JmsConsumerId, AmqpConsumer> consumers = new HashMap<JmsConsumerId, AmqpConsumer>();
     private final Map<JmsProducerId, AmqpProducer> producers = new HashMap<JmsProducerId, AmqpProducer>();
@@ -52,9 +51,18 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
 
         this.info.getSessionId().setProviderHint(this);
         if (this.info.isTransacted()) {
-            transaction = new AmqpTransaction(this);
+            txContext = new AmqpTransactionContext(this);
         } else {
-            transaction = null;
+            txContext = null;
+        }
+    }
+
+    @Override
+    public void opened() {
+        if (this.txContext != null) {
+            this.txContext.open(openRequest);
+        } else {
+            super.opened();
         }
     }
 
@@ -114,8 +122,8 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
         return this.consumers.get(consumerId);
     }
 
-    public AmqpTransaction createTransaction(JmsTransactionInfo transactionInfo) {
-        return null;
+    public AmqpTransactionContext getTransactionContext() {
+        return this.txContext;
     }
 
     /**
@@ -151,7 +159,7 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
                 if (candidate instanceof AmqpConsumer) {
                     AmqpConsumer consumer = (AmqpConsumer) candidate;
                     consumers.put(consumer.getConsumerId(), consumer);
-                } else {
+                } else if (candidate instanceof AmqpProducer) {
                     AmqpProducer producer = (AmqpProducer) candidate;
                     producers.put(producer.getProducerId(), producer);
                 }
@@ -225,5 +233,10 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
 
     void addPedingLinkClose(AmqpLink link) {
         this.pendingCloseLinks.add(link);
+    }
+
+    @Override
+    public String toString() {
+        return "AmqpSession { " + getSessionId() + " }";
     }
 }

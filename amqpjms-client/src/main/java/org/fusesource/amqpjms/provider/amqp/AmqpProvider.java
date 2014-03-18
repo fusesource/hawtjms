@@ -160,7 +160,7 @@ public class AmqpProvider implements AsyncProvider {
                             serializer.shutdown();
                         }
 
-                        request.onSuccess(null);
+                        request.onSuccess();
                     }
                 }
             });
@@ -235,8 +235,8 @@ public class AmqpProvider implements AsyncProvider {
                         @Override
                         public void processTransactionInfo(JmsTransactionInfo transactionInfo) throws Exception {
                             AmqpSession session = connection.getSession(transactionInfo.getParentId());
-                            AmqpTransaction transaction = session.createTransaction(transactionInfo);
-                            transaction.open(request);
+                            AmqpTransactionContext transaction = session.getTransactionContext();
+                            transaction.begin(transactionInfo.getTransactionId(), request);
                         }
                     });
 
@@ -422,7 +422,7 @@ public class AmqpProvider implements AsyncProvider {
                 try {
                     checkClosed();
                     pumpToProtonTransport();
-                    request.onSuccess(null);
+                    request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -440,7 +440,7 @@ public class AmqpProvider implements AsyncProvider {
                 try {
                     checkClosed();
                     pumpToProtonTransport();
-                    request.onSuccess(null);
+                    request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -458,7 +458,7 @@ public class AmqpProvider implements AsyncProvider {
                 try {
                     checkClosed();
                     pumpToProtonTransport();
-                    request.onSuccess(null);
+                    request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -486,7 +486,7 @@ public class AmqpProvider implements AsyncProvider {
 
                     consumer.pull(timeout);
                     pumpToProtonTransport();
-                    request.onSuccess(null);
+                    request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
                 }

@@ -79,6 +79,11 @@ public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTran
     }
 
     @Override
+    public String toString() {
+        return "JmsTransactionInfo { " + this.transactionId + " }";
+    }
+
+    @Override
     public void visit(JmsResourceVistor visitor) throws Exception {
         visitor.processTransactionInfo(this);
     }

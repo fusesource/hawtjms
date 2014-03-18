@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.jms.JMSSecurityException;
+import javax.jms.Session;
 
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -79,6 +80,8 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         // Create a Session for this connection that is used for Temporary Destinations
         // and perhaps later on management and advisory monitoring.
         JmsSessionInfo sessionInfo = new JmsSessionInfo(this.info, -1);
+        sessionInfo.setAcknowledgementMode(Session.AUTO_ACKNOWLEDGE);
+
         this.connectionSession = new AmqpSession(this, sessionInfo);
     }
 
@@ -108,13 +111,13 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         processSaslHandshake();
 
         if (!connected && isOpen()) {
+            connected = true;
             connectionSession.open(new AsyncResult<Void>() {
 
                 @Override
                 public void onSuccess(Void result) {
                     LOG.debug("AMQP Connection Session opened: {}", result);
                     opened();
-                    connected = true;
                 }
 
                 @Override
