@@ -23,9 +23,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
+import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
@@ -92,6 +94,13 @@ public class AmqpFixedProducer extends AmqpProducer {
 
         if (amqp != null && amqp.getLength() > 0) {
             sendBuffer = new Buffer(amqp.getArray(), amqp.getArrayOffset(), amqp.getLength());
+        }
+
+        if (envelope.getTransactionId() != null) {
+            Binary amqpTxId = (Binary) envelope.getTransactionId().getProviderHint();
+            TransactionalState state = new TransactionalState();
+            state.setTxnId(amqpTxId);
+            delivery.disposition(state);
         }
 
         while (sendBuffer != null) {
