@@ -60,10 +60,10 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
-    public JmsResource create(JmsResource resource) throws IOException {
-        ProviderRequest<JmsResource> request = new ProviderRequest<JmsResource>();
+    public void create(JmsResource resource) throws IOException {
+        ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.create(resource, request);
-        return request.getResponse();
+        request.getResponse();
     }
 
     @Override

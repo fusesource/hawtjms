@@ -64,9 +64,7 @@ public interface AsyncProvider {
      * Create the Provider version of the given JmsResource.
      *
      * For each JMS Resource type the Provider implementation must create it's own internal
-     * representation and upon successful creation provide the caller with a response.  The
-     * response is either a possible updated version of the requested JmsResource instance
-     * with any necessary configuration changes, or an error value indicating what happened.
+     * representation and upon successful creation provide the caller with a response.
      *
      * @param resource
      *        The JmsResouce instance that indicates what is being created.
@@ -75,7 +73,7 @@ public interface AsyncProvider {
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void create(JmsResource resource, AsyncResult<JmsResource> request) throws IOException;
+    void create(JmsResource resource, AsyncResult<Void> request) throws IOException;
 
     /**
      * Starts the Provider version of the given JmsResource.

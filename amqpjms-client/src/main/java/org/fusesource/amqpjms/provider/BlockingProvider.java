@@ -74,17 +74,16 @@ public interface BlockingProvider {
      *
      * For each JMS Resource type the Provider implementation must create it's own internal
      * representation and upon successful creation provide the caller with a response.  The
-     * response is either a possible updated version of the requested JmsResource instance
-     * with any necessary configuration changes, or an error value indicating what happened.
+     * Provider should examine the given JmsResource to determine if the given configuration
+     * is supported or can be simulated, or is not supported in which case an error should be
+     * returned.
      *
      * @param resource
      *        The JmsResouce instance that indicates what is being created.
      *
-     * @return a JmsResource instance configured for the protocol provider.
-     *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    JmsResource create(JmsResource resource) throws IOException;
+    void create(JmsResource resource) throws IOException;
 
     /**
      * Starts the Provider version of the given JmsResource.

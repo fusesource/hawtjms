@@ -23,7 +23,6 @@ import org.apache.qpid.proton.engine.Link;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
-import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.provider.AsyncResult;
 import org.fusesource.amqpjms.util.IdGenerator;
 import org.slf4j.Logger;
@@ -78,10 +77,10 @@ public class AmqpAnonymousProducer extends AmqpProducer {
     }
 
     @Override
-    public void open(AsyncResult<JmsResource> request) {
+    public void open(AsyncResult<Void> request) {
         // Trigger an immediate open, we don't talk to the Broker until
         // a send occurs so we must not let the client block.
-        request.onSuccess(info);
+        request.onSuccess();
     }
 
     @Override
@@ -135,6 +134,11 @@ public class AmqpAnonymousProducer extends AmqpProducer {
             this.envelope = envelope;
         }
 
+        @Override
+        public void onSuccess() {
+            onSuccess(null);
+        }
+
         /**
          * In all cases of the chain of events that make up the send for an anonymous
          * producer a failure will trigger the original send request to fail.
@@ -146,14 +150,14 @@ public class AmqpAnonymousProducer extends AmqpProducer {
         }
     }
 
-    private final class AnonymousOpenRequest extends AnonymousRequest<JmsResource> {
+    private final class AnonymousOpenRequest extends AnonymousRequest<Void> {
 
         public AnonymousOpenRequest(AsyncResult<Void> sendResult, AmqpProducer producer, JmsOutboundMessageDispatch envelope) {
             super(sendResult, producer, envelope);
         }
 
         @Override
-        public void onSuccess(JmsResource result) {
+        public void onSuccess(Void result) {
             LOG.trace("Open phase of anonymous send complete: {} ", getProducerId());
             AnonymousSendRequest send = new AnonymousSendRequest(this);
             try {

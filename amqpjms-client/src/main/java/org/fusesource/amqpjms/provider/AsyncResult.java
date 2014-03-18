@@ -39,4 +39,10 @@ public interface AsyncResult<T> {
      */
     void onSuccess(T result);
 
+    /**
+     * If the operation succeeds the resulting value produced is set to null and
+     * the waiting parties are signaled.
+     */
+    void onSuccess();
+
 }

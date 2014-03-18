@@ -36,7 +36,7 @@ import org.fusesource.amqpjms.provider.AsyncResult;
  */
 public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endpoint> implements AmqpResource {
 
-    protected AsyncResult<JmsResource> openRequest;
+    protected AsyncResult<Void> openRequest;
     protected AsyncResult<Void> closeRequest;
 
     protected E endpoint;
@@ -68,7 +68,7 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
     }
 
     @Override
-    public void open(AsyncResult<JmsResource> request) {
+    public void open(AsyncResult<Void> request) {
         this.openRequest = request;
         doOpen();
         this.endpoint.setContext(this);
@@ -83,7 +83,7 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
     @Override
     public void opened() {
         if (this.openRequest != null) {
-            this.openRequest.onSuccess(info);
+            this.openRequest.onSuccess();
             this.openRequest = null;
         }
     }
@@ -103,7 +103,7 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
     @Override
     public void closed() {
         if (this.closeRequest != null) {
-            this.closeRequest.onSuccess(null);
+            this.closeRequest.onSuccess();
             this.closeRequest = null;
         }
     }

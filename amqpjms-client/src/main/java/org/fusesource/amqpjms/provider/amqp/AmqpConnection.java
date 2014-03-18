@@ -30,7 +30,6 @@ import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Sasl;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
-import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.provider.AsyncResult;
@@ -109,13 +108,18 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         processSaslHandshake();
 
         if (!connected && isOpen()) {
-            connectionSession.open(new AsyncResult<JmsResource>() {
+            connectionSession.open(new AsyncResult<Void>() {
 
                 @Override
-                public void onSuccess(JmsResource result) {
+                public void onSuccess(Void result) {
                     LOG.debug("AMQP Connection Session opened: {}", result);
                     opened();
                     connected = true;
+                }
+
+                @Override
+                public void onSuccess() {
+                    onSuccess(null);
                 }
 
                 @Override

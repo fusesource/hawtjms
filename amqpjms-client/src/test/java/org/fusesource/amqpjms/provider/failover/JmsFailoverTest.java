@@ -159,8 +159,21 @@ public class JmsFailoverTest extends AmqpTestSupport {
             }
         }));
 
-        assertEquals(0, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
-        assertEquals(1, brokerService.getAdminView().getDurableTopicSubscribers().length);
+        assertTrue("Should have no inactive subscribers.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return brokerService.getAdminView().getInactiveDurableTopicSubscribers().length == 0;
+            }
+        }));
+
+        assertTrue("Should have one durable sub.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return brokerService.getAdminView().getDurableTopicSubscribers().length == 1;
+            }
+        }));
 
         connection.close();
     }

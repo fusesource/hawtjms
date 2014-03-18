@@ -16,7 +16,6 @@
  */
 package org.fusesource.amqpjms.provider.amqp;
 
-import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.provider.AsyncResult;
 
 /**
@@ -34,7 +33,7 @@ public interface AmqpResource {
      * @param request
      *        The initiating request that triggered this open call.
      */
-    void open(AsyncResult<JmsResource> request);
+    void open(AsyncResult<Void> request);
 
     /**
      * @return if the resource has moved to the opened state on the remote.

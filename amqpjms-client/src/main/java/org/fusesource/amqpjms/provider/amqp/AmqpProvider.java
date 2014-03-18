@@ -180,7 +180,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void create(final JmsResource resource, final AsyncResult<JmsResource> request) throws IOException {
+    public void create(final JmsResource resource, final AsyncResult<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -228,7 +228,7 @@ public class AmqpProvider implements AsyncProvider {
                                 AmqpTemporaryDestination temporary = connection.createTemporaryDestination(destination);
                                 temporary.open(request);
                             } else {
-                                request.onSuccess(destination);
+                                request.onSuccess();
                             }
                         }
 

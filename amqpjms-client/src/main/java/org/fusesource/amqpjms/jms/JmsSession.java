@@ -92,7 +92,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private MessageListener messageListener;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
-    private final JmsTransactionInfo currentTransaction;
+    private JmsTransactionId currentTxId;
     private boolean forceAsyncSend;
     private final long consumerMessageBufferSize = 1024 * 64;
     private final LinkedBlockingQueue<JmsInboundMessageDispatch> stoppedMessages =
@@ -118,12 +118,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         // TODO - This starts to show that create should not really return the object, it should just
         //        take what we give it and either complain or accept it.
         if (this.acknowledgementMode == SESSION_TRANSACTED) {
-            JmsTransactionId txId = connection.getNextTransactionId();
-            JmsTransactionInfo transaction = new JmsTransactionInfo(sessionInfo.getSessionId(), txId);
-
-            this.currentTransaction = connection.createResource(transaction);
+            currentTxId = connection.getNextTransactionId();
+            JmsTransactionInfo transaction = new JmsTransactionInfo(sessionInfo.getSessionId(), currentTxId);
+            connection.createResource(transaction);
         } else {
-            this.currentTransaction = null;
+            this.currentTxId = null;
         }
     }
 
@@ -180,7 +179,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             c.commit();
         }
 
-        this.connection.commit(this.currentTransaction.getTransactionId());
+        this.connection.commit(this.currentTxId);
         startNextTransaction();
     }
 
@@ -195,7 +194,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             c.rollback();
         }
 
-        this.connection.rollback(this.currentTransaction.getTransactionId());
+        this.connection.rollback(this.currentTxId);
         startNextTransaction();
 
         getExecutor().execute(new Runnable() {
@@ -885,8 +884,9 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     private void startNextTransaction() throws JMSException {
-        this.currentTransaction.setTransactionId(connection.getNextTransactionId());
-        connection.createResource(this.currentTransaction);
+        currentTxId = connection.getNextTransactionId();
+        JmsTransactionInfo transaction = new JmsTransactionInfo(sessionInfo.getSessionId(), currentTxId);
+        connection.createResource(transaction);
     }
 
     boolean isDestinationInUse(JmsDestination destination) {

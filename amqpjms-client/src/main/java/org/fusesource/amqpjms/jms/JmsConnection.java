@@ -576,12 +576,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     // Provider interface methods
     ////////////////////////////////////////////////////////////////////////////
 
-    @SuppressWarnings("unchecked")
     <T extends JmsResource> T createResource(T resource) throws JMSException {
         checkClosedOrFailed();
 
         try {
-            return (T) provider.create(resource);
+            provider.create(resource);
+            return resource;
         } catch (Exception ex) {
             throw JmsExceptionSupport.create(ex);
         }

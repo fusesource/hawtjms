@@ -58,6 +58,11 @@ public class ProviderRequest<T> implements AsyncResult<T> {
         }
     }
 
+    @Override
+    public void onSuccess() {
+        onSuccess(null);
+    }
+
     /**
      * Timed wait for a response to a Provider operation.
      *
