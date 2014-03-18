@@ -45,7 +45,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
     private static final ProtonFactoryLoader<MessageFactory> protonFactoryLoader =
-        new ProtonFactoryLoader<MessageFactory>();
+        new ProtonFactoryLoader<MessageFactory>(MessageFactory.class);
 
     private final URI remoteURI;
     private final Map<JmsSessionId, AmqpSession> sessions = new HashMap<JmsSessionId, AmqpSession>();
