@@ -728,6 +728,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         envelope.setMessage(copy);
         envelope.setProducerId(producer.getProducerId());
         envelope.setDestination(destination);
+        envelope.setTransactionId(currentTxId);
 
         if (sync) {
             this.connection.send(envelope);
