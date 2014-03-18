@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.qpid.proton.engine.Session;
+import org.apache.qpid.proton.message.MessageFactory;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
@@ -225,6 +226,10 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
 
     public Session getProtonSession() {
         return this.endpoint;
+    }
+
+    public MessageFactory getMessageFactory() {
+        return this.connection.getMessageFactory();
     }
 
     void addPedingLinkOpen(AmqpLink link) {

@@ -26,9 +26,11 @@ import java.util.Map;
 import javax.jms.JMSSecurityException;
 import javax.jms.Session;
 
+import org.apache.qpid.proton.ProtonFactoryLoader;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Sasl;
+import org.apache.qpid.proton.message.MessageFactory;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
@@ -42,6 +44,9 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
+    private static final ProtonFactoryLoader<MessageFactory> protonFactoryLoader =
+        new ProtonFactoryLoader<MessageFactory>();
+
     private final URI remoteURI;
     private final Map<JmsSessionId, AmqpSession> sessions = new HashMap<JmsSessionId, AmqpSession>();
     private final Map<JmsDestination, AmqpTemporaryDestination> tempDests = new HashMap<JmsDestination, AmqpTemporaryDestination>();
@@ -49,6 +54,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     private boolean connected;
     private AmqpSaslAuthenticator authenticator;
     private final AmqpSession connectionSession;
+    private final MessageFactory messageFactory = protonFactoryLoader.loadFactory();
 
     private final List<AmqpResource> pendingOpen = new LinkedList<AmqpResource>();
     private final List<AmqpResource> pendingClose = new LinkedList<AmqpResource>();
@@ -302,6 +308,13 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
             return (AmqpSession) sessionId.getProviderHint();
         }
         return this.sessions.get(sessionId);
+    }
+
+    /**
+     * @return the loaded Proton MessageFactory used to create message objects.
+     */
+    public MessageFactory getMessageFactory() {
+        return this.messageFactory;
     }
 }
 

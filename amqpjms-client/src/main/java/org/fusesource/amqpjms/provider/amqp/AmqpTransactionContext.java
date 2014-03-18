@@ -78,13 +78,18 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
     }
 
     public void begin(JmsTransactionId txId, AsyncResult<Void> request) {
+        // TODO
         request.onSuccess();
     }
 
     public void commit(JmsTransactionId txId, AsyncResult<Void> request) {
+        // TODO
+        request.onSuccess();
     }
 
     public void rollback(JmsTransactionId txId, AsyncResult<Void> request) {
+        // TODO
+        request.onSuccess();
     }
 
     public AmqpSession getSession() {
