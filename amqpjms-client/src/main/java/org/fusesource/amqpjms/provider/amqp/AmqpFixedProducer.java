@@ -100,7 +100,9 @@ public class AmqpFixedProducer extends AmqpProducer {
             Binary amqpTxId = (Binary) envelope.getTransactionId().getProviderHint();
             TransactionalState state = new TransactionalState();
             state.setTxnId(amqpTxId);
+            state.setOutcome(Accepted.getInstance());
             delivery.disposition(state);
+            LOG.info("Pending delivery local state is: {}", delivery.getLocalState());
         }
 
         while (sendBuffer != null) {
@@ -146,7 +148,9 @@ public class AmqpFixedProducer extends AmqpProducer {
                 continue;
             }
 
-            if (Accepted.getInstance().equals(state)) {
+            if (state instanceof TransactionalState) {
+                LOG.info("State of delivery is Transacted: {}", state);
+            } else if (state instanceof Accepted) {
                 @SuppressWarnings("unchecked")
                 AsyncResult<Void> request = (AsyncResult<Void>) delivery.getContext();
                 toRemove.add(delivery);
