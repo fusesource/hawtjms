@@ -92,6 +92,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final Object connectLock = new Object();
     private IOException firstFailureError;
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
+    private boolean messagePrioritySupported;
 
     private final ThreadPoolExecutor executor;
 
@@ -813,6 +814,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     public void setPrefetchPolicy(JmsPrefetchPolicy prefetchPolicy) {
         this.prefetchPolicy = prefetchPolicy;
+    }
+
+    public boolean isMessagePrioritySupported() {
+        return messagePrioritySupported;
+    }
+
+    public void setMessagePrioritySupported(boolean messagePrioritySupported) {
+        this.messagePrioritySupported = messagePrioritySupported;
     }
 
     public long getDisconnectTimeout() {

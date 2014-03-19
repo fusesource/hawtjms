@@ -36,7 +36,9 @@ import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
+import org.fusesource.amqpjms.util.FifoMessageQueue;
 import org.fusesource.amqpjms.util.MessageQueue;
+import org.fusesource.amqpjms.util.PriorityMessageQueue;
 
 /**
  * implementation of a JMS Message Consumer
@@ -88,9 +90,12 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
 
         if (acknowledgementMode == Session.SESSION_TRANSACTED) {
             throw new UnsupportedOperationException();
-            //this.messageQueue = new TxMessageQueue(session.consumerMessageBufferSize);
         } else {
-            this.messageQueue = new MessageQueue(session.getConsumerMessageBufferSize());
+            if (connection.isMessagePrioritySupported()) {
+                this.messageQueue = new PriorityMessageQueue();
+            } else {
+                this.messageQueue = new FifoMessageQueue();
+            }
         }
 
         JmsPrefetchPolicy policy = this.connection.getPrefetchPolicy();

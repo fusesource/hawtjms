@@ -94,7 +94,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final AtomicBoolean started = new AtomicBoolean();
     private JmsTransactionId currentTxId;
     private boolean forceAsyncSend;
-    private final long consumerMessageBufferSize = 1024 * 64;
     private final LinkedBlockingQueue<JmsInboundMessageDispatch> stoppedMessages =
         new LinkedBlockingQueue<JmsInboundMessageDispatch>(10000);
     private JmsPrefetchPolicy prefetchPolicy;
@@ -920,10 +919,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     public void setPrefetchPolicy(JmsPrefetchPolicy prefetchPolicy) {
         this.prefetchPolicy = prefetchPolicy;
-    }
-
-    public long getConsumerMessageBufferSize() {
-        return consumerMessageBufferSize;
     }
 
     @Override

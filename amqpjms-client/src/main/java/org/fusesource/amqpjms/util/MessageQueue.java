@@ -16,151 +16,116 @@
  */
 package org.fusesource.amqpjms.util;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 
-public class MessageQueue {
+/**
+ * Queue based storage interface for inbound Messages.
+ */
+public interface MessageQueue {
 
-    protected static class QueueEntry {
-        final JmsInboundMessageDispatch message;
-        final int size;
+    /**
+     * Adds the given message envelope to the end of the Message queue.
+     *
+     * @param envelope
+     *        The in-bound Message envelope to enqueue.
+     */
+    void enqueue(JmsInboundMessageDispatch envelope);
 
-        QueueEntry(JmsInboundMessageDispatch message, int size) {
-            this.message = message;
-            this.size = size;
-        }
-    }
+    /**
+     * Adds the given message envelope to the front of the Message queue.
+     *
+     * @param envelope
+     *        The in-bound Message envelope to enqueue.
+     */
+    void enqueueFirst(JmsInboundMessageDispatch envelope);
 
-    protected final long maxSize;
-    protected final LinkedList<QueueEntry> list = new LinkedList<QueueEntry>();
-    protected boolean closed;
-    protected boolean running;
-    protected long size;
+    /**
+     * @return true if there are no messages in the queue.
+     */
+    boolean isEmpty();
 
-    public MessageQueue(long maxSize) {
-        this.maxSize = maxSize;
-    }
+    /**
+     * Return but do not remove the first element in the Message queue.
+     *
+     * @return the first element in the Queue or null if empty.
+     */
+    JmsInboundMessageDispatch peek();
 
-    public void enqueue(JmsInboundMessageDispatch message) {
-        QueueEntry entry = new QueueEntry(message, 1);
-        synchronized (this) {
-            list.addLast(entry);
-            size += entry.size;
-            this.notify();
-        }
-    }
+    /**
+     * Used to get an enqueued message. The amount of time this method blocks is
+     * based on the timeout value. - if timeout==-1 then it blocks until a
+     * message is received. - if timeout==0 then it it tries to not block at
+     * all, it returns a message if it is available - if timeout>0 then it
+     * blocks up to timeout amount of time. Expired messages will consumed by
+     * this method.
+     *
+     * @return null if we timeout or if the consumer is closed.
+     *
+     * @throws InterruptedException if the wait is interrupted.
+     */
+    JmsInboundMessageDispatch dequeue(long timeout) throws InterruptedException;
 
-    public boolean isEmpty() {
-        synchronized (this) {
-            return list.isEmpty();
-        }
-    }
+    /**
+     * Used to get an enqueued Message if on exists, otherwise returns null.
+     *
+     * @return the next Message in the Queue if one exists, otherwise null.
+     */
+    JmsInboundMessageDispatch dequeueNoWait();
 
-    public JmsInboundMessageDispatch dequeue(long timeout) throws InterruptedException {
-        synchronized (this) {
-            // Wait until the consumer is ready to deliver messages.
-            while (timeout != 0 && !closed && (list.isEmpty() || !running)) {
-                if (timeout == -1) {
-                    this.wait();
-                } else {
-                    this.wait(timeout);
-                    break;
-                }
-            }
-            if (closed || !running || list.isEmpty()) {
-                return null;
-            }
-            QueueEntry entry = list.removeFirst();
-            size -= entry.size;
-            removed(entry);
-            return entry.message;
-        }
-    }
+    /**
+     * Starts the Message Queue.  An non-started Queue will always return null for
+     * any of the Queue accessor methods.
+     */
+    void start();
 
-    public JmsInboundMessageDispatch dequeueNoWait() {
-        synchronized (this) {
-            if (closed || !running || list.isEmpty()) {
-                return null;
-            }
-            QueueEntry entry = list.removeFirst();
-            size -= entry.size;
-            removed(entry);
-            return entry.message;
-        }
-    }
+    /**
+     * Stops the Message Queue.  Messages cannot be read from the Queue when it is in
+     * the stopped state.
+     */
+    void stop();
 
-    protected void removed(QueueEntry entry) {
-    }
+    /**
+     * @return true if the Queue is not in the stopped or closed state.
+     */
+    boolean isRunning();
 
-    public void start() {
-        synchronized (this) {
-            running = true;
-            this.notifyAll();
-        }
-    }
+    /**
+     * Closes the Message Queue.  No messages can be added or removed from the Queue
+     * once it has entered the closed state.
+     */
+    void close();
 
-    public void stop() {
-        synchronized (this) {
-            running = false;
-            this.notifyAll();
-        }
-    }
+    /**
+     * @return true if the Queue has been closed.
+     */
+    boolean isClosed();
 
-    public boolean isRunning() {
-        return running;
-    }
+    /**
+     * Returns the number of Messages currently in the Queue.  This value is only
+     * meaningful at the time of the call as the size of the Queue changes rapidly
+     * as Messages arrive and are consumed.
+     *
+     * @return the current number of Messages in the Queue.
+     */
+    int size();
 
-    public void close() {
-        synchronized (this) {
-            if (!closed) {
-                running = false;
-                closed = true;
-            }
-            this.notifyAll();
-        }
-    }
+    /**
+     * Clears the Queue of any Messages.
+     */
+    void clear();
 
-    public boolean isClosed() {
-        return closed;
-    }
+    /**
+     * Removes and returns all Messages in the Queue.
+     *
+     * @return a List containing all Messages removed from the Queue.
+     */
+    List<JmsInboundMessageDispatch> removeAll();
 
-    public int size() {
-        synchronized (this) {
-            return list.size();
-        }
-    }
+    /**
+     * @return the lock object used to protect against concurrent access.
+     */
+    Object getLock();
 
-    public void clear() {
-        synchronized (this) {
-            list.clear();
-        }
-    }
-
-    public List<JmsInboundMessageDispatch> removeAll() {
-        synchronized (this) {
-            ArrayList<JmsInboundMessageDispatch> rc = new ArrayList<JmsInboundMessageDispatch>(list.size());
-            for (QueueEntry entry : list) {
-                rc.add(entry.message);
-            }
-            list.clear();
-            size = 0;
-            return rc;
-        }
-    }
-
-    @Override
-    public String toString() {
-        synchronized (this) {
-            return list.toString();
-        }
-    }
-
-    public boolean isFull() {
-        synchronized (this) {
-            return this.size >= maxSize;
-        }
-    }
 }

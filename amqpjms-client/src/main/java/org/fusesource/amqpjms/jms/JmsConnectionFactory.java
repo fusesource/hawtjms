@@ -55,6 +55,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String password;
     private boolean forceAsyncSend;
     private boolean omitHost;
+    private boolean messagePrioritySupported = true;
     private String queuePrefix = "queue://";
     private String topicPrefix = "topic://";
     private String tempQueuePrefix = "temp-queue://";
@@ -390,6 +391,23 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     public void setOmitHost(boolean omitHost) {
         this.omitHost = omitHost;
+    }
+
+    /**
+     * @return the messagePrioritySupported configuration option.
+     */
+    public boolean isMessagePrioritySupported() {
+        return this.messagePrioritySupported;
+    }
+
+    /**
+     * Enables message priority support in MessageConsumer instances.  This results
+     * in all prefetched messages being dispatched in priority order.
+     *
+     * @param messagePrioritySupported the messagePrioritySupported to set
+     */
+    public void setMessagePrioritySupported(boolean messagePrioritySupported) {
+        this.messagePrioritySupported = messagePrioritySupported;
     }
 
     public String getQueuePrefix() {
