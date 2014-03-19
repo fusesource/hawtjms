@@ -24,7 +24,6 @@ import javax.jms.Session;
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -62,7 +61,6 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Ignore
     @Test(timeout = 60000)
     public void testRollbackOnSessionWithNoWork() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
