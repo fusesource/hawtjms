@@ -75,6 +75,13 @@ public class AmqpFixedProducer extends AmqpProducer {
         byte[] tag = borrowTag();
         Delivery delivery = endpoint.delivery(tag);
         delivery.setContext(request);
+        if (envelope.getTransactionId() != null) {
+            Binary amqpTxId = (Binary) envelope.getTransactionId().getProviderHint();
+            TransactionalState state = new TransactionalState();
+            state.setTxnId(amqpTxId);
+            state.setOutcome(Accepted.getInstance());
+            delivery.disposition(state);
+        }
 
         JmsMessage message = envelope.getMessage();
         message.setReadOnlyBody(true);
@@ -94,15 +101,6 @@ public class AmqpFixedProducer extends AmqpProducer {
 
         if (amqp != null && amqp.getLength() > 0) {
             sendBuffer = new Buffer(amqp.getArray(), amqp.getArrayOffset(), amqp.getLength());
-        }
-
-        if (envelope.getTransactionId() != null) {
-            Binary amqpTxId = (Binary) envelope.getTransactionId().getProviderHint();
-            TransactionalState state = new TransactionalState();
-            state.setTxnId(amqpTxId);
-            state.setOutcome(Accepted.getInstance());
-            delivery.disposition(state);
-            LOG.info("Pending delivery local state is: {}", delivery.getLocalState());
         }
 
         while (sendBuffer != null) {
