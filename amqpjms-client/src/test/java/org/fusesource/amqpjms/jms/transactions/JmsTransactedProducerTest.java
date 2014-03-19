@@ -18,9 +18,12 @@ package org.fusesource.amqpjms.jms.transactions;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import javax.jms.Connection;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -55,18 +58,24 @@ public class JmsTransactedProducerTest extends AmqpTestSupport {
         connection.close();
     }
 
+    @Ignore
     @Test(timeout = 60000)
     public void testTXProducerCommitsAreQueued() throws Exception {
         final int MSG_COUNT = 10;
         Connection connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Session nonTxSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
 
         for (int i = 0; i < MSG_COUNT; ++i) {
             producer.send(session.createTextMessage());
         }
+
+        MessageConsumer consumer = nonTxSession.createConsumer(queue);
+        Message msg = consumer.receive(5000);
+        assertNull(msg);
 
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         session.commit();
