@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import javax.jms.IllegalStateException;
+
 import org.apache.qpid.proton.engine.Session;
 import org.apache.qpid.proton.message.MessageFactory;
 import org.fusesource.amqpjms.jms.JmsDestination;
@@ -30,6 +32,8 @@ import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerInfo;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
+import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
+import org.fusesource.amqpjms.provider.AsyncResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +129,57 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
 
     public AmqpTransactionContext getTransactionContext() {
         return this.txContext;
+    }
+
+    /**
+     * Begins a new Transaction using the given Transaction Id as the identifier.  The AMQP
+     * binary Transaction Id will be stored in the provider hint value of the given transaction.
+     *
+     * @param txId
+     *        The JMS Framework's assigned Transaction Id for the new TX.
+     * @param request
+     *        The request that will be signaled on completion of this operation.
+     *
+     * @throws Exception if an error occurs while performing the operation.
+     */
+    public void begin(JmsTransactionId txId, AsyncResult<Void> request) throws Exception {
+        if (!this.info.isTransacted()) {
+            throw new IllegalStateException("Non-transacted Session cannot start a TX.");
+        }
+
+        getTransactionContext().begin(txId, request);
+    }
+
+    /**
+     * Commit the currently running Transaction.
+     *
+     * @param request
+     *        The request that will be signaled on completion of this operation.
+     *
+     * @throws Exception if an error occurs while performing the operation.
+     */
+    public void commit(AsyncResult<Void> request) throws Exception {
+        if (!this.info.isTransacted()) {
+            throw new IllegalStateException("Non-transacted Session cannot start a TX.");
+        }
+
+        getTransactionContext().commit(request);
+    }
+
+    /**
+     * Roll back the currently running Transaction
+     *
+     * @param request
+     *        The request that will be signaled on completion of this operation.
+     *
+     * @throws Exception if an error occurs while performing the operation.
+     */
+    public void rollback(AsyncResult<Void> request) throws Exception {
+        if (!this.info.isTransacted()) {
+            throw new IllegalStateException("Non-transacted Session cannot start a TX.");
+        }
+
+        getTransactionContext().rollback(request);
     }
 
     /**

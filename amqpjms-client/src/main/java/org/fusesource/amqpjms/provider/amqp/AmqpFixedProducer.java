@@ -158,6 +158,8 @@ public class AmqpFixedProducer extends AmqpProducer {
             }
         }
 
+        // TODO - Check for and handle endpoint detached state.
+
         pending.removeAll(toRemove);
     }
 

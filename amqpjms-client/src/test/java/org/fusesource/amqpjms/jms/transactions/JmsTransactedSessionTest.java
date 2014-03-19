@@ -47,7 +47,6 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Ignore
     @Test(timeout = 60000)
     public void testCommitOnSessionWithNoWork() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());

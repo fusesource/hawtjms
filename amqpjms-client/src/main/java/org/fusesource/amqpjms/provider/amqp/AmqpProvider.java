@@ -234,8 +234,7 @@ public class AmqpProvider implements AsyncProvider {
                         @Override
                         public void processTransactionInfo(JmsTransactionInfo transactionInfo) throws Exception {
                             AmqpSession session = connection.getSession(transactionInfo.getParentId());
-                            AmqpTransactionContext transaction = session.getTransactionContext();
-                            transaction.begin(transactionInfo.getTransactionId(), request);
+                            session.begin(transactionInfo.getTransactionId(), request);
                         }
                     });
 
@@ -283,7 +282,7 @@ public class AmqpProvider implements AsyncProvider {
             public void run() {
                 try {
                     checkClosed();
-                    resource.visit(new JmsResourceVistor() {
+                    resource.visit(new JmsDefaultResourceVisitor() {
 
                         @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
@@ -308,12 +307,6 @@ public class AmqpProvider implements AsyncProvider {
                         @Override
                         public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
                             connection.close(request);
-                        }
-
-                        @Override
-                        public void processTransactionInfo(JmsTransactionInfo transactionInfo) throws Exception {
-                            // TODO - Rollback any running transactio.
-                            request.onSuccess(null);
                         }
 
                         @Override
@@ -420,8 +413,9 @@ public class AmqpProvider implements AsyncProvider {
             public void run() {
                 try {
                     checkClosed();
+                    AmqpSession session = connection.getSession(sessionId);
+                    session.commit(request);
                     pumpToProtonTransport();
-                    request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -438,8 +432,9 @@ public class AmqpProvider implements AsyncProvider {
             public void run() {
                 try {
                     checkClosed();
+                    AmqpSession session = connection.getSession(sessionId);
+                    session.rollback(request);
                     pumpToProtonTransport();
-                    request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
                 }

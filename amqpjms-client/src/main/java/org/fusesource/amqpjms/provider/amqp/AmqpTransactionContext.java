@@ -20,8 +20,13 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.BufferOverflowException;
 
+import javax.jms.IllegalStateException;
+import javax.jms.TransactionRolledBackException;
+
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
+import org.apache.qpid.proton.amqp.messaging.Rejected;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.transaction.Coordinator;
 import org.apache.qpid.proton.amqp.transaction.Declare;
@@ -80,9 +85,44 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
                 current.setProviderHint(declared.getTxnId());
                 pendingDelivery.settle();
                 LOG.info("New TX started: {}", current.getProviderHint());
-                pendingRequest.onSuccess();
+                AsyncResult<Void> request = this.pendingRequest;
+                this.pendingRequest = null;
+                this.pendingDelivery = null;
+                request.onSuccess();
+            } else if (state instanceof Accepted) {
+                LOG.info("Last TX request succeeded: {}", current.getProviderHint());
+                pendingDelivery.settle();
+                AsyncResult<Void> request = this.pendingRequest;
+                this.current = null;
+                this.pendingRequest = null;
+                this.pendingDelivery = null;
+                request.onSuccess();
+            } else if (state instanceof Rejected) {
+                LOG.info("Last TX request failed: {}", current.getProviderHint());
+                pendingDelivery.settle();
+                Rejected rejected = (Rejected) state;
+                TransactionRolledBackException ex =
+                    new TransactionRolledBackException(rejected.getError().getDescription());
+                AsyncResult<Void> request = this.pendingRequest;
+                this.current = null;
+                this.pendingRequest = null;
+                this.pendingDelivery = null;
+                request.onFailure(ex);
             }
+        } else if (pendingDelivery != null && pendingDelivery.remotelySettled()) {
+            // Case where remote settles but doesn't tag as Accepted.
+            LOG.debug("Delivery remotely settled: {}", pendingDelivery.remotelySettled());
+            LOG.info("Last TX request succeeded: {}", current.getProviderHint());
+            pendingDelivery.settle();
+            AsyncResult<Void> request = this.pendingRequest;
+            this.current = null;
+            this.pendingRequest = null;
+            this.pendingDelivery = null;
+            request.onSuccess();
         }
+
+        // TODO check for and handle endpoint detached state.
+        //endpoint.getRemoteState().equals(EndpointState.CLOSED);
     }
 
     @Override
@@ -106,7 +146,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
         this.session.addPedingLinkClose(this);
     }
 
-    public void begin(JmsTransactionId txId, AsyncResult<Void> request) throws IOException {
+    public void begin(JmsTransactionId txId, AsyncResult<Void> request) throws Exception {
         if (current != null) {
             throw new IOException("Begin called while a TX is still Active.");
         }
@@ -122,38 +162,36 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
         sendTxCommand(message);
     }
 
-    public void commit(JmsTransactionId txId, AsyncResult<Void> request) throws IOException {
-        if (current != txId) {
-            throw new IOException("Commit called with wrong Transaction Id.");
+    public void commit(AsyncResult<Void> request) throws Exception {
+        if (current == null) {
+            throw new IllegalStateException("Rollback called with no active Transaction.");
         }
 
         Message message = session.getMessageFactory().createMessage();
         Discharge discharge = new Discharge();
         discharge.setFail(false);
-        discharge.setTxnId((Binary) txId.getProviderHint());
+        discharge.setTxnId((Binary) current.getProviderHint());
         message.setBody(new AmqpValue(discharge));
 
         pendingDelivery = endpoint.delivery(getNextTagId());
         pendingRequest = request;
-        current = txId;
 
         sendTxCommand(message);
     }
 
-    public void rollback(JmsTransactionId txId, AsyncResult<Void> request) throws IOException {
-        if (current != txId) {
-            throw new IOException("Rollback called with wrong Transaction Id.");
+    public void rollback(AsyncResult<Void> request) throws Exception {
+        if (current == null) {
+            throw new IllegalStateException("Rollback called with no active Transaction.");
         }
 
         Message message = session.getMessageFactory().createMessage();
         Discharge discharge = new Discharge();
         discharge.setFail(true);
-        discharge.setTxnId((Binary) txId.getProviderHint());
+        discharge.setTxnId((Binary) current.getProviderHint());
         message.setBody(new AmqpValue(discharge));
 
         pendingDelivery = endpoint.delivery(getNextTagId());
         pendingRequest = request;
-        current = txId;
 
         sendTxCommand(message);
     }
