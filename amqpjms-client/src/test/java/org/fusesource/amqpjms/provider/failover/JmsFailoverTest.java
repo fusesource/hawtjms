@@ -76,6 +76,15 @@ public class JmsFailoverTest extends AmqpTestSupport {
         connection.start();
     }
 
+    @Test(timeout=60000, expected=JMSException.class)
+    public void testStartupReconnectAttemptsMultipleHosts() throws Exception {
+        URI brokerURI = new URI("failover://(amqp://localhost:61616,amqp://localhost:61617)" +
+                                "?maxReconnectDelay=1000&startupMaxReconnectAttempts=5");
+        JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
+        Connection connection = factory.createConnection();
+        connection.start();
+    }
+
     @Test(timeout=60000)
     public void testStartFailureWithAsyncExceptionListener() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI() + "?maxReconnectDelay=1000&maxReconnectAttempts=5");
