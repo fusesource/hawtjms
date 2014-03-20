@@ -24,7 +24,6 @@ import javax.jms.IllegalStateException;
 import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.proton.amqp.Binary;
-import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
 import org.apache.qpid.proton.amqp.messaging.Source;
@@ -78,7 +77,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
 
     @Override
     public void processUpdates() {
-        if (pendingDelivery != null && pendingDelivery.getRemoteState() != null) {
+        if (pendingDelivery != null && pendingDelivery.remotelySettled()) {
             DeliveryState state = pendingDelivery.getRemoteState();
             if (state instanceof Declared) {
                 Declared declared = (Declared) state;
@@ -86,14 +85,6 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
                 pendingDelivery.settle();
                 LOG.info("New TX started: {}", current.getProviderHint());
                 AsyncResult<Void> request = this.pendingRequest;
-                this.pendingRequest = null;
-                this.pendingDelivery = null;
-                request.onSuccess();
-            } else if (state instanceof Accepted) {
-                LOG.info("Last TX request succeeded: {}", current.getProviderHint());
-                pendingDelivery.settle();
-                AsyncResult<Void> request = this.pendingRequest;
-                this.current = null;
                 this.pendingRequest = null;
                 this.pendingDelivery = null;
                 request.onSuccess();
@@ -108,17 +99,15 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
                 this.pendingRequest = null;
                 this.pendingDelivery = null;
                 request.onFailure(ex);
+            } else {
+                LOG.info("Last TX request succeeded: {}", current.getProviderHint());
+                pendingDelivery.settle();
+                AsyncResult<Void> request = this.pendingRequest;
+                this.current = null;
+                this.pendingRequest = null;
+                this.pendingDelivery = null;
+                request.onSuccess();
             }
-        } else if (pendingDelivery != null && pendingDelivery.remotelySettled()) {
-            // Case where remote settles but doesn't tag as Accepted.
-            LOG.debug("Delivery remotely settled: {}", pendingDelivery.remotelySettled());
-            LOG.info("Last TX request succeeded: {}", current.getProviderHint());
-            pendingDelivery.settle();
-            AsyncResult<Void> request = this.pendingRequest;
-            this.current = null;
-            this.pendingRequest = null;
-            this.pendingDelivery = null;
-            request.onSuccess();
         }
 
         // TODO check for and handle endpoint detached state.
