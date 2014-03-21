@@ -118,7 +118,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testConnectionExceptionBrokerStop() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         Connection connection = createAmqpConnection();

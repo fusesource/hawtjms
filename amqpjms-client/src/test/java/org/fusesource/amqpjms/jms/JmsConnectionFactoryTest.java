@@ -51,14 +51,14 @@ public class JmsConnectionFactoryTest extends AmqpTestSupport {
         return new URI(getBadProviderAddress());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testConnectionFactoryCreate() {
         JmsConnectionFactory factory = new JmsConnectionFactory();
         assertNull(factory.getUsername());
         assertNull(factory.getPassword());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testConnectionFactoryCreateUsernameAndPassword() {
         JmsConnectionFactory factory = new JmsConnectionFactory(username, password);
         assertNotNull(factory.getUsername());
@@ -79,7 +79,7 @@ public class JmsConnectionFactoryTest extends AmqpTestSupport {
         factory.createConnection();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testCreateConnectionGoodProviderURI() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getGoodProviderAddressURI());
         Connection connection = factory.createConnection();
@@ -87,7 +87,7 @@ public class JmsConnectionFactoryTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testCreateConnectionGoodProviderString() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getGoodProviderAddress());
         Connection connection = factory.createConnection();
@@ -95,7 +95,7 @@ public class JmsConnectionFactoryTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testUriOptionsApplied() throws Exception {
         String uri = getGoodProviderAddress() + "?jms.omitHost=true&jms.forceAsyncSend=true";
         JmsConnectionFactory factory = new JmsConnectionFactory(uri);
