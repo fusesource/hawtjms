@@ -16,12 +16,9 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
-public class JmsConnectionId implements JmsResourceId, Comparable<JmsConnectionId> {
+public class JmsConnectionId extends JmsAbstractResourceId implements Comparable<JmsConnectionId> {
 
     private final String value;
-
-    private transient Object hint;
-    private transient Object providerId;
 
     public JmsConnectionId(String connectionId) {
         this.value = connectionId;
@@ -49,7 +46,10 @@ public class JmsConnectionId implements JmsResourceId, Comparable<JmsConnectionI
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        if (hashCode == 0) {
+            hashCode = value.hashCode();
+        }
+        return hashCode;
     }
 
     @Override
@@ -72,25 +72,5 @@ public class JmsConnectionId implements JmsResourceId, Comparable<JmsConnectionI
     @Override
     public int compareTo(JmsConnectionId o) {
         return value.compareTo(o.value);
-    }
-
-    @Override
-    public void setProviderHint(Object hint) {
-        this.hint = hint;
-    }
-
-    @Override
-    public Object getProviderHint() {
-        return this.hint;
-    }
-
-    @Override
-    public Object getProviderId() {
-        return providerId;
-    }
-
-    @Override
-    public void setProviderId(Object providerId) {
-        this.providerId = providerId;
     }
 }

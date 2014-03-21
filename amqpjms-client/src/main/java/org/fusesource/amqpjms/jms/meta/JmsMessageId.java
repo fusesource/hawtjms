@@ -20,16 +20,13 @@ package org.fusesource.amqpjms.jms.meta;
 /**
  * JMS Message Id class used to uniquely identify messages for the JMS Framework.
  */
-public class JmsMessageId implements Comparable<JmsMessageId>, JmsResourceId {
+public class JmsMessageId extends JmsAbstractResourceId implements Comparable<JmsMessageId> {
 
     protected String textView;
     protected JmsProducerId producerId;
     protected long producerSequenceId;
 
     private transient String key;
-    private transient int hashCode;
-    private transient Object providerHint;
-    private transient Object providerId;
 
     public JmsMessageId(JmsProducerInfo producerInfo, long producerSequenceId) {
         this.producerId = producerInfo.getProducerId();
@@ -162,25 +159,5 @@ public class JmsMessageId implements Comparable<JmsMessageId>, JmsResourceId {
 
     public void setProducerSequenceId(long producerSequenceId) {
         this.producerSequenceId = producerSequenceId;
-    }
-
-    @Override
-    public void setProviderHint(Object hint) {
-        this.providerHint = hint;
-    }
-
-    @Override
-    public Object getProviderHint() {
-        return this.providerHint;
-    }
-
-    @Override
-    public Object getProviderId() {
-        return providerId;
-    }
-
-    @Override
-    public void setProviderId(Object providerId) {
-        this.providerId = providerId;
     }
 }

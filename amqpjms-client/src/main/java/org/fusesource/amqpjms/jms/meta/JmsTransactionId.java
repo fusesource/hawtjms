@@ -16,15 +16,12 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
-public final class JmsTransactionId implements JmsResourceId, Comparable<JmsTransactionId> {
+public final class JmsTransactionId extends JmsAbstractResourceId implements Comparable<JmsTransactionId> {
 
     private final JmsConnectionId connectionId;
     private final long value;
-    private Object providerHint;
 
     private transient String transactionKey;
-    private transient int hashCode;
-    private transient Object providerId;
 
     public JmsTransactionId(JmsConnectionId connectionId, long transactionId) {
         this.connectionId = connectionId;
@@ -80,25 +77,5 @@ public final class JmsTransactionId implements JmsResourceId, Comparable<JmsTran
 
     public JmsConnectionId getConnectionId() {
         return connectionId;
-    }
-
-    @Override
-    public void setProviderHint(Object hint) {
-        this.providerHint = hint;
-    }
-
-    @Override
-    public Object getProviderHint() {
-        return this.providerHint;
-    }
-
-    @Override
-    public Object getProviderId() {
-        return providerId;
-    }
-
-    @Override
-    public void setProviderId(Object providerId) {
-        this.providerId = providerId;
     }
 }

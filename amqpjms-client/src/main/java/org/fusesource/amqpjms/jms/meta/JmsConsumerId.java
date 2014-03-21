@@ -16,17 +16,14 @@
  */
 package org.fusesource.amqpjms.jms.meta;
 
-public final class JmsConsumerId implements JmsResourceId, Comparable<JmsConsumerId> {
+public final class JmsConsumerId extends JmsAbstractResourceId implements Comparable<JmsConsumerId> {
 
     private final String connectionId;
     private final long sessionId;
     private final long value;
 
-    private transient int hashCode;
     private transient String key;
     private transient JmsSessionId parentId;
-    private transient Object hint;
-    private transient Object providerId;
 
     public JmsConsumerId(String str) throws IllegalArgumentException {
         if (str != null){
@@ -113,25 +110,5 @@ public final class JmsConsumerId implements JmsResourceId, Comparable<JmsConsume
     @Override
     public int compareTo(JmsConsumerId other) {
         return toString().compareTo(other.toString());
-    }
-
-    @Override
-    public void setProviderHint(Object hint) {
-        this.hint = hint;
-    }
-
-    @Override
-    public Object getProviderHint() {
-        return this.hint;
-    }
-
-    @Override
-    public Object getProviderId() {
-        return providerId;
-    }
-
-    @Override
-    public void setProviderId(Object providerId) {
-        this.providerId = providerId;
     }
 }
