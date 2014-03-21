@@ -45,4 +45,24 @@ public class JmsConnectionCloseVariationsTest extends AmqpTestSupport {
         stopPrimaryBroker();
         connection.close();
     }
+
+    @Test(timeout=60000)
+    public void testCloseBeforeBrokerStopped() throws Exception {
+        doTestConnectionClosedBeforeBrokerStopped();
+    }
+
+    @Test(timeout=90000)
+    public void testCloseBeforeBrokerStoppedRepeated() throws Exception {
+        for (int i = 0; i < 50; ++i) {
+            doTestConnectionClosedBeforeBrokerStopped();
+            restartPrimaryBroker();
+        }
+    }
+
+    private void doTestConnectionClosedBeforeBrokerStopped() throws Exception {
+        Connection connection = createAmqpConnection();
+        connection.start();
+        connection.close();
+        stopPrimaryBroker();
+    }
 }
