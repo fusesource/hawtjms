@@ -16,8 +16,6 @@
  */
 package org.fusesource.amqpjms.jms;
 
-import org.junit.Ignore;
-
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
@@ -31,7 +29,6 @@ import javax.jms.Session;
 /**
  * Tests the Session method contracts when the underlying connection is lost.
  */
-@Ignore("See https://github.com/fusesource/amqpjms/issues/1")
 public class JmsSessionFailedTest extends JmsSessionClosedTest {
 
     @Override
