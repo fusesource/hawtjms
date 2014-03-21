@@ -26,6 +26,7 @@ public final class JmsProducerId implements JmsResourceId, Comparable<JmsProduce
     private transient String key;
     private transient JmsSessionId parentId;
     private transient Object hint;
+    private transient Object providerId;
 
     public JmsProducerId(JmsSessionId sessionId, long producerId) {
         this.connectionId = sessionId.getConnectionId();
@@ -128,5 +129,15 @@ public final class JmsProducerId implements JmsResourceId, Comparable<JmsProduce
     @Override
     public Object getProviderHint() {
         return this.hint;
+    }
+
+    @Override
+    public Object getProviderId() {
+        return providerId;
+    }
+
+    @Override
+    public void setProviderId(Object providerId) {
+        this.providerId = providerId;
     }
 }

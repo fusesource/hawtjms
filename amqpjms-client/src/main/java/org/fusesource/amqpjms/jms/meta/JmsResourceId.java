@@ -31,10 +31,26 @@ public interface JmsResourceId {
     void setProviderHint(Object hint);
 
     /**
-     * Return the previously store Provider hint object.
+     * Return the previously stored Provider hint object.
      *
      * @return the previously stored Provider hint object.
      */
     Object getProviderHint();
+
+    /**
+     * Allows a provider to set it's own internal Id object for this resource
+     * in the case where the JMS framework Id cannot be used directly by the
+     * Provider implementation.
+     *
+     * @param id
+     */
+    void setProviderId(Object id);
+
+    /**
+     * Returns the previously stored Provider Id value.
+     *
+     * @return the previously stored Provider Id value.
+     */
+    Object getProviderId();
 
 }

@@ -25,6 +25,7 @@ public final class JmsSessionId implements JmsResourceId, Comparable<JmsSessionI
     protected transient String key;
     protected transient JmsConnectionId parentId;
     protected transient Object hint;
+    protected transient Object providerId;
 
     public JmsSessionId(String connectionId, long value) {
         this.connectionId = connectionId;
@@ -108,5 +109,15 @@ public final class JmsSessionId implements JmsResourceId, Comparable<JmsSessionI
     @Override
     public Object getProviderHint() {
         return this.hint;
+    }
+
+    @Override
+    public Object getProviderId() {
+        return providerId;
+    }
+
+    @Override
+    public void setProviderId(Object providerId) {
+        this.providerId = providerId;
     }
 }

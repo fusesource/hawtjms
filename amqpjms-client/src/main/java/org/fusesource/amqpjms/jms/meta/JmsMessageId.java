@@ -29,6 +29,7 @@ public class JmsMessageId implements Comparable<JmsMessageId>, JmsResourceId {
     private transient String key;
     private transient int hashCode;
     private transient Object providerHint;
+    private transient Object providerId;
 
     public JmsMessageId(JmsProducerInfo producerInfo, long producerSequenceId) {
         this.producerId = producerInfo.getProducerId();
@@ -171,5 +172,15 @@ public class JmsMessageId implements Comparable<JmsMessageId>, JmsResourceId {
     @Override
     public Object getProviderHint() {
         return this.providerHint;
+    }
+
+    @Override
+    public Object getProviderId() {
+        return providerId;
+    }
+
+    @Override
+    public void setProviderId(Object providerId) {
+        this.providerId = providerId;
     }
 }

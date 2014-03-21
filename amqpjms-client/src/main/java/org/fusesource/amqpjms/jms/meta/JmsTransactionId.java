@@ -24,6 +24,7 @@ public final class JmsTransactionId implements JmsResourceId, Comparable<JmsTran
 
     private transient String transactionKey;
     private transient int hashCode;
+    private transient Object providerId;
 
     public JmsTransactionId(JmsConnectionId connectionId, long transactionId) {
         this.connectionId = connectionId;
@@ -89,5 +90,15 @@ public final class JmsTransactionId implements JmsResourceId, Comparable<JmsTran
     @Override
     public Object getProviderHint() {
         return this.providerHint;
+    }
+
+    @Override
+    public Object getProviderId() {
+        return providerId;
+    }
+
+    @Override
+    public void setProviderId(Object providerId) {
+        this.providerId = providerId;
     }
 }

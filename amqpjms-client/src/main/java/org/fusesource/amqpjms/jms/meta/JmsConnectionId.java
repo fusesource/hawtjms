@@ -21,6 +21,7 @@ public class JmsConnectionId implements JmsResourceId, Comparable<JmsConnectionI
     private final String value;
 
     private transient Object hint;
+    private transient Object providerId;
 
     public JmsConnectionId(String connectionId) {
         this.value = connectionId;
@@ -81,5 +82,15 @@ public class JmsConnectionId implements JmsResourceId, Comparable<JmsConnectionI
     @Override
     public Object getProviderHint() {
         return this.hint;
+    }
+
+    @Override
+    public Object getProviderId() {
+        return providerId;
+    }
+
+    @Override
+    public void setProviderId(Object providerId) {
+        this.providerId = providerId;
     }
 }

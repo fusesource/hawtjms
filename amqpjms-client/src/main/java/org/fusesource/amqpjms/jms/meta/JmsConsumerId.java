@@ -26,6 +26,7 @@ public final class JmsConsumerId implements JmsResourceId, Comparable<JmsConsume
     private transient String key;
     private transient JmsSessionId parentId;
     private transient Object hint;
+    private transient Object providerId;
 
     public JmsConsumerId(String str) throws IllegalArgumentException {
         if (str != null){
@@ -122,5 +123,15 @@ public final class JmsConsumerId implements JmsResourceId, Comparable<JmsConsume
     @Override
     public Object getProviderHint() {
         return this.hint;
+    }
+
+    @Override
+    public Object getProviderId() {
+        return providerId;
+    }
+
+    @Override
+    public void setProviderId(Object providerId) {
+        this.providerId = providerId;
     }
 }
