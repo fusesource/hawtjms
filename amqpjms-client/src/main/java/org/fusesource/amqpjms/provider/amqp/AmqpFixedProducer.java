@@ -18,7 +18,6 @@ package org.fusesource.amqpjms.provider.amqp;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -57,8 +56,7 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpFixedProducer.class);
 
-    private long nextTagId;
-    private final Set<byte[]> tagCache = new LinkedHashSet<byte[]>();
+    private final AmqpTransferTagGenerator tagGenerator = new AmqpTransferTagGenerator(true);
     private final Set<Delivery> pending = new LinkedHashSet<Delivery>();
 
     private final OutboundTransformer outboundTransformer = new AutoOutboundTransformer(AmqpJMSVendor.INSTANCE);
@@ -72,7 +70,11 @@ public class AmqpFixedProducer extends AmqpProducer {
     public void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException {
         LOG.info("Producer sending message: {}", envelope.getMessage().getMessageId());
 
-        byte[] tag = borrowTag();
+        // TODO - Handle the case where remote has no credit which means we can't send to it.
+        //        We need to hold the send until remote credit becomes available but we should
+        //        also have a send timeout option and filter timed out sends.
+
+        byte[] tag = tagGenerator.getNextTag();
         Delivery delivery = endpoint.delivery(tag);
         delivery.setContext(request);
         if (envelope.getTransactionId() != null) {
@@ -118,24 +120,6 @@ public class AmqpFixedProducer extends AmqpProducer {
         }
     }
 
-    private byte[] borrowTag() throws IOException {
-        byte[] rc;
-        if (tagCache != null && !tagCache.isEmpty()) {
-            final Iterator<byte[]> iterator = tagCache.iterator();
-            rc = iterator.next();
-            iterator.remove();
-        } else {
-            rc = Long.toHexString(nextTagId++).getBytes("UTF-8");
-        }
-        return rc;
-    }
-
-    private void returnTag(byte[] data) {
-        if (tagCache.size() < 1024) {
-            tagCache.add(data);
-        }
-    }
-
     @Override
     public void processUpdates() {
         List<Delivery> toRemove = new ArrayList<Delivery>();
@@ -153,12 +137,12 @@ public class AmqpFixedProducer extends AmqpProducer {
                 LOG.info("State of delivery is Transacted: {}", state);
             } else if (state instanceof Accepted) {
                 toRemove.add(delivery);
-                returnTag(delivery.getTag());
+                tagGenerator.returnTag(delivery.getTag());
                 request.onSuccess(null);
             } else if (state instanceof Rejected) {
                 Exception remoteError = getRemoteError();
                 toRemove.add(delivery);
-                returnTag(delivery.getTag());
+                tagGenerator.returnTag(delivery.getTag());
                 request.onFailure(remoteError);
             } else {
                 LOG.warn("Message send updated with unsupported state: {}", state);

@@ -17,7 +17,6 @@
 package org.fusesource.amqpjms.provider.amqp;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.BufferOverflowException;
 
 import javax.jms.IllegalStateException;
@@ -57,7 +56,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
 
     private final AmqpSession session;
     private JmsTransactionId current;
-    private long nextTagId;
+    private final AmqpTransferTagGenerator tagGenerator = new AmqpTransferTagGenerator();
 
     private Delivery pendingDelivery;
     private AsyncResult<Void> pendingRequest;
@@ -144,7 +143,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
         Declare declare = new Declare();
         message.setBody(new AmqpValue(declare));
 
-        pendingDelivery = endpoint.delivery(getNextTagId());
+        pendingDelivery = endpoint.delivery(tagGenerator.getNextTag());
         pendingRequest = request;
         current = txId;
 
@@ -162,7 +161,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
         discharge.setTxnId((Binary) current.getProviderHint());
         message.setBody(new AmqpValue(discharge));
 
-        pendingDelivery = endpoint.delivery(getNextTagId());
+        pendingDelivery = endpoint.delivery(tagGenerator.getNextTag());
         pendingRequest = request;
 
         sendTxCommand(message);
@@ -179,7 +178,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
         discharge.setTxnId((Binary) current.getProviderHint());
         message.setBody(new AmqpValue(discharge));
 
-        pendingDelivery = endpoint.delivery(getNextTagId());
+        pendingDelivery = endpoint.delivery(tagGenerator.getNextTag());
         pendingRequest = request;
 
         sendTxCommand(message);
@@ -217,9 +216,5 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
     @Override
     public String toString() {
         return this.session.getSessionId() + ": txContext";
-    }
-
-    private byte[] getNextTagId() throws UnsupportedEncodingException {
-        return Long.toHexString(nextTagId++).getBytes("UTF-8");
     }
 }
