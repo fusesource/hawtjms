@@ -25,6 +25,7 @@ import java.util.Set;
 
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
+import org.apache.qpid.proton.amqp.messaging.Rejected;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
@@ -154,15 +155,17 @@ public class AmqpFixedProducer extends AmqpProducer {
                 toRemove.add(delivery);
                 returnTag(delivery.getTag());
                 request.onSuccess(null);
-            } else {
+            } else if (state instanceof Rejected) {
                 // TODO - figure out how to handle not accepted.
                 LOG.info("Message send failed: {}", state);
+            } else {
+                LOG.warn("Message send updated with unsupported state: {}", state);
             }
         }
 
-        // TODO - Check for and handle endpoint detached state.
-
         pending.removeAll(toRemove);
+
+        // TODO - Check for and handle endpoint detached state.
     }
 
     @Override
@@ -177,7 +180,7 @@ public class AmqpFixedProducer extends AmqpProducer {
         target.setAddress(destnationName);
         target.setDynamic(isDynamic());
 
-        String senderName = sourceAddress + ":" + destnationName;
+        String senderName = sourceAddress + ":" + destnationName != null ? destnationName : "Anonymous";
         endpoint = session.getProtonSession().sender(senderName);
         endpoint.setSource(source);
         endpoint.setTarget(target);
