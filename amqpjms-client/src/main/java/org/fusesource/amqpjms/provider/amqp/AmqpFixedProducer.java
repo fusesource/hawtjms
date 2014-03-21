@@ -147,17 +147,20 @@ public class AmqpFixedProducer extends AmqpProducer {
                 continue;
             }
 
+            @SuppressWarnings("unchecked")
+            AsyncResult<Void> request = (AsyncResult<Void>) delivery.getContext();
+
             if (state instanceof TransactionalState) {
                 LOG.info("State of delivery is Transacted: {}", state);
             } else if (state instanceof Accepted) {
-                @SuppressWarnings("unchecked")
-                AsyncResult<Void> request = (AsyncResult<Void>) delivery.getContext();
                 toRemove.add(delivery);
                 returnTag(delivery.getTag());
                 request.onSuccess(null);
             } else if (state instanceof Rejected) {
-                // TODO - figure out how to handle not accepted.
-                LOG.info("Message send failed: {}", state);
+                Exception remoteError = getRemoteError();
+                toRemove.add(delivery);
+                returnTag(delivery.getTag());
+                request.onFailure(remoteError);
             } else {
                 LOG.warn("Message send updated with unsupported state: {}", state);
             }
