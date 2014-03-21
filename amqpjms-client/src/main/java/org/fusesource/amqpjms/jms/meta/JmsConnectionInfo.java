@@ -24,6 +24,8 @@ import org.fusesource.amqpjms.util.ToStringSupport;
  */
 public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConnectionInfo> {
 
+    public static final long DEFAULT_CLOSE_TIMEOUT = 15000;
+
     private final JmsConnectionId connectionId;
     private String clientId;
     private String clientIp;
@@ -31,7 +33,9 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private String password;
     private boolean forceAsyncSend;
     private boolean omitHost;
-    public long disconnectTimeout;
+    public long sendTimeout;
+    public long requestTimeout;
+    public long closeTimeout = DEFAULT_CLOSE_TIMEOUT;
     private String queuePrefix = "/queue/";
     private String topicPrefix = "/topic/";
     private String tempQueuePrefix = "/temp-queue/";
@@ -54,7 +58,9 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.clientIp = clientIp;
         copy.forceAsyncSend = forceAsyncSend;
         copy.omitHost = omitHost;
-        copy.disconnectTimeout = disconnectTimeout;
+        copy.sendTimeout = sendTimeout;
+        copy.requestTimeout = requestTimeout;
+        copy.closeTimeout = closeTimeout;
         copy.queuePrefix = queuePrefix;
         copy.topicPrefix = topicPrefix;
         copy.tempQueuePrefix = tempQueuePrefix;
@@ -145,12 +151,28 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         this.tempTopicPrefix = tempTopicPrefix;
     }
 
-    public long getDisconnectTimeout() {
-        return disconnectTimeout;
+    public long getCloseTimeout() {
+        return closeTimeout;
     }
 
-    public void setDisconnectTimeout(long disconnectTimeout) {
-        this.disconnectTimeout = disconnectTimeout;
+    public void setCloseTimeout(long closeTimeout) {
+        this.closeTimeout = closeTimeout;
+    }
+
+    public long getSendTimeout() {
+        return sendTimeout;
+    }
+
+    public void setSendTimeout(long sendTimeout) {
+        this.sendTimeout = sendTimeout;
+    }
+
+    public long getRequestTimeout() {
+        return requestTimeout;
+    }
+
+    public void setRequestTimeout(long requestTimeout) {
+        this.requestTimeout = requestTimeout;
     }
 
     @Override

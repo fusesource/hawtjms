@@ -33,6 +33,7 @@ import javax.jms.TopicConnectionFactory;
 
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.jndi.JNDIStorable;
+import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderFactory;
 import org.fusesource.amqpjms.util.IdGenerator;
@@ -60,7 +61,9 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String topicPrefix = "topic://";
     private String tempQueuePrefix = "temp-queue://";
     private String tempTopicPrefix = "temp-topic://";
-    private long disconnectTimeout = 10000;
+    public long sendTimeout;
+    public long requestTimeout;
+    public long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
     private IdGenerator clientIdGenerator;
     private String clientIDPrefix;
     private IdGenerator connectionIdGenerator;
@@ -442,12 +445,28 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.topicPrefix = topicPrefix;
     }
 
-    public long getDisconnectTimeout() {
-        return disconnectTimeout;
+    public long getCloseTimeout() {
+        return closeTimeout;
     }
 
-    public void setDisconnectTimeout(long disconnectTimeout) {
-        this.disconnectTimeout = disconnectTimeout;
+    public void setCloseTimeout(long closeTimeout) {
+        this.closeTimeout = closeTimeout;
+    }
+
+    public long getSendTimeout() {
+        return sendTimeout;
+    }
+
+    public void setSendTimeout(long sendTimeout) {
+        this.sendTimeout = sendTimeout;
+    }
+
+    public long getRequestTimeout() {
+        return requestTimeout;
+    }
+
+    public void setRequestTimeout(long requestTimeout) {
+        this.requestTimeout = requestTimeout;
     }
 
     public JmsPrefetchPolicy getPrefetchPolicy() {

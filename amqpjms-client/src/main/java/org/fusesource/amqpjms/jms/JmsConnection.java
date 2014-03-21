@@ -824,12 +824,28 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.messagePrioritySupported = messagePrioritySupported;
     }
 
-    public long getDisconnectTimeout() {
-        return connectionInfo.getDisconnectTimeout();
+    public long getCloseTimeout() {
+        return connectionInfo.getCloseTimeout();
     }
 
-    public void setDisconnectTimeout(long disconnectTimeout) {
-        connectionInfo.setDisconnectTimeout(disconnectTimeout);
+    public void setCloseTimeout(long closeTimeout) {
+        connectionInfo.setCloseTimeout(closeTimeout);
+    }
+
+    public long getSendTimeout() {
+        return connectionInfo.getSendTimeout();
+    }
+
+    public void setSendTimeout(long sendTimeout) {
+        connectionInfo.setSendTimeout(sendTimeout);
+    }
+
+    public long getRequestTimeout() {
+        return connectionInfo.getRequestTimeout();
+    }
+
+    public void setRequestTimeout(long requestTimeout) {
+        connectionInfo.setRequestTimeout(requestTimeout);
     }
 
     public URI getBrokerURI() {
