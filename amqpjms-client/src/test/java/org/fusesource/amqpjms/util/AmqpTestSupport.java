@@ -177,6 +177,7 @@ public class AmqpTestSupport {
         int openwirePort = this.openwirePort + offset;
 
         BrokerService brokerService = createBroker(brokerName, true, amqpPort, openwirePort);
+        brokerService.setUseJmx(false);
         brokerService.start();
         brokerService.waitUntilStarted();
 
@@ -234,12 +235,24 @@ public class AmqpTestSupport {
         uri.append(brokerService.getTransportConnectorByName("amqp").getPublishableConnectString());
 
         for (BrokerService broker : brokers) {
+            uri.append(",");
             uri.append(broker.getTransportConnectorByName("amqp").getPublishableConnectString());
         }
 
         uri.append(")");
 
         return uri.toString();
+    }
+
+    public List<URI> getBrokerURIs() throws Exception {
+        ArrayList<URI> result = new ArrayList<URI>();
+        result.add(brokerService.getTransportConnectorByName("amqp").getPublishableConnectURI());
+
+        for (BrokerService broker : brokers) {
+            result.add(broker.getTransportConnectorByName("amqp").getPublishableConnectURI());
+        }
+
+        return result;
     }
 
     public Connection createAmqpConnection() throws Exception {

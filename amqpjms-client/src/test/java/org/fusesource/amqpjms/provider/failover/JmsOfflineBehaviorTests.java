@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
@@ -30,6 +31,8 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
+import org.fusesource.amqpjms.jms.JmsConnection;
+import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.fusesource.amqpjms.util.Wait;
 import org.junit.Test;
@@ -123,6 +126,37 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
 
         stopPrimaryBroker();
         session.close();
+        connection.close();
+    }
+
+    @Test(timeout=60000)
+    public void testGetRemoteURI() throws Exception {
+
+        startNewBroker();
+
+        URI brokerURI = new URI(getAmqpFailoverURI() + "randomize=false");
+        Connection connection = createAmqpConnection(brokerURI);
+        connection.start();
+
+        JmsConnection jmsConnection = (JmsConnection) connection;
+        final BlockingProvider provider = jmsConnection.getProvider();
+
+        URI connectedURI = provider.getRemoteURI();
+        assertNotNull(connectedURI);
+
+        final List<URI> brokers = getBrokerURIs();
+        assertEquals(brokers.get(0), connectedURI);
+
+        stopPrimaryBroker();
+
+        assertTrue("Should connect to secondary URI.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return provider.getRemoteURI().equals(brokers.get(1));
+            }
+        }));
+
         connection.close();
     }
 
