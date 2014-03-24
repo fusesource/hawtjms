@@ -26,6 +26,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
+import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
@@ -195,9 +196,11 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         if (messageId.getProviderHint() instanceof Delivery) {
             delivery = (Delivery) messageId.getProviderHint();
         } else {
-            // TODO - If not in hint search for it in pending.
-            LOG.warn("Received Ack for unknown message: {}", envelope.getMessage().getMessageId());
-            return;
+            delivery = delivered.get(messageId);
+            if (delivery == null) {
+                LOG.warn("Received Ack for unknown message: {}", envelope.getMessage().getMessageId());
+                return;
+            }
         }
 
         if (ackType.equals(ACK_TYPE.DELIVERED)) {
@@ -259,15 +262,21 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         try {
             message = (JmsMessage) inboundTransformer.transform(em);
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             LOG.warn("Error on transform: {}", e.getMessage());
+            // TODO - We could signal provider error but not sure we want to fail
+            //        the connection just because we can't convert the message.
+            deliveryFailed(incoming);
+            return;
         }
 
         try {
             message.setJMSDestination(info.getDestination());
         } catch (JMSException e) {
-            // TODO Auto-generated catch block
             LOG.warn("Error on transform: {}", e.getMessage());
+            // TODO - We could signal provider error but not sure we want to fail
+            //        the connection just because we can't convert the message.
+            deliveryFailed(incoming);
+            return;
         }
 
         message.getMessageId().setProviderHint(incoming);
@@ -281,6 +290,15 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             LOG.debug("Dispatching received message: {}", message.getMessageId());
             listener.onMessage(envelope);
         }
+    }
+
+    private void deliveryFailed(Delivery incoming) {
+        Modified disposition = new Modified();
+        disposition.setUndeliverableHere(true);
+        disposition.setDeliveryFailed(true);
+        incoming.disposition(disposition);
+        incoming.settle();
+        endpoint.flow(1);
     }
 
     @Override
