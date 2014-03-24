@@ -19,12 +19,13 @@ package org.fusesource.amqpjms.jms.message;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 
 /**
- *
+ * Envelope used to deliver incoming messages to their targeted consumer.
  */
 public class JmsInboundMessageDispatch {
 
     private JmsConsumerId consumerId;
     private JmsMessage message;
+    private Object providerHint;
 
     public JmsMessage getMessage() {
         return message;
@@ -40,5 +41,13 @@ public class JmsInboundMessageDispatch {
 
     public void setConsumerId(JmsConsumerId consumerId) {
         this.consumerId = consumerId;
+    }
+
+    public Object getProviderHint() {
+        return this.providerHint;
+    }
+
+    public void setProviderHint(Object hint) {
+        this.providerHint = hint;
     }
 }

@@ -99,6 +99,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             } else {
                 incoming = null;
             }
+            endpoint.advance();
         } while (incoming != null);
     }
 
@@ -173,6 +174,17 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             delivery.disposition(Accepted.getInstance());
             delivery.settle();
         }
+
+        // TODO - currently Proton is not tracking it's own unsettled messages, so we
+        //        have to track them.  We could remove the delivered collection once this
+        //        is implemented in Proton.
+        //
+        // Iterator<Delivery> pending = endpoint.unsettled();
+        // while (pending != null && pending.hasNext()) {
+        //     Delivery delivery = pending.next();
+        //     delivery.disposition(Accepted.getInstance());
+        //     delivery.settle();
+        // }
 
         delivered.clear();
     }
@@ -250,7 +262,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
                 stream.write(data, 0, count);
             }
 
-            endpoint.advance();
             buffer = stream.toBuffer();
         } finally {
             try {
@@ -286,6 +297,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch();
         envelope.setMessage(message);
         envelope.setConsumerId(info.getConsumerId());
+        envelope.setProviderHint(incoming);
 
         ProviderListener listener = session.getProvider().getProviderListener();
         if (listener != null) {
