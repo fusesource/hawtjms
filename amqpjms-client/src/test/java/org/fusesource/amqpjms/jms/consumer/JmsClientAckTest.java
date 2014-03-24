@@ -322,4 +322,39 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue(rec4.getJMSRedelivered());
         rec4.acknowledge();
     }
+
+    @Test(timeout=60000)
+    public void testRecoverRedelivery() throws Exception {
+        final CountDownLatch redelivery = new CountDownLatch(6);
+        connection = createAmqpConnection();
+        connection.start();
+
+        final Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageConsumer consumer = session.createConsumer(queue);
+
+        consumer.setMessageListener(new MessageListener() {
+            @Override
+            public void onMessage(Message message) {
+                try {
+                    LOG.info("Got message: " + message.getJMSMessageID());
+                    if (message.getJMSRedelivered()) {
+                        LOG.info("It's a redelivery.");
+                        redelivery.countDown();
+                    }
+                    LOG.info("calling recover() on the session to force redelivery.");
+                    session.recover();
+                } catch (JMSException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        connection.start();
+
+        MessageProducer producer = session.createProducer(queue);
+        producer.send(session.createTextMessage("test"));
+
+        assertTrue("we got 6 redeliveries", redelivery.await(20, TimeUnit.SECONDS));
+    }
 }
