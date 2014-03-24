@@ -91,6 +91,16 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
         }
     }
 
+    /**
+     * Perform re-send of all delivered but not yet acknowledged messages for all consumers
+     * active in this Session.
+     */
+    public void recover() {
+        for (AmqpConsumer consumer : consumers.values()) {
+            consumer.recover();
+        }
+    }
+
     public AmqpProducer createProducer(JmsProducerInfo producerInfo) {
         // TODO - There seems to be an issue with Proton not allowing links with a Target
         //        that has no address.  Otherwise we could just ensure that messages sent

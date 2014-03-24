@@ -306,6 +306,25 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
         serializer.execute(pending);
     }
 
+
+    @Override
+    public void recover(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException {
+        checkClosed();
+        final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
+            @Override
+            public void doTask() throws IOException {
+                provider.recover(sessionId, this);
+            }
+
+            @Override
+            public boolean succeedsWhenOffline() {
+                return true;
+            }
+        };
+
+        serializer.execute(pending);
+    }
+
     @Override
     public void unsubscribe(final String subscription, AsyncResult<Void> request) throws IOException {
         checkClosed();

@@ -868,6 +868,10 @@ public class JmsMessage implements javax.jms.Message {
         this.redeliveryCount = redeliveryCount;
     }
 
+    public void incrementRedeliveryCount() {
+        this.redeliveryCount++;
+    }
+
     public String getType() {
         return type;
     }

@@ -115,6 +115,13 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
+    public void recover(JmsSessionId sessionId) throws IOException {
+        ProviderRequest<Void> request = new ProviderRequest<Void>();
+        next.recover(sessionId, request);
+        request.getResponse();
+    }
+
+    @Override
     public void unsubscribe(String subscription) throws IOException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.unsubscribe(subscription, request);

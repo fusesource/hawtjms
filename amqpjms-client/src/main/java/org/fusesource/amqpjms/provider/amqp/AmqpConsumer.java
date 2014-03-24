@@ -175,17 +175,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             delivery.settle();
         }
         delivered.clear();
-
-        // TODO - currently Proton is not tracking it's own unsettled messages, so we
-        //        have to track them.  We could remove the delivered collection once this
-        //        is implemented in Proton.
-        //
-        // Iterator<Delivery> pending = endpoint.unsettled();
-        // while (pending != null && pending.hasNext()) {
-        //     Delivery delivery = pending.next();
-        //     delivery.disposition(Accepted.getInstance());
-        //     delivery.settle();
-        // }
     }
 
     /**
@@ -236,6 +225,20 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         // TODO - handle the other ack modes, poisoned, redelivered
     }
 
+    /**
+     * Recovers all previously delivered but not acknowledged messages.
+     */
+    public void recover() {
+        LOG.debug("Session Recover for consumer: {}", info.getConsumerId());
+        for (Delivery delivery : delivered.values()) {
+            // TODO - increment redelivery counter and apply connection redelivery policy
+            //        to those messages that are past max redlivery.
+            JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) delivery.getContext();
+            envelope.onMessageRedelivered();
+            deliver(envelope);
+        }
+        delivered.clear();
+    }
 
     /**
      * For a consumer whose prefetch value is set to zero this method will attempt to solicite
@@ -291,6 +294,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             return;
         }
 
+        // Store link to delivery in the hint for use in acknowledge requests.
         message.getMessageId().setProviderHint(incoming);
 
         JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch();
@@ -298,11 +302,10 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         envelope.setConsumerId(info.getConsumerId());
         envelope.setProviderHint(incoming);
 
-        ProviderListener listener = session.getProvider().getProviderListener();
-        if (listener != null) {
-            LOG.debug("Dispatching received message: {}", message.getMessageId());
-            listener.onMessage(envelope);
-        }
+        // Store reference to envelope in delivery context for recovery
+        incoming.setContext(envelope);
+
+        deliver(envelope);
     }
 
     private void deliveryFailed(Delivery incoming) {
@@ -312,6 +315,16 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         incoming.disposition(disposition);
         incoming.settle();
         endpoint.flow(1);
+    }
+
+    private void deliver(JmsInboundMessageDispatch envelope) {
+        ProviderListener listener = session.getProvider().getProviderListener();
+        if (listener != null) {
+            LOG.debug("Dispatching received message: {}", envelope.getMessage().getMessageId());
+            listener.onMessage(envelope);
+        } else {
+            LOG.error("Provider listener is not set, message will be dropped.");
+        }
     }
 
     @Override

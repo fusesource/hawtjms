@@ -180,6 +180,18 @@ public interface AsyncProvider {
     void rollback(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException;
 
     /**
+     * Called to recover all unacknowledged messages for a Session in client Ack mode.
+     *
+     * @param sessionId
+     *        the Id of the JmsSession that is recovering unacknowledged messages..
+     * @param request
+     *        The request object that should be signaled when this operation completes.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     */
+    void recover(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException;
+
+    /**
      * Remove a durable topic subscription by name.
      *
      * @param subscription

@@ -163,7 +163,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         if (getTransacted()) {
             throw new javax.jms.IllegalStateException("Cannot call recover() on a transacted session");
         }
-        // TODO: re-deliver all un-acked client-ack messages.
+
+        this.connection.recover(getSessionId());
     }
 
     @Override

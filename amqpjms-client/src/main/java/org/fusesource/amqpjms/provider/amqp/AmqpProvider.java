@@ -443,6 +443,26 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
+    public void recover(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException {
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    AmqpSession session = connection.getSession(sessionId);
+                    session.recover();
+                    request.onSuccess();
+                    pumpToProtonTransport();
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
+    }
+
+    @Override
     public void unsubscribe(final String subscription, final AsyncResult<Void> request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {

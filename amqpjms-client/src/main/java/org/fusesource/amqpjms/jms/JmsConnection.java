@@ -715,6 +715,17 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
+    void recover(JmsSessionId sessionId) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+
+        try {
+            provider.recover(sessionId);
+        } catch (Exception ioe) {
+            throw JmsExceptionSupport.create(ioe);
+        }
+    }
+
     void pull(JmsConsumerId consumerId, long timeout) throws JMSException {
         checkClosedOrFailed();
         connect();

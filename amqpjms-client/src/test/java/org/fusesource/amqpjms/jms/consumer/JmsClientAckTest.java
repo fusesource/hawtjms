@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
+import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -32,10 +33,12 @@ import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.fusesource.amqpjms.util.Wait;
+import org.junit.After;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +50,18 @@ public class JmsClientAckTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsClientAckTest.class);
 
+    private Connection connection;
+
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        connection.close();
+        super.tearDown();
+    }
+
     @Test
     public void testAckedMessageAreConsumed() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -78,7 +90,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
 
     @Test
     public void testLastMessageAcked() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -107,13 +119,11 @@ public class JmsClientAckTest extends AmqpTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
-
-        connection.close();
     }
 
     @Test
     public void testUnAckedMessageAreNotConsumedOnSessionClose() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -145,13 +155,11 @@ public class JmsClientAckTest extends AmqpTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
-
-        connection.close();
     }
 
     @Test
     public void testAckedMessageAreConsumedByAsync() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -182,13 +190,11 @@ public class JmsClientAckTest extends AmqpTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
-
-        connection.close();
     }
 
     @Test
     public void testUnAckedAsyncMessageAreNotConsumedOnSessionClose() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -225,13 +231,11 @@ public class JmsClientAckTest extends AmqpTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
-
-        connection.close();
     }
 
     @Test(timeout=90000)
     public void testAckMarksAllConsumerMessageAsConsumed() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -277,7 +281,45 @@ public class JmsClientAckTest extends AmqpTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
+    }
 
-        connection.close();
+    @Test(timeout=60000)
+    public void testUnackedAreRecovered() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+        Session consumerSession = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        Queue queue = consumerSession.createQueue(name.getMethodName());
+        MessageConsumer consumer = consumerSession.createConsumer(queue);
+        Session producerSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        MessageProducer producer = producerSession.createProducer(queue);
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+
+        TextMessage sent1 = producerSession.createTextMessage();
+        sent1.setText("msg1");
+        producer.send(sent1);
+        TextMessage sent2 = producerSession.createTextMessage();
+        sent1.setText("msg2");
+        producer.send(sent2);
+        TextMessage sent3 = producerSession.createTextMessage();
+        sent1.setText("msg3");
+        producer.send(sent3);
+
+        consumer.receive(5000);
+        Message rec2 = consumer.receive(5000);
+        consumer.receive(5000);
+        rec2.acknowledge();
+
+        TextMessage sent4 = producerSession.createTextMessage();
+        sent4.setText("msg4");
+        producer.send(sent4);
+
+        Message rec4 = consumer.receive(5000);
+        assertTrue(rec4.equals(sent4));
+        consumerSession.recover();
+        rec4 = consumer.receive(5000);
+        assertNotNull(rec4);
+        assertTrue(rec4.equals(sent4));
+        assertTrue(rec4.getJMSRedelivered());
+        rec4.acknowledge();
     }
 }

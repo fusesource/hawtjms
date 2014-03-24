@@ -50,4 +50,8 @@ public class JmsInboundMessageDispatch {
     public void setProviderHint(Object hint) {
         this.providerHint = hint;
     }
+
+    public void onMessageRedelivered() {
+        this.message.incrementRedeliveryCount();
+    }
 }
