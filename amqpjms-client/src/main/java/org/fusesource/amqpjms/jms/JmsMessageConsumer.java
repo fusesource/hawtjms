@@ -127,14 +127,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         }
     }
 
-    public boolean isDurableSubscription() {
-        return false;
-    }
-
-    public boolean isBrowser() {
-        return false;
-    }
-
     /**
      * @throws JMSException
      * @see javax.jms.MessageConsumer#close()
@@ -170,31 +162,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         }
     }
 
-    @Override
-    public MessageListener getMessageListener() throws JMSException {
-        checkClosed();
-        return this.messageListener;
-    }
-
-    /**
-     * @return the Message Selector
-     * @throws JMSException
-     * @see javax.jms.MessageConsumer#getMessageSelector()
-     */
-    @Override
-    public String getMessageSelector() throws JMSException {
-        checkClosed();
-        return this.consumerInfo.getSelector();
-    }
-
-    /**
-     * Gets the configured prefetch size for this consumer.
-     * @return the prefetch size configuration for this consumer.
-     */
-    public int getPrefetchSize() {
-        return this.consumerInfo.getPrefetchSize();
-    }
-
     /**
      * @return a Message or null if closed during the operation
      * @throws JMSException
@@ -204,6 +171,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     public Message receive() throws JMSException {
         checkClosed();
         checkMessageListener();
+        sendPullCommand(0);
 
         try {
             return copy(ack(this.messageQueue.dequeue(-1)));
@@ -214,7 +182,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
 
     /**
      * @param timeout
-     * @return a MEssage or null
+     * @return a Message or null
      * @throws JMSException
      * @see javax.jms.MessageConsumer#receive(long)
      */
@@ -222,12 +190,17 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     public Message receive(long timeout) throws JMSException {
         checkClosed();
         checkMessageListener();
+        sendPullCommand(timeout);
 
-        try {
-            return copy(ack(this.messageQueue.dequeue(timeout)));
-        } catch (InterruptedException e) {
-            throw JmsExceptionSupport.create(e);
+        if (timeout > 0) {
+            try {
+                return copy(ack(this.messageQueue.dequeue(timeout)));
+            } catch (InterruptedException e) {
+                throw JmsExceptionSupport.create(e);
+            }
         }
+
+        return null;
     }
 
     /**
@@ -239,21 +212,10 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     public Message receiveNoWait() throws JMSException {
         checkClosed();
         checkMessageListener();
+        sendPullCommand(-1);
 
         Message result = copy(ack(this.messageQueue.dequeueNoWait()));
         return result;
-    }
-
-    /**
-     * @param listener
-     * @throws JMSException
-     * @see javax.jms.MessageConsumer#setMessageListener(javax.jms.MessageListener)
-     */
-    @Override
-    public void setMessageListener(MessageListener listener) throws JMSException {
-        checkClosed();
-        this.messageListener = listener;
-        drainMessageQueueToListener();
     }
 
     protected void checkClosed() throws IllegalStateException {
@@ -263,14 +225,14 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     }
 
     JmsMessage copy(final JmsInboundMessageDispatch envelope) throws JMSException {
-        if (envelope == null) {
+        if (envelope == null || envelope.getMessage() == null) {
             return null;
         }
         return envelope.getMessage().copy();
     }
 
     JmsInboundMessageDispatch ack(final JmsInboundMessageDispatch envelope) throws JMSException {
-        if (envelope != null) {
+        if (envelope != null && envelope.getMessage() != null) {
             JmsMessage message = envelope.getMessage();
             if (message.getAcknowledgeCallback() != null) {
                 // Message has been received by the app.. expand the credit
@@ -338,20 +300,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         }
     }
 
-    /**
-     * @return the id
-     */
-    public JmsConsumerId getConsumerId() {
-        return this.consumerInfo.getConsumerId();
-    }
-
-    /**
-     * @return the Destination
-     */
-    public JmsDestination getDestination() {
-        return this.consumerInfo.getDestination();
-    }
-
     public void start() {
         lock.lock();
         try {
@@ -400,6 +348,61 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         }
     }
 
+    /**
+     * @return the id
+     */
+    public JmsConsumerId getConsumerId() {
+        return this.consumerInfo.getConsumerId();
+    }
+
+    /**
+     * @return the Destination
+     */
+    public JmsDestination getDestination() {
+        return this.consumerInfo.getDestination();
+    }
+
+    @Override
+    public MessageListener getMessageListener() throws JMSException {
+        checkClosed();
+        return this.messageListener;
+    }
+
+    /**
+     * @param listener
+     * @throws JMSException
+     * @see javax.jms.MessageConsumer#setMessageListener(javax.jms.MessageListener)
+     */
+    @Override
+    public void setMessageListener(MessageListener listener) throws JMSException {
+        checkClosed();
+        if (consumerInfo.getPrefetchSize() == 0) {
+            throw new JMSException("Illegal prefetch size of zero. This setting is not supported" +
+                                   "for asynchronous consumers please set a value of at least 1");
+        }
+        this.messageListener = listener;
+        drainMessageQueueToListener();
+    }
+
+    /**
+     * @return the Message Selector
+     * @throws JMSException
+     * @see javax.jms.MessageConsumer#getMessageSelector()
+     */
+    @Override
+    public String getMessageSelector() throws JMSException {
+        checkClosed();
+        return this.consumerInfo.getSelector();
+    }
+
+    /**
+     * Gets the configured prefetch size for this consumer.
+     * @return the prefetch size configuration for this consumer.
+     */
+    public int getPrefetchSize() {
+        return this.consumerInfo.getPrefetchSize();
+    }
+
     protected void checkMessageListener() throws JMSException {
         session.checkMessageListener();
     }
@@ -420,6 +423,14 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         return this.consumerInfo.isNoLocal();
     }
 
+    public boolean isDurableSubscription() {
+        return false;
+    }
+
+    public boolean isBrowser() {
+        return false;
+    }
+
     protected void onConnectionInterrupted() {
         messageQueue.clear();
     }
@@ -433,6 +444,26 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     }
 
     protected void onConnectionRestored() {
+    }
+
+    /**
+     * Triggers a pull request from the connected Provider.  An attempt is made to set
+     * a timeout on the pull request however some providers will not honor this value
+     * and the pull will remain active until a message is dispatched.
+     *
+     * The timeout value can be one of:
+     *
+     *  < 0 to indicate that the request should expire immediately if no message.
+     *  = 0 to indicate that the request should never time out.
+     *  > 1 to indicate that the request should expire after the given time in milliseconds.
+     *
+     * @param timeout
+     *        The amount of time the pull request should remain valid.
+     */
+    private void sendPullCommand(long timeout) throws JMSException {
+        if (consumerInfo.getPrefetchSize() == 0 && messageQueue.isEmpty()) {
+            connection.pull(getConsumerId(), timeout);
+        }
     }
 
     private int getConfiguredPrefetch(JmsDestination destination, JmsPrefetchPolicy policy) {

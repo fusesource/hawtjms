@@ -73,8 +73,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         super(info);
         this.session = session;
 
-        // TODO - Zero Prefetch ?  Can we pull by setting flow to 1 ?
-
         // Add a shortcut back to this Consumer for quicker lookups
         this.info.getConsumerId().setProviderHint(this);
     }
@@ -206,12 +204,16 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         if (ackType.equals(ACK_TYPE.DELIVERED)) {
             LOG.debug("Delivered Ack of message: {}", messageId);
             delivered.put(messageId, delivery);
-            endpoint.flow(1);
+            if (info.getPrefetchSize() > 0) {
+                endpoint.flow(1);
+            }
         } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
             // A Consumer may not always send a delivered ACK so we need to check to
             // ensure we don't add to much credit to the link.
             if (delivered.remove(messageId) == null) {
-                endpoint.flow(1);
+                if (info.getPrefetchSize() > 0) {
+                    endpoint.flow(1);
+                }
             }
             LOG.debug("Consumed Ack of message: {}", messageId);
             delivery.disposition(Accepted.getInstance());

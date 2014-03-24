@@ -715,6 +715,17 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
+    void pull(JmsConsumerId consumerId, long timeout) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+
+        try {
+            provider.pull(consumerId, timeout);
+        } catch (Exception ioe) {
+            throw JmsExceptionSupport.create(ioe);
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Property setters and getters
     ////////////////////////////////////////////////////////////////////////////
