@@ -888,7 +888,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.connectionInfo.setPassword(password);
     }
 
-    BlockingProvider getProvider() {
+    public BlockingProvider getProvider() {
         return provider;
     }
 
