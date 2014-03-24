@@ -214,8 +214,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         checkMessageListener();
         sendPullCommand(-1);
 
-        Message result = copy(ack(this.messageQueue.dequeueNoWait()));
-        return result;
+        return copy(ack(this.messageQueue.dequeueNoWait()));
     }
 
     protected void checkClosed() throws IllegalStateException {

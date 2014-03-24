@@ -174,6 +174,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             delivery.disposition(Accepted.getInstance());
             delivery.settle();
         }
+        delivered.clear();
 
         // TODO - currently Proton is not tracking it's own unsettled messages, so we
         //        have to track them.  We could remove the delivered collection once this
@@ -185,8 +186,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         //     delivery.disposition(Accepted.getInstance());
         //     delivery.settle();
         // }
-
-        delivered.clear();
     }
 
     /**
