@@ -413,6 +413,11 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.messagePrioritySupported = messagePrioritySupported;
     }
 
+    /**
+     * Returns the prefix applied to Queues that are created by the client.
+     *
+     * @return the currently configured Queue prefix.
+     */
     public String getQueuePrefix() {
         return queuePrefix;
     }
@@ -421,6 +426,11 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.queuePrefix = queuePrefix;
     }
 
+    /**
+     * Returns the prefix applied to Temporary Queues that are created by the client.
+     *
+     * @return the currently configured Temporary Queue prefix.
+     */
     public String getTempQueuePrefix() {
         return tempQueuePrefix;
     }
@@ -429,6 +439,11 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.tempQueuePrefix = tempQueuePrefix;
     }
 
+    /**
+     * Returns the prefix applied to Temporary Topics that are created by the client.
+     *
+     * @return the currently configured Temporary Topic prefix.
+     */
     public String getTempTopicPrefix() {
         return tempTopicPrefix;
     }
@@ -437,6 +452,11 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.tempTopicPrefix = tempTopicPrefix;
     }
 
+    /**
+     * Returns the prefix applied to Topics that are created by the client.
+     *
+     * @return the currently configured Topic prefix.
+     */
     public String getTopicPrefix() {
         return topicPrefix;
     }
@@ -445,10 +465,26 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.topicPrefix = topicPrefix;
     }
 
+    /**
+     * Gets the currently set close timeout.
+     *
+     * @return the currently set close timeout.
+     */
     public long getCloseTimeout() {
         return closeTimeout;
     }
 
+    /**
+     * Sets the close timeout used to control how long a Connection close will wait for
+     * clean shutdown of the connection before giving up.  A negative value means wait
+     * forever.
+     *
+     * Care should be taken in that a very short close timeout can cause the client to
+     * not cleanly shutdown the connection and it's resources.
+     *
+     * @param closeTimeout
+     *        time in milliseconds to wait for a clean connection close.
+     */
     public void setCloseTimeout(long closeTimeout) {
         this.closeTimeout = closeTimeout;
     }
