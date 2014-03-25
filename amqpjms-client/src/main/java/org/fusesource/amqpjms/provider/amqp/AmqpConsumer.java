@@ -379,6 +379,10 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         return new EncodedMessage(incoming.getMessageFormat(), buffer.data, buffer.offset, buffer.length);
     }
 
+    /**
+     * Ensures that all delivered messages are marked as settled locally before the TX state
+     * is cleared and the next TX started.
+     */
     public void postCommit() {
         for (Delivery delivery : delivered.values()) {
             delivery.settle();
@@ -386,7 +390,15 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         this.delivered.clear();
     }
 
+    /**
+     * Redeliver Acknowledge all previously delivered messages and clear state to prepare for
+     * the next TX to start.
+     */
     public void postRollback() {
-        // TODO
+        for (Delivery delivery : delivered.values()) {
+            JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) delivery.getContext();
+            acknowledge(envelope, ACK_TYPE.REDELIVERED);
+        }
+        this.delivered.clear();
     }
 }

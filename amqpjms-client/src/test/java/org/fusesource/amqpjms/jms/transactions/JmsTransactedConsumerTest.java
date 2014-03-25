@@ -45,7 +45,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         super.tearDown();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testCreateConsumerFromTxSession() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -59,7 +59,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         assertNotNull(consumer);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testConsumedInTxAreAcked() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -76,6 +76,41 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
+        session.commit();
+
+        assertEquals(0, proxy.getQueueSize());
+    }
+
+    @Test(timeout=60000)
+    public void testReceiveAndRollback() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        sendToAmqQueue(2);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(2, proxy.getQueueSize());
+
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageConsumer consumer = session.createConsumer(queue);
+
+        Message message = consumer.receive(1000);
+        assertNotNull(message);
+        session.commit();
+
+        assertEquals(1, proxy.getQueueSize());
+
+        // rollback so we can get that last message again.
+        message = consumer.receive(1000);
+        assertNotNull(message);
+        session.rollback();
+
+        assertEquals(1, proxy.getQueueSize());
+
+        // Consume again.. the prev message should get redelivered.
+        message = consumer.receive(5000);
+        assertNotNull("Should have re-received the message again!", message);
         session.commit();
 
         assertEquals(0, proxy.getQueueSize());
