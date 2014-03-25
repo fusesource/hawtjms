@@ -764,6 +764,33 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return this.acknowledgementMode == Session.SESSION_TRANSACTED;
     }
 
+    /**
+     * Checks whether the session used client acknowledgment.
+     *
+     * @return true - if the session uses client acknowledgment.
+     */
+    protected boolean isClientAcknowledge() {
+        return this.acknowledgementMode == Session.CLIENT_ACKNOWLEDGE;
+    }
+
+    /**
+     * Checks whether the session used auto acknowledgment.
+     *
+     * @return true - if the session uses client acknowledgment.
+     */
+    public boolean isAutoAcknowledge() {
+        return acknowledgementMode == Session.AUTO_ACKNOWLEDGE;
+    }
+
+    /**
+     * Checks whether the session used dup ok acknowledgment.
+     *
+     * @return true - if the session uses client acknowledgment.
+     */
+    public boolean isDupsOkAcknowledge() {
+        return acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;
+    }
+
     protected void checkClosed() throws IllegalStateException {
         if (this.closed.get()) {
             throw new IllegalStateException("The MessageProducer is closed");
