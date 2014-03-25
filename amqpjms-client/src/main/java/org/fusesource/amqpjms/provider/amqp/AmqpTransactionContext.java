@@ -18,6 +18,8 @@ package org.fusesource.amqpjms.provider.amqp;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import javax.jms.IllegalStateException;
 import javax.jms.TransactionRolledBackException;
@@ -57,6 +59,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
     private final AmqpSession session;
     private JmsTransactionId current;
     private final AmqpTransferTagGenerator tagGenerator = new AmqpTransferTagGenerator();
+    private final Set<AmqpConsumer> txConsumers = new LinkedHashSet<AmqpConsumer>();
 
     private Delivery pendingDelivery;
     private AsyncResult<Void> pendingRequest;
@@ -97,6 +100,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
                 this.current = null;
                 this.pendingRequest = null;
                 this.pendingDelivery = null;
+                postRollback();
                 request.onFailure(ex);
             } else {
                 LOG.info("Last TX request succeeded: {}", current.getProviderHint());
@@ -105,6 +109,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
                 this.current = null;
                 this.pendingRequest = null;
                 this.pendingDelivery = null;
+                postCommit();
                 request.onSuccess();
             }
         }
@@ -184,6 +189,48 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
         sendTxCommand(message);
     }
 
+    public void registerTxConsumer(AmqpConsumer consumer) {
+        this.txConsumers.add(consumer);
+    }
+
+    public AmqpSession getSession() {
+        return this.session;
+    }
+
+    public JmsTransactionId getTransactionId() {
+        return this.current;
+    }
+
+    public Binary getAmqpTransactionId() {
+        Binary result = null;
+        if (current != null) {
+            result = (Binary) current.getProviderHint();
+        }
+        return result;
+    }
+
+    @Override
+    public Link getProtonLink() {
+        return this.endpoint;
+    }
+
+    @Override
+    public String toString() {
+        return this.session.getSessionId() + ": txContext";
+    }
+
+    private void postCommit() {
+        for (AmqpConsumer consumer : txConsumers) {
+            consumer.postCommit();
+        }
+    }
+
+    private void postRollback() {
+        for (AmqpConsumer consumer : txConsumers) {
+            consumer.postRollback();
+        }
+    }
+
     private void sendTxCommand(Message message) throws IOException {
         int encodedSize = 0;
         byte[] buffer = new byte[4 * 1024];
@@ -198,23 +245,5 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
 
         this.endpoint.send(buffer, 0, encodedSize);
         this.endpoint.advance();
-    }
-
-    public AmqpSession getSession() {
-        return this.session;
-    }
-
-    public JmsTransactionId getTransactionId() {
-        return this.current;
-    }
-
-    @Override
-    public Link getProtonLink() {
-        return this.endpoint;
-    }
-
-    @Override
-    public String toString() {
-        return this.session.getSessionId() + ": txContext";
     }
 }

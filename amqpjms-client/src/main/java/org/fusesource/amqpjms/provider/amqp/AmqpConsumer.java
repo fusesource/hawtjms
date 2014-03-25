@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.jms.JMSException;
 
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
@@ -31,6 +32,7 @@ import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
 import org.apache.qpid.proton.amqp.messaging.TerminusExpiryPolicy;
+import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
@@ -201,8 +203,20 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             }
         }
 
+        AmqpTransactionContext txContext = session.getTransactionContext();
+
         if (ackType.equals(ACK_TYPE.DELIVERED)) {
             LOG.debug("Delivered Ack of message: {}", messageId);
+            if (txContext != null) {
+                Binary txnId = txContext.getAmqpTransactionId();
+                if (txnId != null) {
+                    TransactionalState txState = new TransactionalState();
+                    txState.setOutcome(Accepted.getInstance());
+                    txState.setTxnId(txnId);
+                    delivery.disposition(txState);
+                    txContext.registerTxConsumer(this);
+                }
+            }
             delivered.put(messageId, delivery);
             if (info.getPrefetchSize() > 0) {
                 endpoint.flow(1);
@@ -218,11 +232,16 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             LOG.debug("Consumed Ack of message: {}", messageId);
             delivery.disposition(Accepted.getInstance());
             delivery.settle();
+        } else if (ackType.equals(ACK_TYPE.REDELIVERED)) {
+            Modified disposition = new Modified();
+            disposition.setUndeliverableHere(false);
+            disposition.setDeliveryFailed(true);
+            delivery.disposition(disposition);
+        } else if (ackType.equals(ACK_TYPE.POISONED)) {
+            deliveryFailed(delivery, false);
         } else {
             LOG.warn("Unsupporeted Ack Type for message: {}", messageId);
         }
-
-        // TODO - handle the other ack modes, poisoned, redelivered
     }
 
     /**
@@ -254,33 +273,15 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     }
 
     protected void processDelivery(Delivery incoming) {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Buffer buffer;
-
-        try {
-            int count;
-            byte data[] = new byte[1024 * 4];
-            while ((count = endpoint.recv(data, 0, data.length)) > 0) {
-                stream.write(data, 0, count);
-            }
-
-            buffer = stream.toBuffer();
-        } finally {
-            try {
-                stream.close();
-            } catch (IOException e) {
-            }
-        }
-
-        EncodedMessage em = new EncodedMessage(incoming.getMessageFormat(), buffer.data, buffer.offset, buffer.length);
+        EncodedMessage encoded = readIncomingMessage(incoming);
         JmsMessage message = null;
         try {
-            message = (JmsMessage) inboundTransformer.transform(em);
+            message = (JmsMessage) inboundTransformer.transform(encoded);
         } catch (Exception e) {
             LOG.warn("Error on transform: {}", e.getMessage());
             // TODO - We could signal provider error but not sure we want to fail
             //        the connection just because we can't convert the message.
-            deliveryFailed(incoming);
+            deliveryFailed(incoming, true);
             return;
         }
 
@@ -290,7 +291,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             LOG.warn("Error on transform: {}", e.getMessage());
             // TODO - We could signal provider error but not sure we want to fail
             //        the connection just because we can't convert the message.
-            deliveryFailed(incoming);
+            deliveryFailed(incoming, true);
             return;
         }
 
@@ -306,25 +307,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         incoming.setContext(envelope);
 
         deliver(envelope);
-    }
-
-    private void deliveryFailed(Delivery incoming) {
-        Modified disposition = new Modified();
-        disposition.setUndeliverableHere(true);
-        disposition.setDeliveryFailed(true);
-        incoming.disposition(disposition);
-        incoming.settle();
-        endpoint.flow(1);
-    }
-
-    private void deliver(JmsInboundMessageDispatch envelope) {
-        ProviderListener listener = session.getProvider().getProviderListener();
-        if (listener != null) {
-            LOG.debug("Dispatching received message: {}", envelope.getMessage().getMessageId());
-            listener.onMessage(envelope);
-        } else {
-            LOG.error("Provider listener is not set, message will be dropped.");
-        }
     }
 
     @Override
@@ -352,5 +334,59 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     @Override
     public String toString() {
         return "AmqpConsumer: " + this.info.getConsumerId();
+    }
+
+    private void deliveryFailed(Delivery incoming, boolean expandCredit) {
+        Modified disposition = new Modified();
+        disposition.setUndeliverableHere(true);
+        disposition.setDeliveryFailed(true);
+        incoming.disposition(disposition);
+        incoming.settle();
+        if (expandCredit) {
+            endpoint.flow(1);
+        }
+    }
+
+    private void deliver(JmsInboundMessageDispatch envelope) {
+        ProviderListener listener = session.getProvider().getProviderListener();
+        if (listener != null) {
+            LOG.debug("Dispatching received message: {}", envelope.getMessage().getMessageId());
+            listener.onMessage(envelope);
+        } else {
+            LOG.error("Provider listener is not set, message will be dropped.");
+        }
+    }
+
+    private EncodedMessage readIncomingMessage(Delivery incoming) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Buffer buffer;
+
+        try {
+            int count;
+            byte data[] = new byte[1024 * 4];
+            while ((count = endpoint.recv(data, 0, data.length)) > 0) {
+                stream.write(data, 0, count);
+            }
+
+            buffer = stream.toBuffer();
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+            }
+        }
+
+        return new EncodedMessage(incoming.getMessageFormat(), buffer.data, buffer.offset, buffer.length);
+    }
+
+    public void postCommit() {
+        for (Delivery delivery : delivered.values()) {
+            delivery.settle();
+        }
+        this.delivered.clear();
+    }
+
+    public void postRollback() {
+        // TODO
     }
 }

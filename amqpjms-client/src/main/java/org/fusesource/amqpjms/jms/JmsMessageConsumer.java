@@ -88,14 +88,10 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         this.connection = session.getConnection();
         this.acknowledgementMode = session.acknowledgementMode();
 
-        if (acknowledgementMode == Session.SESSION_TRANSACTED) {
-            throw new UnsupportedOperationException();
+        if (connection.isMessagePrioritySupported()) {
+            this.messageQueue = new PriorityMessageQueue();
         } else {
-            if (connection.isMessagePrioritySupported()) {
-                this.messageQueue = new PriorityMessageQueue();
-            } else {
-                this.messageQueue = new FifoMessageQueue();
-            }
+            this.messageQueue = new FifoMessageQueue();
         }
 
         JmsPrefetchPolicy policy = this.connection.getPrefetchPolicy();
@@ -233,7 +229,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     JmsInboundMessageDispatch ack(final JmsInboundMessageDispatch envelope) throws JMSException {
         if (envelope != null && envelope.getMessage() != null) {
             JmsMessage message = envelope.getMessage();
-            if (message.getAcknowledgeCallback() != null) {
+            if (message.getAcknowledgeCallback() != null || session.isTransacted()) {
                 // Message has been received by the app.. expand the credit
                 // window so that we receive more messages.
                 session.acknowledge(envelope, ACK_TYPE.DELIVERED);

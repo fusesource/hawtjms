@@ -114,8 +114,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
         this.sessionInfo = connection.createResource(sessionInfo);
 
-        // TODO - This starts to show that create should not really return the object, it should just
-        //        take what we give it and either complain or accept it.
         if (this.acknowledgementMode == SESSION_TRANSACTED) {
             currentTxId = connection.getNextTransactionId();
             JmsTransactionInfo transaction = new JmsTransactionInfo(sessionInfo.getSessionId(), currentTxId);
@@ -142,7 +140,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public boolean getTransacted() throws JMSException {
         checkClosed();
-        return this.acknowledgementMode == Session.SESSION_TRANSACTED;
+        return isTransacted();
     }
 
     @Override
@@ -757,6 +755,15 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return this.closed.get();
     }
 
+    /**
+     * Checks whether the session uses transactions.
+     *
+     * @return true - if the session uses transactions.
+     */
+    public boolean isTransacted() {
+        return this.acknowledgementMode == Session.SESSION_TRANSACTED;
+    }
+
     protected void checkClosed() throws IllegalStateException {
         if (this.closed.get()) {
             throw new IllegalStateException("The MessageProducer is closed");
@@ -941,9 +948,13 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     protected void onConnectionRecovery(BlockingProvider provider) throws Exception {
 
-        // TODO - Recover or Rollback TX ?
-
         provider.create(sessionInfo);
+
+        if (this.acknowledgementMode == SESSION_TRANSACTED) {
+            currentTxId = connection.getNextTransactionId();
+            JmsTransactionInfo transaction = new JmsTransactionInfo(sessionInfo.getSessionId(), currentTxId);
+            connection.createResource(transaction);
+        }
 
         for (JmsMessageProducer producer : producers) {
             producer.onConnectionRecovery(provider);
