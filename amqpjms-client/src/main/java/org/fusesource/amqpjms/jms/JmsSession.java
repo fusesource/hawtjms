@@ -740,8 +740,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
-        // TODO - Async Acks should be supported for some Ack types or based on configuration.
-        //        This could be pushed down to the Provider though.
         this.connection.acknowledge(envelope, ackType);
     }
 

@@ -40,6 +40,7 @@ public class JmsPrefetchPolicy extends Object implements Serializable {
     private int queueBrowserPrefetch;
     private int topicPrefetch;
     private int durableTopicPrefetch;
+    private int maxPrefetchSize = MAX_PREFETCH_SIZE;
 
     /**
      * Initialize default prefetch policies
@@ -72,6 +73,9 @@ public class JmsPrefetchPolicy extends Object implements Serializable {
     }
 
     /**
+     * Sets the durable topic prefetch value, this value is limited by the max
+     * prefetch size setting.
+     *
      * @param durableTopicPrefetch
      *        The durableTopicPrefetch to set.
      */
@@ -125,6 +129,24 @@ public class JmsPrefetchPolicy extends Object implements Serializable {
     }
 
     /**
+     * Gets the currently configured max prefetch size value.
+     * @return the currently configured max prefetch value.
+     */
+    public int getMaxPrefetchSize() {
+        return maxPrefetchSize;
+    }
+
+    /**
+     * Sets the maximum prefetch size value.
+     *
+     * @param maxPrefetchSize
+     *        The maximum allowed value for any of the prefetch size options.
+     */
+    public void setMaxPrefetchSize(int maxPrefetchSize) {
+        this.maxPrefetchSize = maxPrefetchSize;
+    }
+
+    /**
      * Sets the prefetch values for all options in this policy to the set limit.  If the value
      * given is larger than the max prefetch value of this policy the new limit will be capped
      * at the max prefetch value.
@@ -150,7 +172,7 @@ public class JmsPrefetchPolicy extends Object implements Serializable {
     }
 
     private int getMaxPrefetchLimit(int value) {
-        int result = Math.min(value, MAX_PREFETCH_SIZE);
+        int result = Math.min(value, maxPrefetchSize);
         if (result < value) {
             LOG.warn("maximum prefetch limit has been reset from " + value + " to " + MAX_PREFETCH_SIZE);
         }
