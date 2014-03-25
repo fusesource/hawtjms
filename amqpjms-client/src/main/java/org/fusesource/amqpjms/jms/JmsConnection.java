@@ -591,11 +591,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     void startResource(JmsResource resource) throws JMSException {
         connect();
 
-        // TODO - We don't currently have a way to say that an operation
-        //        should be done asynchronously.  For a session dispose
-        //        we only care that the request hits the wire, not that
-        //        any response comes back.
-
         try {
             provider.start(resource);
         } catch (Exception ioe) {
@@ -607,7 +602,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connect();
 
         // TODO - We don't currently have a way to say that an operation
-        //        should be done asynchronously.  For a session dispose
+        //        should be done asynchronously.  For a resource dispose
         //        we only care that the request hits the wire, not that
         //        any response comes back.
 
@@ -623,10 +618,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connect();
 
         // TODO - We don't currently have a way to say that an operation
-        //        should be done asynchronously.  For a session dispose
-        //        we only care that the request hits the wire, not that
-        //        any response comes back.
-
+        //        should be done asynchronously.  A send can be done async
+        //        in many cases, such as non-persistent delivery.
         try {
             provider.send(envelope);
         } catch (Exception ioe) {
@@ -642,7 +635,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         //        should be done asynchronously.  For a some acknowledgments
         //        we only care that the request hits the wire, not that
         //        any response comes back.
-
         try {
             provider.acknowledge(envelope, ackType);
         } catch (Exception ioe) {
@@ -658,7 +650,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         //        should be done asynchronously.  For a some acknowledgments
         //        we only care that the request hits the wire, not that
         //        any response comes back.
-
         try {
             provider.acknowledge(sessionId);
         } catch (Exception ioe) {
@@ -670,11 +661,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         checkClosedOrFailed();
         connect();
 
-        // TODO - We don't currently have a way to say that an operation
-        //        should be done asynchronously.  For a some acknowledgments
-        //        we only care that the request hits the wire, not that
-        //        any response comes back.
-
         try {
             provider.unsubscribe(name);
         } catch (Exception ioe) {
@@ -682,15 +668,9 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
-
     void commit(JmsSessionId sessionId) throws JMSException {
         checkClosedOrFailed();
         connect();
-
-        // TODO - We don't currently have a way to say that an operation
-        //        should be done asynchronously.  For a some acknowledgments
-        //        we only care that the request hits the wire, not that
-        //        any response comes back.
 
         try {
             provider.commit(sessionId);
@@ -702,11 +682,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     void rollback(JmsSessionId sessionId) throws JMSException {
         checkClosedOrFailed();
         connect();
-
-        // TODO - We don't currently have a way to say that an operation
-        //        should be done asynchronously.  For a some acknowledgments
-        //        we only care that the request hits the wire, not that
-        //        any response comes back.
 
         try {
             provider.rollback(sessionId);
@@ -959,7 +934,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
             session.onConnectionInterrupted();
         }
 
-        // TODO Auto-generated method stub
         for (JmsConnectionListener listener : connectionListeners) {
             listener.onConnectionInterrupted();
         }
@@ -967,12 +941,15 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onConnectionRecovery(BlockingProvider provider) throws Exception {
-        // TODO - Recover Advisory Consumer ?
-        //        Recover Temporary Destinations ?
+        // TODO - Recover Advisory Consumer once we can support it.
 
         LOG.debug("Connection {} is starting recovery.", connectionInfo.getConnectionId());
 
         provider.create(connectionInfo);
+
+        for (JmsDestination tempDestination : tempDestinations.values()) {
+            createResource(tempDestination);
+        }
 
         for (JmsSession session : sessions) {
             session.onConnectionRecovery(provider);
