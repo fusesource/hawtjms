@@ -61,9 +61,10 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String topicPrefix = "topic://";
     private String tempQueuePrefix = "temp-queue://";
     private String tempTopicPrefix = "temp-topic://";
-    public long sendTimeout;
-    public long requestTimeout;
-    public long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
+    private long sendTimeout;
+    private long requestTimeout;
+    private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
+    private boolean watchRemoteDestinations = true;
     private IdGenerator clientIdGenerator;
     private String clientIDPrefix;
     private IdGenerator connectionIdGenerator;
@@ -571,5 +572,25 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setExceptionListener(ExceptionListener exceptionListener) {
         this.exceptionListener = exceptionListener;
+    }
+
+    /**
+     * Indicates if the Connection's created from this factory will watch for updates
+     * from the remote peer informing of temporary destination creation and destruction.
+     *
+     * @return true if destination monitoring is enabled.
+     */
+    public boolean isWatchRemoteDestinations() {
+        return watchRemoteDestinations;
+    }
+
+    /**
+     * Enable or disable monitoring of remote temporary destination life-cycles.
+     *
+     * @param watchRemoteDestinations
+     *        true if connection instances should monitor remote destination life-cycles.
+     */
+    public void setWatchRemoteDestinations(boolean watchRemoteDestinations) {
+        this.watchRemoteDestinations = watchRemoteDestinations;
     }
 }

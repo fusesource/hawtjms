@@ -108,6 +108,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final AtomicLong tempDestIdGenerator = new AtomicLong();
     private final AtomicLong transactionIdGenerator = new AtomicLong();
 
+    private boolean watchRemoteDestinations;
+
     protected JmsConnection(String connectionId, BlockingProvider provider, IdGenerator clientIdGenerator) throws JMSException {
 
         // This executor can be used for dispatching asynchronous tasks that might block or result
@@ -907,6 +909,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     JmsConnectionId getConnectionId() {
         return this.connectionInfo.getConnectionId();
+    }
+
+    public boolean isWatchRemoteDestinations() {
+        return this.connectionInfo.isWatchRemoteDestinations();
+    }
+
+    public void setWatchRemoteDestinations(boolean watchRemoteDestinations) {
+        this.connectionInfo.setWatchRemoteDestinations(watchRemoteDestinations);
     }
 
     @Override

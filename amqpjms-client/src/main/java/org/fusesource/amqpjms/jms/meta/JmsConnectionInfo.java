@@ -33,6 +33,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private String password;
     private boolean forceAsyncSend;
     private boolean omitHost;
+    private boolean watchRemoteDestinations;
     public long sendTimeout;
     public long requestTimeout;
     public long closeTimeout = DEFAULT_CLOSE_TIMEOUT;
@@ -173,6 +174,14 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setRequestTimeout(long requestTimeout) {
         this.requestTimeout = requestTimeout;
+    }
+
+    public boolean isWatchRemoteDestinations() {
+        return watchRemoteDestinations;
+    }
+
+    public void setWatchRemoteDestinations(boolean watchRemoteDestinations) {
+        this.watchRemoteDestinations = watchRemoteDestinations;
     }
 
     @Override
