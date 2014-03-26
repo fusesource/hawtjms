@@ -16,14 +16,19 @@
  */
 package org.fusesource.amqpjms.jms.transactions;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import javax.jms.Connection;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.Queue;
 import javax.jms.Session;
 
-import org.fusesource.amqpjms.jms.JmsConnection;
-import org.fusesource.amqpjms.jms.JmsConnectionFactory;
+import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
+import org.junit.After;
 import org.junit.Test;
 
 /**
@@ -31,10 +36,18 @@ import org.junit.Test;
  */
 public class JmsTransactedSessionTest extends AmqpTestSupport {
 
+    private Connection connection;
+
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        connection.close();
+        super.tearDown();
+    }
+
     @Test(timeout = 60000)
     public void testCreateTxSession() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
@@ -48,8 +61,7 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)
     public void testCommitOnSessionWithNoWork() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
@@ -63,8 +75,7 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)
     public void testRollbackOnSessionWithNoWork() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
@@ -74,5 +85,28 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
 
         session.rollback();
         connection.close();
+    }
+
+    @Test(timeout=60000)
+    public void testCloseSessionRollsBack() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        sendToAmqQueue(2);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(2, proxy.getQueueSize());
+
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageConsumer consumer = session.createConsumer(queue);
+        Message message = consumer.receive(5000);
+        assertNotNull(message);
+        message = consumer.receive(5000);
+        assertNotNull(message);
+
+        assertEquals(2, proxy.getQueueSize());
+        session.close();
+        assertEquals(2, proxy.getQueueSize());
     }
 }
