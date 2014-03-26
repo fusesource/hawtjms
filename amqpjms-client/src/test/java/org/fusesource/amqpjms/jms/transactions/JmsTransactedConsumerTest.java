@@ -25,6 +25,7 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
@@ -143,6 +144,35 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         assertNotNull("Should have re-received the message again!", message);
         message = consumer.receive(5000);
         assertNotNull("Should have re-received the message again!", message);
+        session.commit();
+
+        assertEquals(0, proxy.getQueueSize());
+    }
+
+    @Test(timeout=60000)
+    public void testCloseConsumerBeforeCommit() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        sendToAmqQueue(2);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(2, proxy.getQueueSize());
+
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageConsumer consumer = session.createConsumer(queue);
+        TextMessage message = (TextMessage)consumer.receive(5000);
+        assertNotNull(message);
+        consumer.close();
+
+        assertEquals(2, proxy.getQueueSize());
+        session.commit();
+        assertEquals(1, proxy.getQueueSize());
+
+        // Create a new consumer
+        consumer = session.createConsumer(queue);
+        message = (TextMessage)consumer.receive(1000);
         session.commit();
 
         assertEquals(0, proxy.getQueueSize());
