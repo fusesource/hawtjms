@@ -244,6 +244,13 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             for (JmsMessageProducer producer : this.producers) {
                 producer.shutdown();
             }
+
+            try {
+                if (getTransactionContext().isInTransaction()) {
+                    rollback();
+                }
+            } catch (JMSException e) {
+            }
         }
     }
 
