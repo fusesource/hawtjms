@@ -22,60 +22,37 @@ package org.fusesource.amqpjms.jms.meta;
  */
 public class JmsMessageId extends JmsAbstractResourceId implements Comparable<JmsMessageId> {
 
-    protected String textView;
-    protected JmsProducerId producerId;
-    protected long producerSequenceId;
-
-    private transient String key;
+    protected String messageId;
 
     public JmsMessageId(JmsProducerInfo producerInfo, long producerSequenceId) {
-        this.producerId = producerInfo.getProducerId();
-        this.producerSequenceId = producerSequenceId;
+        this(producerInfo.getProducerId(), producerSequenceId);
+    }
+
+    public JmsMessageId(JmsProducerId producerId, long producerSequenceId) {
+        this(producerId.toString(), producerSequenceId);
+    }
+
+    public JmsMessageId(String producerId, long producerSequenceId) {
+        this(producerId + ":" + producerSequenceId);
     }
 
     public JmsMessageId(String messageKey) {
         setValue(messageKey);
     }
 
-    public JmsMessageId(String producerId, long producerSequenceId) {
-        this(new JmsProducerId(producerId), producerSequenceId);
-    }
-
-    public JmsMessageId(JmsProducerId producerId, long producerSequenceId) {
-        this.producerId = producerId;
-        this.producerSequenceId = producerSequenceId;
-    }
-
-    private JmsMessageId() {
-    }
-
-    public static JmsMessageId wrapForeignMessageId(String view) {
-        JmsMessageId id = new JmsMessageId();
-        id.setTextView(view);
-        return id;
-    }
-
     public JmsMessageId copy() {
-        JmsMessageId copy = new JmsMessageId(producerId, producerSequenceId);
-        copy.key = key;
-        copy.textView = textView;
+        JmsMessageId copy = new JmsMessageId(messageId);
         return copy;
     }
 
     /**
      * Sets the value as a String
+     *
+     * @param messageId
+     *        The new message Id value for this instance.
      */
-    public void setValue(String messageKey) {
-        key = messageKey;
-        // Parse off the sequenceId
-        int p = messageKey.lastIndexOf(":");
-        if (p >= 0) {
-            producerSequenceId = Long.parseLong(messageKey.substring(p + 1));
-            messageKey = messageKey.substring(0, p);
-        } else {
-            throw new NumberFormatException();
-        }
-        producerId = new JmsProducerId(messageKey);
+    public void setValue(String messageId) {
+        this.messageId = messageId;
     }
 
     @Override
@@ -88,23 +65,15 @@ public class JmsMessageId extends JmsAbstractResourceId implements Comparable<Jm
         }
 
         JmsMessageId id = (JmsMessageId) o;
-        return producerSequenceId == id.producerSequenceId && producerId.equals(id.producerId);
+        return id.messageId.equals(this.messageId);
     }
 
     @Override
     public int hashCode() {
         if (hashCode == 0) {
-            hashCode = producerId.hashCode() ^ (int) producerSequenceId;
+            hashCode = messageId.hashCode();
         }
         return hashCode;
-    }
-
-    public String toProducerKey() {
-        if (textView == null) {
-            return toString();
-        } else {
-            return producerId.toString() + ":" + producerSequenceId;
-        }
     }
 
     @Override
@@ -118,46 +87,15 @@ public class JmsMessageId extends JmsAbstractResourceId implements Comparable<Jm
 
     @Override
     public String toString() {
-        if (key == null) {
-            if (textView != null) {
-                if (textView.startsWith("ID:")) {
-                    key = textView;
-                } else {
-                    key = "ID:" + textView;
-                }
+        String result = messageId;
+        if (messageId != null) {
+            if (messageId.startsWith("ID:")) {
+                result = messageId;
             } else {
-                key = producerId.toString() + ":" + producerSequenceId;
+                result = "ID:" + messageId;
             }
         }
-        return key;
-    }
 
-    /**
-     * Sets the transient text view of the message which will be ignored if the message is
-     * marshaled on a transport; so is only for in-JVM changes to accommodate foreign JMS
-     * message IDs
-     */
-    public void setTextView(String key) {
-        this.textView = key;
-    }
-
-    public String getTextView() {
-        return textView;
-    }
-
-    public JmsProducerId getProducerId() {
-        return producerId;
-    }
-
-    public void setProducerId(JmsProducerId producerId) {
-        this.producerId = producerId;
-    }
-
-    public long getProducerSequenceId() {
-        return producerSequenceId;
-    }
-
-    public void setProducerSequenceId(long producerSequenceId) {
-        this.producerSequenceId = producerSequenceId;
+        return result;
     }
 }

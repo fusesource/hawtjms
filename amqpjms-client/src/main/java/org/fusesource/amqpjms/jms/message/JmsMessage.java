@@ -204,14 +204,8 @@ public class JmsMessage implements javax.jms.Message {
     @Override
     public void setJMSMessageID(String value) {
         if (value != null) {
-            try {
-                JmsMessageId id = new JmsMessageId(value);
-                setMessageId(id);
-            } catch (NumberFormatException e) {
-                // The Id is foreign so we just use it as a Text View.
-                JmsMessageId id = JmsMessageId.wrapForeignMessageId(value);
-                setMessageId(id);
-            }
+            JmsMessageId id = new JmsMessageId(value);
+            setMessageId(id);
         } else {
             this.setMessageId(null);
         }
