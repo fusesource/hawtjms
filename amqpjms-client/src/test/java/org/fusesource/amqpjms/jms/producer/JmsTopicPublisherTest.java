@@ -51,5 +51,4 @@ public class JmsTopicPublisherTest extends AmqpTestSupport {
         assertEquals(0, proxy.getEnqueueCount());
         connection.close();
     }
-
 }
