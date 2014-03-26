@@ -126,10 +126,7 @@ public class JmsMessageId extends JmsAbstractResourceId implements Comparable<Jm
                     key = "ID:" + textView;
                 }
             } else {
-                // TODO - We use an ID that is not quite the same as ActiveMQ's so that we
-                //        don't run into the case were the Broker doesn't ack our messages
-                //        since our Id's are parsable.
-                key = producerId.toString() + "-" + producerSequenceId;
+                key = producerId.toString() + ":" + producerSequenceId;
             }
         }
         return key;
