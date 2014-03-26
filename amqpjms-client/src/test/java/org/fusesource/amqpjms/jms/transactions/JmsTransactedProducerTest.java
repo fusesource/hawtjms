@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -29,8 +28,6 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
-import org.fusesource.amqpjms.jms.JmsConnection;
-import org.fusesource.amqpjms.jms.JmsConnectionFactory;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -42,8 +39,7 @@ public class JmsTransactedProducerTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)
     public void testCreateTxSessionAndProducer() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
@@ -54,15 +50,13 @@ public class JmsTransactedProducerTest extends AmqpTestSupport {
         Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         assertNotNull(producer);
-
-        connection.close();
     }
 
     @Ignore
     @Test(timeout = 60000)
     public void testTXProducerCommitsAreQueued() throws Exception {
         final int MSG_COUNT = 10;
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
         Session nonTxSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -80,14 +74,13 @@ public class JmsTransactedProducerTest extends AmqpTestSupport {
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         session.commit();
         assertEquals(MSG_COUNT, proxy.getQueueSize());
-        connection.close();
     }
 
     @Ignore
     @Test(timeout = 60000)
     public void testTXProducerRollbacksNotQueued() throws Exception {
         final int MSG_COUNT = 10;
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
         Queue queue = session.createQueue(name.getMethodName());
@@ -100,7 +93,5 @@ public class JmsTransactedProducerTest extends AmqpTestSupport {
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         session.rollback();
         assertEquals(0, proxy.getQueueSize());
-        connection.close();
     }
-
 }

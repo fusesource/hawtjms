@@ -31,7 +31,6 @@ import javax.jms.TextMessage;
 
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
-import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -40,19 +39,10 @@ import org.junit.Test;
  */
 public class JmsZeroPrefetchTest extends AmqpTestSupport {
 
-    private JmsConnection connection;
-
-    @Override
-    @After
-    public void tearDown() throws Exception {
-        connection.close();
-        super.tearDown();
-    }
-
     @Test(timeout=60000, expected=JMSException.class)
     public void testCannotUseMessageListener() throws Exception {
-        connection = (JmsConnection) createAmqpConnection();
-        connection.getPrefetchPolicy().setAll(0);
+        connection = createAmqpConnection();
+        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -70,8 +60,8 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
 
     @Test
     public void testPullConsumerWorks() throws Exception {
-        connection = (JmsConnection) createAmqpConnection();
-        connection.getPrefetchPolicy().setAll(0);
+        connection = createAmqpConnection();
+        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -93,8 +83,8 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
     @Ignore // ActiveMQ doesn't honor link credit.
     @Test
     public void testTwoConsumers() throws Exception {
-        connection = (JmsConnection) createAmqpConnection();
-        connection.getPrefetchPolicy().setAll(0);
+        connection = createAmqpConnection();
+        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

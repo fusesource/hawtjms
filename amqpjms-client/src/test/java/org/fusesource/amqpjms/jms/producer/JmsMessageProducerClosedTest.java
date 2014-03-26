@@ -16,7 +16,6 @@
  */
 package org.fusesource.amqpjms.jms.producer;
 
-import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -31,7 +30,6 @@ import org.junit.Test;
  */
 public class JmsMessageProducerClosedTest extends AmqpTestSupport {
 
-    protected Connection connection;
     protected MessageProducer producer;
     protected Message message;
     protected Destination destination;
@@ -50,12 +48,6 @@ public class JmsMessageProducerClosedTest extends AmqpTestSupport {
     public void setUp() throws Exception {
         super.setUp();
         producer = createProducer();
-    }
-
-    @Override
-    public void tearDown() throws Exception {
-        connection.close();
-        super.tearDown();
     }
 
     @Test(timeout=30000)

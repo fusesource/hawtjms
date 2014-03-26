@@ -31,7 +31,6 @@ import org.junit.Test;
  */
 public class JmsConnectionClosedTest extends AmqpTestSupport {
 
-    protected Connection connection;
     protected Destination destination;
 
     protected Connection createConnection() throws Exception {
@@ -46,12 +45,6 @@ public class JmsConnectionClosedTest extends AmqpTestSupport {
     public void setUp() throws Exception {
         super.setUp();
         createConnection();
-    }
-
-    @Override
-    public void tearDown() throws Exception {
-        connection.close();
-        super.tearDown();
     }
 
     @Test(timeout=30000, expected=JMSException.class)

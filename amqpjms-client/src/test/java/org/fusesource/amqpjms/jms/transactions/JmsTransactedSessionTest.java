@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
@@ -28,22 +27,12 @@ import javax.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
-import org.junit.After;
 import org.junit.Test;
 
 /**
  * Basic tests for Session in Transacted mode.
  */
 public class JmsTransactedSessionTest extends AmqpTestSupport {
-
-    private Connection connection;
-
-    @Override
-    @After
-    public void tearDown() throws Exception {
-        connection.close();
-        super.tearDown();
-    }
 
     @Test(timeout = 60000)
     public void testCreateTxSession() throws Exception {
@@ -56,7 +45,6 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
         assertTrue(session.getTransacted());
 
         session.close();
-        connection.close();
     }
 
     @Test(timeout = 60000)
@@ -70,7 +58,6 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
         assertTrue(session.getTransacted());
 
         session.commit();
-        connection.close();
     }
 
     @Test(timeout = 60000)
@@ -84,7 +71,6 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
         assertTrue(session.getTransacted());
 
         session.rollback();
-        connection.close();
     }
 
     @Test(timeout=60000)

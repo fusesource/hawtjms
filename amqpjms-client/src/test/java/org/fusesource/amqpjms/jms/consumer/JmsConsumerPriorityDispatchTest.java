@@ -32,7 +32,6 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.fusesource.amqpjms.util.Wait;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,13 +47,6 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
     public void setUp() throws Exception {
         super.setUp();
         connection = createAmqpConnection();
-    }
-
-    @Override
-    @After
-    public void tearDown() throws Exception {
-        connection.close();
-        super.tearDown();
     }
 
     @Test

@@ -74,12 +74,26 @@ public class AmqpTestSupport {
     protected int numberOfMessages;
     protected int amqpPort;
     protected int openwirePort;
+    protected Connection connection;
 
     @Before
     public void setUp() throws Exception {
         exceptions.clear();
         startPrimaryBroker();
         this.numberOfMessages = 2000;
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (connection != null) {
+            connection.close();
+        }
+        stopPrimaryBroker();
+        for (BrokerService broker : brokers) {
+            try {
+                stopBroker(broker);
+            } catch (Exception ex) {}
+        }
     }
 
     protected boolean isPersistent() {
@@ -200,16 +214,6 @@ public class AmqpTestSupport {
         if (broker != null) {
             broker.stop();
             broker.waitUntilStopped();
-        }
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        stopPrimaryBroker();
-        for (BrokerService broker : brokers) {
-            try {
-                stopBroker(broker);
-            } catch (Exception ex) {}
         }
     }
 
