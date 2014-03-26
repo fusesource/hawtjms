@@ -29,6 +29,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
@@ -74,8 +75,6 @@ import org.fusesource.amqpjms.jms.meta.JmsMessageId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
-import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
-import org.fusesource.amqpjms.jms.meta.JmsTransactionInfo;
 import org.fusesource.amqpjms.provider.BlockingProvider;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 
@@ -92,16 +91,17 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private MessageListener messageListener;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
-    private JmsTransactionId currentTxId;
     private boolean forceAsyncSend;
     private final LinkedBlockingQueue<JmsInboundMessageDispatch> stoppedMessages =
         new LinkedBlockingQueue<JmsInboundMessageDispatch>(10000);
     private JmsPrefetchPolicy prefetchPolicy;
     private JmsSessionInfo sessionInfo;
     private ExecutorService executor;
+    private final ReentrantLock sendLock = new ReentrantLock();
 
     private final AtomicLong consumerIdGenerator = new AtomicLong();
     private final AtomicLong producerIdGenerator = new AtomicLong();
+    private JmsLocalTransactionContext transactionContext;
 
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         this.connection = connection;
@@ -109,18 +109,12 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         this.forceAsyncSend = connection.isForceAsyncSend();
         this.prefetchPolicy = new JmsPrefetchPolicy(connection.getPrefetchPolicy());
 
+        setTransactionContext(new JmsLocalTransactionContext(this));
+
         this.sessionInfo = new JmsSessionInfo(sessionId);
         this.sessionInfo.setAcknowledgementMode(acknowledgementMode);
 
         this.sessionInfo = connection.createResource(sessionInfo);
-
-        if (this.acknowledgementMode == SESSION_TRANSACTED) {
-            currentTxId = connection.getNextTransactionId();
-            JmsTransactionInfo transaction = new JmsTransactionInfo(sessionInfo.getSessionId(), currentTxId);
-            connection.createResource(transaction);
-        } else {
-            this.currentTxId = null;
-        }
     }
 
     int acknowledgementMode() {
@@ -173,12 +167,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
            throw new javax.jms.IllegalStateException("Not a transacted session");
         }
 
-        for (JmsMessageConsumer c : consumers.values()) {
-            c.commit();
-        }
-
-        this.connection.commit(getSessionId());
-        startNextTransaction();
+        this.transactionContext.commit();
     }
 
     @Override
@@ -188,12 +177,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             throw new javax.jms.IllegalStateException("Not a transacted session");
         }
 
-        for (JmsMessageConsumer c : consumers.values()) {
-            c.rollback();
-        }
-
-        this.connection.rollback(getSessionId());
-        startNextTransaction();
+        this.transactionContext.rollback();
 
         getExecutor().execute(new Runnable() {
             @Override
@@ -684,60 +668,66 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     private void send(JmsMessageProducer producer, JmsDestination destination, Message original, int deliveryMode, int priority, long timeToLive, boolean disableMsgId) throws JMSException {
+        sendLock.lock();
+        try {
+            startNextTransaction();
 
-        original.setJMSDeliveryMode(deliveryMode);
-        original.setJMSPriority(priority);
-        original.setJMSRedelivered(false);
-        if (timeToLive > 0) {
-            long timeStamp = System.currentTimeMillis();
-            original.setJMSTimestamp(timeStamp);
-            original.setJMSExpiration(System.currentTimeMillis() + timeToLive);
-        }
-
-        JmsMessageId msgId = null;
-        if (!disableMsgId) {
-            msgId = getNextMessageId(producer);
-        }
-
-        boolean isJmsMessageType = original instanceof JmsMessage;
-        if (isJmsMessageType) {
-            ((JmsMessage) original).setConnection(connection);
-            if (!disableMsgId) {
-                ((JmsMessage) original).setMessageId(msgId);
+            original.setJMSDeliveryMode(deliveryMode);
+            original.setJMSPriority(priority);
+            original.setJMSRedelivered(false);
+            if (timeToLive > 0) {
+                long timeStamp = System.currentTimeMillis();
+                original.setJMSTimestamp(timeStamp);
+                original.setJMSExpiration(System.currentTimeMillis() + timeToLive);
             }
-            original.setJMSDestination(destination);
-        }
 
-        JmsMessage copy = JmsMessageTransformation.transformMessage(connection, original);
-
-        // Ensure original message gets the destination and message ID as per spec.
-        if (!isJmsMessageType) {
+            JmsMessageId msgId = null;
             if (!disableMsgId) {
-                original.setJMSMessageID(msgId.toString());
-                copy.setMessageId(msgId);
+                msgId = getNextMessageId(producer);
             }
-            original.setJMSDestination(destination);
-            copy.setJMSDestination(destination);
-        }
 
-        boolean sync = !forceAsyncSend && deliveryMode == DeliveryMode.PERSISTENT && !getTransacted();
+            boolean isJmsMessageType = original instanceof JmsMessage;
+            if (isJmsMessageType) {
+                ((JmsMessage) original).setConnection(connection);
+                if (!disableMsgId) {
+                    ((JmsMessage) original).setMessageId(msgId);
+                }
+                original.setJMSDestination(destination);
+            }
 
-        JmsOutboundMessageDispatch envelope = new JmsOutboundMessageDispatch();
-        envelope.setMessage(copy);
-        envelope.setProducerId(producer.getProducerId());
-        envelope.setDestination(destination);
-        envelope.setTransactionId(currentTxId);
+            JmsMessage copy = JmsMessageTransformation.transformMessage(connection, original);
 
-        if (sync) {
-            this.connection.send(envelope);
-        } else {
-            this.connection.send(envelope);
-            // TODO - Async sends should be supported
-            //        we could force this down into the provider though
+            // Ensure original message gets the destination and message ID as per spec.
+            if (!isJmsMessageType) {
+                if (!disableMsgId) {
+                    original.setJMSMessageID(msgId.toString());
+                    copy.setMessageId(msgId);
+                }
+                original.setJMSDestination(destination);
+                copy.setJMSDestination(destination);
+            }
+
+            boolean sync = !forceAsyncSend && deliveryMode == DeliveryMode.PERSISTENT && !getTransacted();
+
+            JmsOutboundMessageDispatch envelope = new JmsOutboundMessageDispatch();
+            envelope.setMessage(copy);
+            envelope.setProducerId(producer.getProducerId());
+            envelope.setDestination(destination);
+
+            if (sync) {
+                this.connection.send(envelope);
+            } else {
+                this.connection.send(envelope);
+                // TODO - Async sends should be supported
+                //        we could force this down into the provider though
+            }
+        } finally {
+            sendLock.unlock();
         }
     }
 
     void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
+        startNextTransaction();
         this.connection.acknowledge(envelope, ackType);
     }
 
@@ -920,10 +910,10 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return message;
     }
 
-    private void startNextTransaction() throws JMSException {
-        currentTxId = connection.getNextTransactionId();
-        JmsTransactionInfo transaction = new JmsTransactionInfo(sessionInfo.getSessionId(), currentTxId);
-        connection.createResource(transaction);
+    private synchronized void startNextTransaction() throws JMSException {
+        if (getTransacted()) {
+            transactionContext.begin();
+        }
     }
 
     boolean isDestinationInUse(JmsDestination destination) {
@@ -978,9 +968,10 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         provider.create(sessionInfo);
 
         if (this.acknowledgementMode == SESSION_TRANSACTED) {
-            currentTxId = connection.getNextTransactionId();
-            JmsTransactionInfo transaction = new JmsTransactionInfo(sessionInfo.getSessionId(), currentTxId);
-            connection.createResource(transaction);
+            if (transactionContext.isInTransaction()) {
+                transactionContext.clear();
+                transactionContext.begin();
+            }
         }
 
         for (JmsMessageProducer producer : producers) {
@@ -1026,5 +1017,25 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 consumer.onMessage(envelope);
             }
         }
+    }
+
+    /**
+     * Sets the transaction context of the session.
+     *
+     * @param transactionContext
+     *        provides the means to control a JMS transaction.
+     */
+    public void setTransactionContext(JmsLocalTransactionContext transactionContext) {
+        this.transactionContext = transactionContext;
+    }
+
+    /**
+     * Returns the transaction context of the session.
+     *
+     * @return transactionContext
+     *         session's transaction context.
+     */
+    public JmsLocalTransactionContext getTransactionContext() {
+        return transactionContext;
     }
 }

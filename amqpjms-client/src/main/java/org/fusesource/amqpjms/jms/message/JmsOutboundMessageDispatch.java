@@ -18,7 +18,6 @@ package org.fusesource.amqpjms.jms.message;
 
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
-import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 
 /**
  * Envelope that wraps the objects involved in a Message send operation.
@@ -26,7 +25,6 @@ import org.fusesource.amqpjms.jms.meta.JmsTransactionId;
 public class JmsOutboundMessageDispatch {
 
     private JmsProducerId producerId;
-    private JmsTransactionId transactionId;
     private JmsMessage message;
     private JmsDestination destination;
 
@@ -52,13 +50,5 @@ public class JmsOutboundMessageDispatch {
 
     public void setProducerId(JmsProducerId producerId) {
         this.producerId = producerId;
-    }
-
-    public JmsTransactionId getTransactionId() {
-        return transactionId;
-    }
-
-    public void setTransactionId(JmsTransactionId transactionId) {
-        this.transactionId = transactionId;
     }
 }

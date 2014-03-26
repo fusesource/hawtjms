@@ -55,6 +55,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     protected final MessageQueue messageQueue;
     protected final Lock lock = new ReentrantLock();
     protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
+    protected final AtomicBoolean delivered = new AtomicBoolean();
 
     /**
      * Create a non-durable MessageConsumer
@@ -130,7 +131,21 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
     @Override
     public void close() throws JMSException {
         if (!closed.get()) {
-            doClose();
+            if (delivered.get() && session.getTransactionContext().isInTransaction()) {
+                session.getTransactionContext().addSynchronization(new JmsTxSynchronization() {
+                    @Override
+                    public void afterCommit() throws Exception {
+                        doClose();
+                    }
+
+                    @Override
+                    public void afterRollback() throws Exception {
+                        doClose();
+                    }
+                });
+            } else {
+                doClose();
+            }
         }
     }
 
@@ -236,6 +251,8 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
             } else {
                 doAck(envelope);
             }
+            // Tags that we have delivered and can't close if in a TX Session.
+            delivered.set(true);
         }
         return envelope;
     }
@@ -314,16 +331,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
         } finally {
             lock.unlock();
         }
-    }
-
-    void rollback() {
-        // TODO
-        // ((TxMessageQueue) this.messageQueue).rollback();
-    }
-
-    void commit() {
-        // TODO
-        // ((TxMessageQueue) this.messageQueue).commit();
     }
 
     void drainMessageQueueToListener() {

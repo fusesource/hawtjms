@@ -203,18 +203,16 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             }
         }
 
-        AmqpTransactionContext txContext = session.getTransactionContext();
-
         if (ackType.equals(ACK_TYPE.DELIVERED)) {
             LOG.debug("Delivered Ack of message: {}", messageId);
-            if (txContext != null) {
-                Binary txnId = txContext.getAmqpTransactionId();
+            if (session.isTransacted()) {
+                Binary txnId = session.getTransactionContext().getAmqpTransactionId();
                 if (txnId != null) {
                     TransactionalState txState = new TransactionalState();
                     txState.setOutcome(Accepted.getInstance());
                     txState.setTxnId(txnId);
                     delivery.disposition(txState);
-                    txContext.registerTxConsumer(this);
+                    session.getTransactionContext().registerTxConsumer(this);
                 }
             }
             delivered.put(messageId, delivery);

@@ -77,8 +77,8 @@ public class AmqpFixedProducer extends AmqpProducer {
         byte[] tag = tagGenerator.getNextTag();
         Delivery delivery = endpoint.delivery(tag);
         delivery.setContext(request);
-        if (envelope.getTransactionId() != null) {
-            Binary amqpTxId = (Binary) envelope.getTransactionId().getProviderHint();
+        if (session.isTransacted()) {
+            Binary amqpTxId = session.getTransactionContext().getAmqpTransactionId();
             TransactionalState state = new TransactionalState();
             state.setTxnId(amqpTxId);
             state.setOutcome(Accepted.getInstance());

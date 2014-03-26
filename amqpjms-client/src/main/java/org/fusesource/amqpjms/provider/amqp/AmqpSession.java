@@ -320,6 +320,10 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
         this.pendingCloseLinks.add(link);
     }
 
+    boolean isTransacted() {
+        return this.info.isTransacted();
+    }
+
     @Override
     public String toString() {
         return "AmqpSession { " + getSessionId() + " }";
