@@ -17,12 +17,18 @@
 package org.fusesource.amqpjms.provider.amqp;
 
 import org.apache.qpid.proton.amqp.messaging.Source;
+import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerInfo;
+import org.fusesource.amqpjms.provider.AsyncResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Queue Browser implementation for AMQP
  */
 public class AmqpQueueBrowser extends AmqpConsumer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpQueueBrowser.class);
 
     /**
      * @param session
@@ -30,6 +36,27 @@ public class AmqpQueueBrowser extends AmqpConsumer {
      */
     public AmqpQueueBrowser(AmqpSession session, JmsConsumerInfo info) {
         super(session, info);
+    }
+
+    /**
+     * Starts the QueueBrowser by activating drain mode with the initial credits.
+     */
+    @Override
+    public void start(AsyncResult<Void> request) {
+        this.endpoint.drain(info.getPrefetchSize());
+        request.onSuccess();
+    }
+
+    @Override
+    public void processUpdates() {
+        super.processUpdates();
+
+        if (endpoint.getDrain()) {
+            LOG.debug("Endpoint reports drained: ", getConsumerId());
+            JmsInboundMessageDispatch endOfBrowse = new JmsInboundMessageDispatch();
+            endOfBrowse.setConsumerId(getConsumerId());
+            deliver(endOfBrowse);
+        }
     }
 
     @Override

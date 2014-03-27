@@ -84,7 +84,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
      */
     public void start(AsyncResult<Void> request) {
         this.endpoint.flow(info.getPrefetchSize());
-        request.onSuccess(null);
+        request.onSuccess();
     }
 
     /**
@@ -92,6 +92,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
      */
     @Override
     public void processUpdates() {
+
         Delivery incoming = null;
         do {
             incoming = endpoint.current();
@@ -334,7 +335,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         return "AmqpConsumer: " + this.info.getConsumerId();
     }
 
-    private void deliveryFailed(Delivery incoming, boolean expandCredit) {
+    protected void deliveryFailed(Delivery incoming, boolean expandCredit) {
         Modified disposition = new Modified();
         disposition.setUndeliverableHere(true);
         disposition.setDeliveryFailed(true);
@@ -345,17 +346,21 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         }
     }
 
-    private void deliver(JmsInboundMessageDispatch envelope) {
+    protected void deliver(JmsInboundMessageDispatch envelope) {
         ProviderListener listener = session.getProvider().getProviderListener();
         if (listener != null) {
-            LOG.debug("Dispatching received message: {}", envelope.getMessage().getMessageId());
+            if (envelope.getMessage() != null) {
+                LOG.debug("Dispatching received message: {}", envelope.getMessage().getMessageId());
+            } else {
+                LOG.debug("Dispatching end of browse to: {}", envelope.getConsumerId());
+            }
             listener.onMessage(envelope);
         } else {
             LOG.error("Provider listener is not set, message will be dropped.");
         }
     }
 
-    private EncodedMessage readIncomingMessage(Delivery incoming) {
+    protected EncodedMessage readIncomingMessage(Delivery incoming) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Buffer buffer;
 

@@ -128,6 +128,7 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
      *         if the JMS provider fails to get the enumeration for this browser due to some
      *         internal error.
      */
+    @SuppressWarnings("rawtypes")
     @Override
     public Enumeration getEnumeration() throws JMSException {
         checkClosed();
