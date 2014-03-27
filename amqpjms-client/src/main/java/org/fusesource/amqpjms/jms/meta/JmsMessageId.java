@@ -33,7 +33,7 @@ public class JmsMessageId extends JmsAbstractResourceId implements Comparable<Jm
     }
 
     public JmsMessageId(String producerId, long producerSequenceId) {
-        this(producerId + ":" + producerSequenceId);
+        this(producerId + "-" + producerSequenceId);
     }
 
     public JmsMessageId(String messageKey) {

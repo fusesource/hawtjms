@@ -44,7 +44,6 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.activemq.broker.jmx.TopicViewMBean;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
 import org.fusesource.amqpjms.util.Wait;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -316,7 +315,6 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertEquals(0, messagesReceived);
     }
 
-    @Ignore // ActiveMQ Bug
     @Test(timeout = 60000)
     public void testMessagesAreAckedAMQPProducer() throws Exception {
         int messagesSent = 3;
