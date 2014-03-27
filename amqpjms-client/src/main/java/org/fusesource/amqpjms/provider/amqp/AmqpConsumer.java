@@ -62,9 +62,9 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConsumer.class);
 
-    private static final Symbol COPY = Symbol.getSymbol("copy");
-    private static final Symbol JMS_NO_LOCAL_SYMBOL = Symbol.valueOf("no-local");
-    private static final Symbol JMS_SELECTOR_SYMBOL = Symbol.valueOf("jms-selector");
+    protected static final Symbol COPY = Symbol.getSymbol("copy");
+    protected static final Symbol JMS_NO_LOCAL_SYMBOL = Symbol.valueOf("no-local");
+    protected static final Symbol JMS_SELECTOR_SYMBOL = Symbol.valueOf("jms-selector");
 
     private final AmqpSession session;
     private final InboundTransformer inboundTransformer =
@@ -134,10 +134,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     protected void configureSource(Source source) {
         Map<Symbol, DescribedType> filters = new HashMap<Symbol, DescribedType>();
-
-        if (info.isBrowser()) {
-            source.setDistributionMode(COPY);
-        }
 
         if (info.getSubscriptionName() != null && !info.getSubscriptionName().isEmpty()) {
             source.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
@@ -327,6 +323,10 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     public Receiver getProtonReceiver() {
         return this.endpoint;
+    }
+
+    public boolean isBrowser() {
+        return false;
     }
 
     @Override

@@ -126,7 +126,13 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     }
 
     public AmqpConsumer createConsumer(JmsConsumerInfo consumerInfo) {
-        return new AmqpConsumer(this, consumerInfo);
+        AmqpConsumer result = null;
+        if (consumerInfo.isBrowser()) {
+            result = new AmqpConsumer(this, consumerInfo);
+        } else {
+            result = new AmqpQueueBrowser(this, consumerInfo);
+        }
+        return result;
     }
 
     public AmqpConsumer getConsumer(JmsConsumerInfo consumerInfo) {
