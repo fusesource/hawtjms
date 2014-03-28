@@ -56,6 +56,9 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpTransactionContext.class);
 
+    private static final Boolean ROLLBACK_MARKER = Boolean.FALSE;
+    private static final Boolean COMMIT_MARKER = Boolean.TRUE;
+
     private final AmqpSession session;
     private JmsTransactionId current;
     private final AmqpTransferTagGenerator tagGenerator = new AmqpTransferTagGenerator();
@@ -106,10 +109,16 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
                 LOG.info("Last TX request succeeded: {}", current.getProviderHint());
                 pendingDelivery.settle();
                 AsyncResult<Void> request = this.pendingRequest;
+                if (pendingDelivery.getContext() != null) {
+                    if (pendingDelivery.getContext().equals(COMMIT_MARKER)) {
+                        postCommit();
+                    } else {
+                        postRollback();
+                    }
+                }
                 this.current = null;
                 this.pendingRequest = null;
                 this.pendingDelivery = null;
-                postCommit();
                 request.onSuccess();
             }
         }
@@ -160,6 +169,8 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
             throw new IllegalStateException("Rollback called with no active Transaction.");
         }
 
+        preCommit();
+
         Message message = session.getMessageFactory().createMessage();
         Discharge discharge = new Discharge();
         discharge.setFail(false);
@@ -167,6 +178,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
         message.setBody(new AmqpValue(discharge));
 
         pendingDelivery = endpoint.delivery(tagGenerator.getNextTag());
+        pendingDelivery.setContext(COMMIT_MARKER);
         pendingRequest = request;
 
         sendTxCommand(message);
@@ -177,6 +189,8 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
             throw new IllegalStateException("Rollback called with no active Transaction.");
         }
 
+        preRollback();
+
         Message message = session.getMessageFactory().createMessage();
         Discharge discharge = new Discharge();
         discharge.setFail(true);
@@ -184,6 +198,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
         message.setBody(new AmqpValue(discharge));
 
         pendingDelivery = endpoint.delivery(tagGenerator.getNextTag());
+        pendingDelivery.setContext(ROLLBACK_MARKER);
         pendingRequest = request;
 
         sendTxCommand(message);
@@ -217,6 +232,18 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
     @Override
     public String toString() {
         return this.session.getSessionId() + ": txContext";
+    }
+
+    private void preCommit() {
+        for (AmqpConsumer consumer : txConsumers) {
+            consumer.preCommit();
+        }
+    }
+
+    private void preRollback() {
+        for (AmqpConsumer consumer : txConsumers) {
+            consumer.preRollback();
+        }
     }
 
     private void postCommit() {

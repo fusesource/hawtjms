@@ -382,6 +382,12 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         return new EncodedMessage(incoming.getMessageFormat(), buffer.data, buffer.offset, buffer.length);
     }
 
+    public void preCommit() {
+    }
+
+    public void preRollback() {
+    }
+
     /**
      * Ensures that all delivered messages are marked as settled locally before the TX state
      * is cleared and the next TX started.
