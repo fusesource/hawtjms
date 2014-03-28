@@ -35,7 +35,7 @@ import org.junit.Test;
  */
 public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testCreateConsumerFromTxSession() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -49,7 +49,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         assertNotNull(consumer);
     }
 
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testConsumedInTxAreAcked() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -71,7 +71,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testReceiveAndRollback() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -106,7 +106,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testReceiveTwoThenRollback() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -138,7 +138,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testCloseConsumerBeforeCommit() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -151,7 +151,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
         Queue queue = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(queue);
-        TextMessage message = (TextMessage)consumer.receive(5000);
+        TextMessage message = (TextMessage) consumer.receive(5000);
         assertNotNull(message);
         consumer.close();
 
@@ -161,9 +161,48 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
         // Create a new consumer
         consumer = session.createConsumer(queue);
-        message = (TextMessage)consumer.receive(1000);
+        message = (TextMessage) consumer.receive(1000);
         session.commit();
 
         assertEquals(0, proxy.getQueueSize());
+    }
+
+    @Test(timeout=60000)
+    public void testJMSXDeliveryCount() throws Exception {
+        sendToAmqQueue(1);
+
+        connection = createAmqpConnection();
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        assertEquals(true, session.getTransacted());
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageConsumer consumer = session.createConsumer(queue);
+        connection.start();
+
+        // we receive a message...it should be delivered once and not be Re-delivered.
+        Message message = consumer.receive(5000);
+        assertNotNull(message);
+        assertEquals(false, message.getJMSRedelivered());
+        int jmsxDeliveryCount = message.getIntProperty("JMSXDeliveryCount");
+        LOG.info("Incoming message has delivery count: {}", jmsxDeliveryCount);
+        assertEquals(1, jmsxDeliveryCount);
+        session.rollback();
+
+        // we receive again a message
+        message = consumer.receive(5000);
+        assertNotNull(message);
+        assertEquals(true, message.getJMSRedelivered());
+        jmsxDeliveryCount = message.getIntProperty("JMSXDeliveryCount");
+        LOG.info("Redelivered message has delivery count: {}", jmsxDeliveryCount);
+        assertEquals(2, jmsxDeliveryCount);
+        session.rollback();
+
+        // we receive again a message
+        message = consumer.receive(5000);
+        assertNotNull(message);
+        assertEquals(true, message.getJMSRedelivered());
+        jmsxDeliveryCount = message.getIntProperty("JMSXDeliveryCount");
+        LOG.info("Redelivered message has delivery count: {}", jmsxDeliveryCount);
+        assertEquals(3, jmsxDeliveryCount);
+        session.commit();
     }
 }
