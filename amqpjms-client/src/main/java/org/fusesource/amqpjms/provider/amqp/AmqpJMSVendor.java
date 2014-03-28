@@ -118,7 +118,9 @@ public class AmqpJMSVendor extends JMSVendor {
 
     @Override
     public void setJMSXDeliveryCount(Message msg, long value) {
-        ((JmsMessage) msg).setRedeliveryCounter((int) value);
+        // Delivery count tracks total deliveries which is always one higher than
+        // re-delivery count since first delivery counts to.
+        ((JmsMessage) msg).setRedeliveryCounter((int) (value == 0 ? value : value - 1));
     }
 
     @Override
