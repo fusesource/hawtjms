@@ -29,8 +29,8 @@ import javax.jms.QueueBrowser;
 import javax.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
+import org.fusesource.amqpjms.jms.JmsConnection;
 import org.fusesource.amqpjms.util.AmqpTestSupport;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +60,6 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Ignore
     @SuppressWarnings("rawtypes")
     @Test(timeout = 60000)
     public void testNoMessagesBrowserHasNoElements() throws Exception {
@@ -84,7 +83,6 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Ignore
     @SuppressWarnings("rawtypes")
     @Test(timeout = 60000)
     public void testBrowseAllInQueue() throws Exception {
@@ -111,6 +109,39 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         }
         assertFalse(enumeration.hasMoreElements());
         assertEquals(5, count);
+
+        connection.close();
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Test(timeout = 90000)
+    public void testBrowseAllInQueueSmallPrefetch() throws Exception {
+        Connection connection = createAmqpConnection();
+        ((JmsConnection) connection).getPrefetchPolicy().setQueueBrowserPrefetch(10);
+        connection.start();
+
+        final int MSG_COUNT = 30;
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue(name.getMethodName());
+        sendToAmqQueue(MSG_COUNT);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(MSG_COUNT, proxy.getQueueSize());
+
+        QueueBrowser browser = session.createBrowser(queue);
+        assertNotNull(browser);
+        Enumeration enumeration = browser.getEnumeration();
+        int count = 0;
+        while (enumeration.hasMoreElements()) {
+            Message msg = (Message) enumeration.nextElement();
+            assertNotNull(msg);
+            LOG.debug("Recv: {}", msg);
+            count++;
+        }
+        assertFalse(enumeration.hasMoreElements());
+        assertEquals(MSG_COUNT, count);
 
         connection.close();
     }

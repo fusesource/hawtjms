@@ -66,10 +66,10 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     protected static final Symbol JMS_NO_LOCAL_SYMBOL = Symbol.valueOf("no-local");
     protected static final Symbol JMS_SELECTOR_SYMBOL = Symbol.valueOf("jms-selector");
 
-    private final AmqpSession session;
-    private final InboundTransformer inboundTransformer =
+    protected final AmqpSession session;
+    protected final InboundTransformer inboundTransformer =
         new JMSMappingInboundTransformer(AmqpJMSVendor.INSTANCE);;
-    private final Map<JmsMessageId, Delivery> delivered = new LinkedHashMap<JmsMessageId, Delivery>();
+    protected final Map<JmsMessageId, Delivery> delivered = new LinkedHashMap<JmsMessageId, Delivery>();
 
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
         super(info);
@@ -168,7 +168,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
      * would already have been given for these so we just need to settle them.
      */
     public void acknowledge() {
-        LOG.debug("Session Acknowledge for consumer: {}", info.getConsumerId());
+        LOG.trace("Session Acknowledge for consumer: {}", info.getConsumerId());
         for (Delivery delivery : delivered.values()) {
             delivery.disposition(Accepted.getInstance());
             delivery.settle();

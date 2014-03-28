@@ -462,8 +462,8 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
      * @param timeout
      *        The amount of time the pull request should remain valid.
      */
-    private void sendPullCommand(long timeout) throws JMSException {
-        if (consumerInfo.getPrefetchSize() == 0 && messageQueue.isEmpty()) {
+    protected void sendPullCommand(long timeout) throws JMSException {
+        if (messageQueue.isEmpty() && (getPrefetchSize() == 0 || isBrowser())) {
             connection.pull(getConsumerId(), timeout);
         }
     }

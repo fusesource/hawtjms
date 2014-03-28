@@ -361,7 +361,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkDestination(destination);
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
-        JmsQueueBrowser result = new JmsQueueBrowser(getNextConsumerId(), this, dest, messageSelector);
+        JmsQueueBrowser result = new JmsQueueBrowser(this, dest, messageSelector);
         return result;
     }
 

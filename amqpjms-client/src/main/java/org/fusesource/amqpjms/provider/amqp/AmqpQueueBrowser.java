@@ -43,19 +43,44 @@ public class AmqpQueueBrowser extends AmqpConsumer {
      */
     @Override
     public void start(AsyncResult<Void> request) {
-        this.endpoint.drain(info.getPrefetchSize());
+        this.endpoint.flow(info.getPrefetchSize());
         request.onSuccess();
+    }
+
+    /**
+     * QueueBrowser will attempt to initiate a pull whenever there are no pending Messages.
+     *
+     * We need to initiate a drain to see if there are any messages and if the remote sender
+     * indicates it is drained then we can send end of browse.  We only do this when there
+     * are no pending incoming deliveries and all delivered messages have become settled
+     * in order to give the remote a chance to dispatch more messages once all deliveries
+     * have been settled.
+     *
+     * @param timeout
+     *        ignored in this context.
+     */
+    @Override
+    public void pull(long timeout) {
+        if (!endpoint.getDrain() && endpoint.current() == null && endpoint.getUnsettled() == 0) {
+            LOG.trace("QueueBrowser {} will try to drain remote.", getConsumerId());
+            this.endpoint.drain(info.getPrefetchSize());
+        }
     }
 
     @Override
     public void processUpdates() {
+        if (endpoint.getDrain() && endpoint.current() != null) {
+            LOG.trace("{} incoming delivery, cancel drain.", getConsumerId());
+            endpoint.setDrain(false);
+        }
         super.processUpdates();
 
-        if (endpoint.getDrain()) {
-            LOG.debug("Endpoint reports drained: ", getConsumerId());
-            JmsInboundMessageDispatch endOfBrowse = new JmsInboundMessageDispatch();
-            endOfBrowse.setConsumerId(getConsumerId());
-            deliver(endOfBrowse);
+        if (endpoint.getDrain() && endpoint.getCredit() == endpoint.getRemoteCredit()) {
+            JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch();
+            browseDone.setConsumerId(getConsumerId());
+            deliver(browseDone);
+        } else {
+            endpoint.setDrain(false);
         }
     }
 

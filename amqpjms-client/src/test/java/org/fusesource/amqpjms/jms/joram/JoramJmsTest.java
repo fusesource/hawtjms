@@ -27,6 +27,7 @@ import org.objectweb.jtests.jms.conform.message.MessageDefaultTest;
 import org.objectweb.jtests.jms.conform.message.headers.MessageHeaderTest;
 import org.objectweb.jtests.jms.conform.message.properties.MessagePropertyConversionTest;
 import org.objectweb.jtests.jms.conform.message.properties.MessagePropertyTest;
+import org.objectweb.jtests.jms.conform.queue.QueueBrowserTest;
 import org.objectweb.jtests.jms.conform.queue.TemporaryQueueTest;
 import org.objectweb.jtests.jms.conform.selector.SelectorSyntaxTest;
 import org.objectweb.jtests.jms.conform.selector.SelectorTest;
@@ -43,12 +44,12 @@ public class JoramJmsTest extends TestCase {
         // https://issues.apache.org/jira/browse/PROTON-154
         // suite.addTestSuite(TopicSessionTest.class);
 
-//        suite.addTestSuite(QueueBrowserTest.class);
 //        suite.addTestSuite(MessageTypeTest.class);
 //        suite.addTestSuite(UnifiedSessionTest.class);
 //        suite.addTestSuite(JMSXPropertyTest.class);
 //        suite.addTestSuite(SessionTest.class);
 
+        suite.addTestSuite(QueueBrowserTest.class);
         suite.addTestSuite(QueueSessionTest.class);
         suite.addTestSuite(SelectorSyntaxTest.class);
         suite.addTestSuite(SelectorTest.class);

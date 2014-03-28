@@ -17,6 +17,7 @@
 package org.fusesource.amqpjms.jms;
 
 import java.util.Enumeration;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.IllegalStateException;
@@ -26,7 +27,8 @@ import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
-import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A client uses a <CODE>QueueBrowser</CODE> object to look at messages on a queue without
@@ -52,16 +54,19 @@ import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
  * @see javax.jms.QueueBrowser
  * @see javax.jms.QueueReceiver
  */
-public class JmsQueueBrowser implements QueueBrowser, Enumeration {
+public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
+
+    protected static final Logger LOG = LoggerFactory.getLogger(JmsQueueBrowser.class);
 
     private final JmsSession session;
     private final JmsDestination destination;
     private final String selector;
 
     private JmsMessageConsumer consumer;
-    private boolean closed;
-    private final JmsConsumerId consumerId;
-    private final AtomicBoolean browseDone = new AtomicBoolean(true);
+    private final AtomicBoolean browseDone = new AtomicBoolean(false);
+
+    private Message next;
+    private final AtomicBoolean closed = new AtomicBoolean();
     private final Object semaphore = new Object();
 
     /**
@@ -73,35 +78,10 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
      * @param selector
      * @throws javax.jms.JMSException
      */
-    protected JmsQueueBrowser(JmsConsumerId consumerId, JmsSession session, JmsDestination destination, String selector) throws JMSException {
+    protected JmsQueueBrowser(JmsSession session, JmsDestination destination, String selector) throws JMSException {
         this.session = session;
-        this.consumerId = consumerId;
         this.destination = destination;
         this.selector = selector;
-    }
-
-    private JmsMessageConsumer createConsumer() throws JMSException {
-        browseDone.set(false);
-
-        JmsMessageConsumer rc = new JmsMessageConsumer(consumerId, session, destination, selector, false) {
-
-            @Override
-            public boolean isBrowser() {
-                return true;
-            }
-
-            @Override
-            public void onMessage(JmsInboundMessageDispatch envelope) {
-                if (envelope.getMessage() == null) {
-                    browseDone.set(true);
-                } else {
-                    super.onMessage(envelope);
-                }
-                notifyMessageAvailable();
-            }
-        };
-        rc.init();
-        return rc;
     }
 
     private void destroyConsumer() {
@@ -128,9 +108,8 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
      *         if the JMS provider fails to get the enumeration for this browser due to some
      *         internal error.
      */
-    @SuppressWarnings("rawtypes")
     @Override
-    public Enumeration getEnumeration() throws JMSException {
+    public Enumeration<Message> getEnumeration() throws JMSException {
         checkClosed();
         if (consumer == null) {
             consumer = createConsumer();
@@ -139,7 +118,7 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
     }
 
     private void checkClosed() throws IllegalStateException {
-        if (closed) {
+        if (closed.get()) {
             throw new IllegalStateException("The Consumer is closed");
         }
     }
@@ -156,7 +135,19 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
                 }
             }
 
-            if (consumer.getMessageQueueSize() > 0) {
+            if (next == null) {
+                try {
+                    next = consumer.receiveNoWait();
+                } catch (JMSException e) {
+                    LOG.warn("Error while receive the next message: {}", e.getMessage());
+                    // TODO - Add client internal error listener.
+                    // this.session.connection.onClientInternalException(e);
+                }
+
+                if (next != null) {
+                    return true;
+                }
+            } else {
                 return true;
             }
 
@@ -170,41 +161,38 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
     }
 
     /**
-     * @return the next message
+     * @return the next message if one exists
+     *
+     * @throws NoSuchElementException if no more elements are available.
      */
     @Override
-    public Object nextElement() {
-        while (true) {
-
-            synchronized (this) {
-                if (consumer == null) {
-                    return null;
-                }
-            }
-
-            try {
-                Message answer = consumer.receiveNoWait();
-                if (answer != null) {
-                    return answer;
-                }
-            } catch (JMSException e) {
-                this.session.getConnection().onException(e);
+    public Message nextElement() {
+        synchronized (this) {
+            if (consumer == null) {
                 return null;
             }
-
-            if (browseDone.get() || !session.isStarted()) {
-                destroyConsumer();
-                return null;
-            }
-
-            waitForMessage();
         }
+
+        if (hasMoreElements()) {
+            Message message = next;
+            next = null;
+            return message;
+        }
+
+        if (browseDone.get() || !session.isStarted()) {
+            destroyConsumer();
+            return null;
+        }
+
+        throw new NoSuchElementException();
     }
 
     @Override
-    public synchronized void close() throws JMSException {
-        destroyConsumer();
-        closed = true;
+    public void close() throws JMSException {
+        if (closed.compareAndSet(false, true)) {
+            browseDone.set(true);
+            destroyConsumer();
+        }
     }
 
     /**
@@ -247,6 +235,30 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration {
 
     @Override
     public String toString() {
-        return "JmsQueueBrowser { value=" + this.consumerId + " }";
+        JmsMessageConsumer consumer = this.consumer;
+        return "JmsQueueBrowser { value=" + (consumer != null ? consumer.getConsumerId() : "null") + " }";
+    }
+
+    private JmsMessageConsumer createConsumer() throws JMSException {
+        browseDone.set(false);
+        JmsMessageConsumer rc = new JmsMessageConsumer(session.getNextConsumerId(), session, destination, selector, false) {
+
+            @Override
+            public boolean isBrowser() {
+                return true;
+            }
+
+            @Override
+            public void onMessage(JmsInboundMessageDispatch envelope) {
+                if (envelope.getMessage() == null) {
+                    browseDone.set(true);
+                } else {
+                    super.onMessage(envelope);
+                }
+                notifyMessageAvailable();
+            }
+        };
+        rc.init();
+        return rc;
     }
 }
