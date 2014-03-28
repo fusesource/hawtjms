@@ -232,6 +232,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             disposition.setUndeliverableHere(false);
             disposition.setDeliveryFailed(true);
             delivery.disposition(disposition);
+            delivery.settle();
         } else if (ackType.equals(ACK_TYPE.POISONED)) {
             deliveryFailed(delivery, false);
         } else {
