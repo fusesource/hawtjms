@@ -22,6 +22,7 @@ import java.net.URI;
 import javax.jms.JMSException;
 
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
+import org.fusesource.amqpjms.jms.message.JmsMessageFactory;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
@@ -254,7 +255,7 @@ public interface BlockingProvider {
      *
      * @returns a ProviderMessageFactory instance for use by the JMS layer.
      */
-    ProviderMessageFactory getProviderMessageFactory();
+    JmsMessageFactory getMessageFactory();
 
     /**
      * Sets the listener of events from this Provider instance.

@@ -14,16 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.amqpjms.provider;
+package org.fusesource.amqpjms.jms.message;
 
 import java.io.Serializable;
-
-import org.fusesource.amqpjms.jms.message.JmsBytesMessage;
-import org.fusesource.amqpjms.jms.message.JmsMapMessage;
-import org.fusesource.amqpjms.jms.message.JmsMessage;
-import org.fusesource.amqpjms.jms.message.JmsObjectMessage;
-import org.fusesource.amqpjms.jms.message.JmsStreamMessage;
-import org.fusesource.amqpjms.jms.message.JmsTextMessage;
 
 /**
  * Interface that a Provider should implement to provide a Provider
@@ -31,7 +24,7 @@ import org.fusesource.amqpjms.jms.message.JmsTextMessage;
  * message properties and payload between the JMS Message API and the
  * underlying Provider Message implementations.
  */
-public interface ProviderMessageFactory {
+public interface JmsMessageFactory {
 
     /**
      * Creates an instance of a basic JmsMessage object.  The provider may

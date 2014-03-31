@@ -61,15 +61,11 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.activemq.apollo.filter.FilterException;
 import org.apache.activemq.apollo.selector.SelectorParser;
-import org.fusesource.amqpjms.jms.message.JmsBytesMessage;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
-import org.fusesource.amqpjms.jms.message.JmsMapMessage;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
+import org.fusesource.amqpjms.jms.message.JmsMessageFactory;
 import org.fusesource.amqpjms.jms.message.JmsMessageTransformation;
-import org.fusesource.amqpjms.jms.message.JmsObjectMessage;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
-import org.fusesource.amqpjms.jms.message.JmsStreamMessage;
-import org.fusesource.amqpjms.jms.message.JmsTextMessage;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsMessageId;
 import org.fusesource.amqpjms.jms.meta.JmsProducerId;
@@ -102,6 +98,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final AtomicLong consumerIdGenerator = new AtomicLong();
     private final AtomicLong producerIdGenerator = new AtomicLong();
     private JmsLocalTransactionContext transactionContext;
+    private JmsMessageFactory messageFactory;
 
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         this.connection = connection;
@@ -115,6 +112,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         this.sessionInfo.setAcknowledgementMode(acknowledgementMode);
 
         this.sessionInfo = connection.createResource(sessionInfo);
+        this.messageFactory = connection.getMessageFactory();
     }
 
     int acknowledgementMode() {
@@ -501,7 +499,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public BytesMessage createBytesMessage() throws IllegalStateException {
         checkClosed();
-        return init(new JmsBytesMessage());
+        return init(messageFactory.createBytesMessage());
     }
 
     /**
@@ -512,7 +510,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public MapMessage createMapMessage() throws IllegalStateException {
         checkClosed();
-        return init(new JmsMapMessage());
+        return init(messageFactory.createMapMessage());
     }
 
     /**
@@ -523,7 +521,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public Message createMessage() throws IllegalStateException {
         checkClosed();
-        return init(new JmsMessage());
+        return init(messageFactory.createMessage());
     }
 
     /**
@@ -534,7 +532,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public ObjectMessage createObjectMessage() throws IllegalStateException {
         checkClosed();
-        return init(new JmsObjectMessage());
+        return init(messageFactory.createObjectMessage(null));
     }
 
     /**
@@ -545,9 +543,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      */
     @Override
     public ObjectMessage createObjectMessage(Serializable object) throws JMSException {
-        ObjectMessage result = createObjectMessage();
-        result.setObject(object);
-        return result;
+        checkClosed();
+        return init(messageFactory.createObjectMessage(object));
     }
 
     /**
@@ -558,7 +555,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public StreamMessage createStreamMessage() throws JMSException {
         checkClosed();
-        return init(new JmsStreamMessage());
+        return init(messageFactory.createStreamMessage());
     }
 
     /**
@@ -569,7 +566,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public TextMessage createTextMessage() throws JMSException {
         checkClosed();
-        return init(new JmsTextMessage());
+        return init(messageFactory.createTextMessage(null));
     }
 
     /**
@@ -580,9 +577,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      */
     @Override
     public TextMessage createTextMessage(String text) throws JMSException {
-        TextMessage result = createTextMessage();
-        result.setText(text);
-        return result;
+        checkClosed();
+        return init(messageFactory.createTextMessage(text));
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -599,6 +595,18 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     public Queue createQueue(String queueName) throws JMSException {
         checkClosed();
         return new JmsQueue(queueName);
+    }
+
+    /**
+     * @param topicName
+     * @return Topic
+     * @throws JMSException
+     * @see javax.jms.Session#createTopic(java.lang.String)
+     */
+    @Override
+    public Topic createTopic(String topicName) throws JMSException {
+        checkClosed();
+        return new JmsTopic(topicName);
     }
 
     /**
@@ -621,18 +629,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     public TemporaryTopic createTemporaryTopic() throws JMSException {
         checkClosed();
         return connection.createTemporaryTopic();
-    }
-
-    /**
-     * @param topicName
-     * @return Topic
-     * @throws JMSException
-     * @see javax.jms.Session#createTopic(java.lang.String)
-     */
-    @Override
-    public Topic createTopic(String topicName) throws JMSException {
-        checkClosed();
-        return new JmsTopic(topicName);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -991,6 +987,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     protected void onConnectionRecovered(BlockingProvider provider) throws Exception {
+
+        this.messageFactory = provider.getMessageFactory();
 
         for (JmsMessageProducer producer : producers) {
             producer.onConnectionRecovered(provider);

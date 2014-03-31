@@ -22,6 +22,7 @@ import java.net.URI;
 import javax.jms.JMSException;
 
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
+import org.fusesource.amqpjms.jms.message.JmsMessageFactory;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
@@ -134,8 +135,8 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
-    public ProviderMessageFactory getProviderMessageFactory() {
-        return next.getProviderMessageFactory();
+    public JmsMessageFactory getMessageFactory() {
+        return next.getMessageFactory();
     }
 
     @Override

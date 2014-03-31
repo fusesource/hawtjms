@@ -14,24 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.amqpjms.provider;
+package org.fusesource.amqpjms.jms.message;
 
 import java.io.Serializable;
 
 import javax.jms.MessageNotWriteableException;
 
-import org.fusesource.amqpjms.jms.message.JmsBytesMessage;
-import org.fusesource.amqpjms.jms.message.JmsMapMessage;
-import org.fusesource.amqpjms.jms.message.JmsMessage;
-import org.fusesource.amqpjms.jms.message.JmsObjectMessage;
-import org.fusesource.amqpjms.jms.message.JmsStreamMessage;
-import org.fusesource.amqpjms.jms.message.JmsTextMessage;
-
 /**
  * Default implementation of the ProviderMessageFactory that create simple
  * generic javax.jms.Message types that can be sent to any Provider instance.
  */
-public class DefaultMessageFactory implements ProviderMessageFactory {
+public class JmsDefaultMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsMessage createMessage() throws UnsupportedOperationException {

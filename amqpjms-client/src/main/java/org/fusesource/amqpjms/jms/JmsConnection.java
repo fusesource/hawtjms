@@ -54,6 +54,7 @@ import org.fusesource.amqpjms.jms.exceptions.JmsConnectionFailedException;
 import org.fusesource.amqpjms.jms.exceptions.JmsExceptionSupport;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsMessage;
+import org.fusesource.amqpjms.jms.message.JmsMessageFactory;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionId;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
@@ -107,8 +108,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final AtomicLong sessionIdGenerator = new AtomicLong();
     private final AtomicLong tempDestIdGenerator = new AtomicLong();
     private final AtomicLong transactionIdGenerator = new AtomicLong();
-
-    private boolean watchRemoteDestinations;
+    private JmsMessageFactory messageFactory;
 
     protected JmsConnection(String connectionId, BlockingProvider provider, IdGenerator clientIdGenerator) throws JMSException {
 
@@ -497,6 +497,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
             this.connectionInfo = createResource(connectionInfo);
             this.connected.set(true);
+            this.messageFactory = provider.getMessageFactory();
 
             // TODO - Advisory Support.
             //
@@ -919,6 +920,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.connectionInfo.setWatchRemoteDestinations(watchRemoteDestinations);
     }
 
+    public JmsMessageFactory getMessageFactory() {
+        return messageFactory;
+    }
+
     @Override
     public void onMessage(JmsInboundMessageDispatch envelope) {
 
@@ -969,6 +974,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     @Override
     public void onConnectionRecovered(BlockingProvider provider) throws Exception {
         LOG.debug("Connection {} is finalizing recovery.", connectionInfo.getConnectionId());
+
+        this.messageFactory = provider.getMessageFactory();
 
         for (JmsSession session : sessions) {
             session.onConnectionRecovered(provider);

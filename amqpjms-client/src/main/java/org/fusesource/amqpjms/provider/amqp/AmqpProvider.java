@@ -37,7 +37,9 @@ import org.apache.qpid.proton.engine.impl.TransportImpl;
 import org.apache.qpid.proton.framing.TransportFrame;
 import org.fusesource.amqpjms.jms.JmsDestination;
 import org.fusesource.amqpjms.jms.JmsSslContext;
+import org.fusesource.amqpjms.jms.message.JmsDefaultMessageFactory;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
+import org.fusesource.amqpjms.jms.message.JmsMessageFactory;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
@@ -52,10 +54,8 @@ import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionInfo;
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.AsyncResult;
-import org.fusesource.amqpjms.provider.DefaultMessageFactory;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderListener;
-import org.fusesource.amqpjms.provider.ProviderMessageFactory;
 import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.fusesource.amqpjms.util.IOExceptionSupport;
 import org.slf4j.Logger;
@@ -93,7 +93,7 @@ public class AmqpProvider implements AsyncProvider {
     private final Transport protonTransport = engineFactory.createTransport();
     private final ExecutorService serializer;
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final ProviderMessageFactory messageFactory = new DefaultMessageFactory();
+    private final JmsMessageFactory messageFactory = new JmsDefaultMessageFactory();
 
     /**
      * Create a new instance of an AmqpProvider bonded to the given remote URI.
@@ -136,7 +136,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public ProviderMessageFactory getProviderMessageFactory() {
+    public JmsMessageFactory getMessageFactory() {
         return messageFactory;
     }
 
