@@ -52,8 +52,10 @@ import org.fusesource.amqpjms.jms.meta.JmsSessionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsTransactionInfo;
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.AsyncResult;
+import org.fusesource.amqpjms.provider.DefaultMessageFactory;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderListener;
+import org.fusesource.amqpjms.provider.ProviderMessageFactory;
 import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.fusesource.amqpjms.util.IOExceptionSupport;
 import org.slf4j.Logger;
@@ -91,6 +93,7 @@ public class AmqpProvider implements AsyncProvider {
     private final Transport protonTransport = engineFactory.createTransport();
     private final ExecutorService serializer;
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final ProviderMessageFactory messageFactory = new DefaultMessageFactory();
 
     /**
      * Create a new instance of an AmqpProvider bonded to the given remote URI.
@@ -130,6 +133,11 @@ public class AmqpProvider implements AsyncProvider {
 
         transport = createTransport(remoteURI);
         transport.connect();
+    }
+
+    @Override
+    public ProviderMessageFactory getProviderMessageFactory() {
+        return messageFactory;
     }
 
     @Override

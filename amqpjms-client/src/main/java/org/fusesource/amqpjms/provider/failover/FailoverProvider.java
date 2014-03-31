@@ -29,6 +29,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.JMSException;
 
@@ -41,10 +42,12 @@ import org.fusesource.amqpjms.jms.meta.JmsSessionId;
 import org.fusesource.amqpjms.provider.AsyncProvider;
 import org.fusesource.amqpjms.provider.AsyncResult;
 import org.fusesource.amqpjms.provider.DefaultBlockingProvider;
+import org.fusesource.amqpjms.provider.DefaultMessageFactory;
 import org.fusesource.amqpjms.provider.DefaultProviderListener;
 import org.fusesource.amqpjms.provider.ProviderConstants.ACK_TYPE;
 import org.fusesource.amqpjms.provider.ProviderFactory;
 import org.fusesource.amqpjms.provider.ProviderListener;
+import org.fusesource.amqpjms.provider.ProviderMessageFactory;
 import org.fusesource.amqpjms.provider.ProviderRequest;
 import org.fusesource.amqpjms.provider.amqp.AmqpConnection;
 import org.fusesource.amqpjms.util.IOExceptionSupport;
@@ -75,6 +78,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     private final Map<Long, FailoverRequest<?>> requests = new LinkedHashMap<Long, FailoverRequest<?>>();
     private final DefaultProviderListener closedListener = new DefaultProviderListener();
     private final JmsSslContext sslContext;
+    private final ProviderMessageFactory defaultMessageFactory = new DefaultMessageFactory();
 
     // Current state of connection / reconnection
     private boolean firstConnection = true;
@@ -352,6 +356,24 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
         };
 
         serializer.execute(pending);
+    }
+
+    @Override
+    public ProviderMessageFactory getProviderMessageFactory() {
+        final AtomicReference<ProviderMessageFactory> result =
+            new AtomicReference<ProviderMessageFactory>(defaultMessageFactory);
+
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                if (provider != null) {
+                    result.set(provider.getProviderMessageFactory());
+                }
+            }
+        });
+
+        return result.get();
     }
 
     @Override

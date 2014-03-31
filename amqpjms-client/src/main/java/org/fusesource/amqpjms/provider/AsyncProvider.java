@@ -277,6 +277,16 @@ public interface AsyncProvider {
     void pull(JmsConsumerId consumerId, long timeout, AsyncResult<Void> request) throws IOException, UnsupportedOperationException;
 
     /**
+     * Gets the Provider specific Message factory for use in the JMS layer when a Session
+     * is asked to create a Message type.  The Provider should implement it's own internal
+     * JmsMessage core to optimize read / write and marshal operations for the wire protocol
+     * in use.
+     *
+     * @returns a ProviderMessageFactory instance for use by the JMS layer.
+     */
+    ProviderMessageFactory getProviderMessageFactory();
+
+    /**
      * Sets the listener of events from this Provider instance.
      *
      * @param listener

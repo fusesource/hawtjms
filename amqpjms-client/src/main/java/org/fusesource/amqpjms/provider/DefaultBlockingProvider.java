@@ -134,6 +134,11 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
+    public ProviderMessageFactory getProviderMessageFactory() {
+        return next.getProviderMessageFactory();
+    }
+
+    @Override
     public void setProviderListener(ProviderListener listener) {
         next.setProviderListener(listener);
     }
