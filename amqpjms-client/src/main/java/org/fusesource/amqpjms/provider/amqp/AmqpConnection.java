@@ -81,8 +81,6 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         this.tempQueuePrefix = info.getTempQueuePrefix();
         this.tempTopicPrefix = info.getTempTopicPrefix();
 
-        // TODO check info to see if we can meet all the requested options.
-
         // Create a Session for this connection that is used for Temporary Destinations
         // and perhaps later on management and advisory monitoring.
         JmsSessionInfo sessionInfo = new JmsSessionInfo(this.info, -1);

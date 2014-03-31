@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.JMSException;
@@ -88,6 +89,7 @@ public class AmqpProvider implements AsyncProvider {
     private ProviderListener listener;
     private boolean traceFrames;
     private boolean traceBytes;
+    private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
 
     private final EngineFactory engineFactory = new EngineFactoryImpl();
     private final Transport protonTransport = engineFactory.createTransport();
@@ -174,9 +176,12 @@ public class AmqpProvider implements AsyncProvider {
                 }
             });
 
-            // TODO - Add a close timeout.
             try {
-                request.getResponse();
+                if (closeTimeout < 0) {
+                    request.getResponse();
+                } else {
+                    request.getResponse(closeTimeout, TimeUnit.MILLISECONDS);
+                }
             } catch (IOException e) {
                 LOG.warn("Error caught while closing Provider: ", e.getMessage());
             }
@@ -221,6 +226,7 @@ public class AmqpProvider implements AsyncProvider {
 
                         @Override
                         public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
+                            closeTimeout = connectionInfo.getCloseTimeout();
                             Connection protonConnection = engineFactory.createConnection();
                             protonTransport.bind(protonConnection);
                             Sasl sasl = protonTransport.sasl();
@@ -687,5 +693,9 @@ public class AmqpProvider implements AsyncProvider {
 
     public boolean isTraceBytes() {
         return this.traceBytes;
+    }
+
+    public long getCloseTimeout() {
+        return this.closeTimeout;
     }
 }
