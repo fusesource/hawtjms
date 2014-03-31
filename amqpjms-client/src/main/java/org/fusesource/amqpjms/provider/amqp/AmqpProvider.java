@@ -167,10 +167,6 @@ public class AmqpProvider implements AsyncProvider {
                             }
                         }
 
-                        if (serializer != null) {
-                            serializer.shutdown();
-                        }
-
                         request.onSuccess();
                     }
                 }
@@ -184,6 +180,10 @@ public class AmqpProvider implements AsyncProvider {
                 }
             } catch (IOException e) {
                 LOG.warn("Error caught while closing Provider: ", e.getMessage());
+            } finally {
+                if (serializer != null) {
+                    serializer.shutdown();
+                }
             }
         }
     }
