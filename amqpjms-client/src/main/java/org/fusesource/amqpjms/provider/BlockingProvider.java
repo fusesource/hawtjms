@@ -19,6 +19,8 @@ package org.fusesource.amqpjms.provider;
 import java.io.IOException;
 import java.net.URI;
 
+import javax.jms.JMSException;
+
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
@@ -65,12 +67,20 @@ public interface BlockingProvider {
      * is supported or can be simulated, or is not supported in which case an error should be
      * returned.
      *
+     * It is possible for a Provider to indicate that it cannot complete a requested create
+     * either due to some mis-configuration such as bad login credentials on connection create
+     * by throwing a JMSException.  If the Provider does not support creating of the indicated
+     * resource such as a Temporary Queue etc the provider may throw an UnsupportedOperationException
+     * to indicate this.
+     *
      * @param resource
      *        The JmsResouce instance that indicates what is being created.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws JMSException if an error occurs due to JMS violation such as bad credentials.
+     * @throws UnsupportedOperationException is the provider cannot create the indicated resource.
      */
-    void create(JmsResource resource) throws IOException;
+    void create(JmsResource resource) throws IOException, JMSException, UnsupportedOperationException;
 
     /**
      * Starts the Provider version of the given JmsResource.
@@ -83,6 +93,10 @@ public interface BlockingProvider {
      * after connection recovery.  A JMS consumer should normally recover with it's prefetc
      * value set to zero, or an AMQP link credit of zero and only open up the credit window
      * once all Connection resources are restored.
+     *
+     * The provider is required to implement this method and not throw any error other than
+     * an IOException if a communication error occurs.  The start operation is not required to
+     * have any effect on the provider resource but must not throw UnsupportedOperation etc.
      *
      * @param resource
      *        The JmsResouce instance that indicates what is being started.
@@ -97,12 +111,20 @@ public interface BlockingProvider {
      * The provider is given a JmsResource which it should use to remove any associated
      * resources and inform the remote Broker instance of the removal of this resource.
      *
+     * If the Provider cannot destroy the resource due to a non-communication error such as
+     * the logged in user not have role access to destroy the given resource it may throw an
+     * instance of JMSException to indicate such an error.  If the Provider does not support
+     * a destroy operation on a given resource such as a temporary destination it must throw
+     * an instance of UnsupportedOperationException.
+     *
      * @param resource
      *        The JmsResouce that identifies a previously created JmsResource.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws JMSException if an error occurs due to JMS violation such not authorized.
+     * @throws UnsupportedOperationException is the provider cannot destroy the indicated resource.
      */
-    void destroy(JmsResource resource) throws IOException;
+    void destroy(JmsResource resource) throws IOException, JMSException, UnsupportedOperationException;
 
     /**
      * Sends the JmsMessage contained in the out-bound dispatch envelope.
@@ -111,8 +133,9 @@ public interface BlockingProvider {
      *        the message envelope containing the JmsMessage to send.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws JMSException if an error that maps to JMS occurs such as not authorized.
      */
-    void send(JmsOutboundMessageDispatch envelope) throws IOException;
+    void send(JmsOutboundMessageDispatch envelope) throws IOException, JMSException;
 
     /**
      * Called to acknowledge all messages that have been delivered in a given session.
@@ -146,25 +169,40 @@ public interface BlockingProvider {
     /**
      * Called to commit an open transaction.
      *
+     * If the provider is unable to support transactions then it should throw an
+     * UnsupportedOperationException to indicate this.  The Provider may also throw a
+     * JMSException to indicate a transaction was already rolled back etc.
+     *
      * @param sessionId
      *        the session that is committing it's current transaction.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws JMSException if an error occurs due to JMS violation such not authorized.
+     * @throws UnsupportedOperationException is the provider does not support transactions.
      */
-    void commit(JmsSessionId sessionId) throws IOException;
+    void commit(JmsSessionId sessionId) throws IOException, JMSException, UnsupportedOperationException;
 
     /**
      * Called to roll back an open transaction.
+     *
+     * If the provider is unable to support transactions then it should throw an
+     * UnsupportedOperationException to indicate this.  The Provider may also throw a
+     * JMSException to indicate the transaction is unknown etc.
      *
      * @param sessionId
      *        the session that is rolling back it's current transaction.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws JMSException if an error occurs due to JMS violation such not authorized.
+     * @throws UnsupportedOperationException is the provider does not support transactions.
      */
-    void rollback(JmsSessionId sessionId) throws IOException;
+    void rollback(JmsSessionId sessionId) throws IOException, JMSException, UnsupportedOperationException;
 
     /**
      * Called to recover all unacknowledged messages for a Session in client Ack mode.
+     *
+     * If the provider cannot fulfill the contract of JMS recover then it should throw an
+     * UnsupportedOperationException.
      *
      * @param sessionId
      *        the Id of the JmsSession that is recovering unacknowledged messages..
@@ -173,17 +211,21 @@ public interface BlockingProvider {
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void recover(JmsSessionId sessionId) throws IOException;
+    void recover(JmsSessionId sessionId) throws IOException, UnsupportedOperationException;
 
     /**
      * Remove a durable topic subscription by name.
+     *
+     * A provider can throw an instance of JMSException to indicate that it cannot perform the
+     * un-subscribe operation due to bad security credentials etc.  If the Provider cannot perform
+     * a named un-subscribe it must throw an UnsupportedOperationException.
      *
      * @param subscription
      *        the name of the durable subscription that is to be removed.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
-    void unsubscribe(String subscription) throws IOException;
+    void unsubscribe(String subscription) throws IOException, JMSException, UnsupportedOperationException;
 
     /**
      * Request a remote peer send a Message to this client.  A message pull request is

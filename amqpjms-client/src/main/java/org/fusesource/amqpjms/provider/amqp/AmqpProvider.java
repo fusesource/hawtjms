@@ -25,6 +25,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.jms.JMSException;
+
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EngineFactory;
 import org.apache.qpid.proton.engine.Sasl;
@@ -179,7 +181,7 @@ public class AmqpProvider implements AsyncProvider {
     }
 
     @Override
-    public void create(final JmsResource resource, final AsyncResult<Void> request) throws IOException {
+    public void create(final JmsResource resource, final AsyncResult<Void> request) throws IOException, JMSException {
         checkClosed();
         serializer.execute(new Runnable() {
 

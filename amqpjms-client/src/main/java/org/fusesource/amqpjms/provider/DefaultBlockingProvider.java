@@ -19,6 +19,8 @@ package org.fusesource.amqpjms.provider;
 import java.io.IOException;
 import java.net.URI;
 
+import javax.jms.JMSException;
+
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
@@ -55,7 +57,7 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
-    public void create(JmsResource resource) throws IOException {
+    public void create(JmsResource resource) throws IOException, JMSException, UnsupportedOperationException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.create(resource, request);
         request.getResponse();
@@ -69,14 +71,14 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
-    public void destroy(JmsResource resource) throws IOException {
+    public void destroy(JmsResource resource) throws IOException, JMSException, UnsupportedOperationException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.destroy(resource, request);
         request.getResponse();
     }
 
     @Override
-    public void send(JmsOutboundMessageDispatch envelope) throws IOException {
+    public void send(JmsOutboundMessageDispatch envelope) throws IOException, JMSException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.send(envelope, request);
         request.getResponse();
@@ -97,35 +99,35 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
-    public void commit(JmsSessionId sessionId) throws IOException {
+    public void commit(JmsSessionId sessionId) throws IOException, JMSException, UnsupportedOperationException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.commit(sessionId, request);
         request.getResponse();
     }
 
     @Override
-    public void rollback(JmsSessionId sessionId) throws IOException {
+    public void rollback(JmsSessionId sessionId) throws IOException, JMSException, UnsupportedOperationException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.rollback(sessionId, request);
         request.getResponse();
     }
 
     @Override
-    public void recover(JmsSessionId sessionId) throws IOException {
+    public void recover(JmsSessionId sessionId) throws IOException, UnsupportedOperationException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.recover(sessionId, request);
         request.getResponse();
     }
 
     @Override
-    public void unsubscribe(String subscription) throws IOException {
+    public void unsubscribe(String subscription) throws IOException, JMSException, UnsupportedOperationException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.unsubscribe(subscription, request);
         request.getResponse();
     }
 
     @Override
-    public void pull(JmsConsumerId consumerId, long timeout) throws IOException {
+    public void pull(JmsConsumerId consumerId, long timeout) throws IOException, UnsupportedOperationException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.pull(consumerId, timeout, request);
         request.getResponse();
