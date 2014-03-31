@@ -50,10 +50,6 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
-    public void receoveryComplate() throws IOException {
-    }
-
-    @Override
     public URI getRemoteURI() {
         return next.getRemoteURI();
     }

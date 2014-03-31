@@ -49,18 +49,6 @@ public interface BlockingProvider {
     void close();
 
     /**
-     * Called to indicate that a signaled recovery cycle is not complete.
-     *
-     * This method is used only when the Provider is a fault tolerant implementation and the
-     * recovery started event has been fired after a reconnect.  This allows for the fault
-     * tolerant implementation to perform any intermediate processing before a transition
-     * to a recovered state.
-     *
-     * @throws IOException if an error occurs during recovery completion processing.
-     */
-    void receoveryComplate() throws IOException;
-
-    /**
      * Returns the URI used to configure this Provider and specify the remote address of the
      * Broker it connects to.
      *
