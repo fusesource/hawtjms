@@ -38,6 +38,7 @@ import org.fusesource.amqpjms.jms.message.JmsDefaultMessageFactory;
 import org.fusesource.amqpjms.jms.message.JmsInboundMessageDispatch;
 import org.fusesource.amqpjms.jms.message.JmsMessageFactory;
 import org.fusesource.amqpjms.jms.message.JmsOutboundMessageDispatch;
+import org.fusesource.amqpjms.jms.meta.JmsConnectionInfo;
 import org.fusesource.amqpjms.jms.meta.JmsConsumerId;
 import org.fusesource.amqpjms.jms.meta.JmsResource;
 import org.fusesource.amqpjms.jms.meta.JmsSessionId;
@@ -64,7 +65,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
-    private static final int INFINITE = -1;
+    private static final int UNLIMITED = -1;
 
     private ProviderListener listener;
     private AsyncProvider provider;
@@ -86,13 +87,18 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     private long reconnectDelay = TimeUnit.SECONDS.toMillis(5);
     private IOException failureCause;
 
+    // Timeout values configured via JmsConnectionInfo
+    private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
+    private long sendTimeout =  JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
+    private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
+
     // Configuration values.
     private long initialReconnectDelay = 0L;
     private long maxReconnectDelay = TimeUnit.SECONDS.toMillis(30);
     private boolean useExponentialBackOff = true;
     private double backOffMultiplier = 2d;
-    private int maxReconnectAttempts = INFINITE;
-    private int startupMaxReconnectAttempts = INFINITE;
+    private int maxReconnectAttempts = UNLIMITED;
+    private int startupMaxReconnectAttempts = UNLIMITED;
     private int warnAfterReconnectAttempts = 10;
 
     public FailoverProvider(URI[] uris) {
@@ -171,10 +177,12 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
                 }
             });
 
-            // TODO - Add a close timeout by reading the connection value from the
-            //        provided JmsConnectionInfo in create of connection resource.
             try {
-                request.getResponse();
+                if (this.closeTimeout >= 0) {
+                    request.getResponse();
+                } else {
+                    request.getResponse(closeTimeout, TimeUnit.MILLISECONDS);
+                }
             } catch (IOException e) {
                 LOG.warn("Error caught while closing Provider: ", e.getMessage());
             }
@@ -187,6 +195,13 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
         final FailoverRequest<Void> pending = new FailoverRequest<Void>(request) {
             @Override
             public void doTask() throws Exception {
+                if (resource instanceof JmsConnectionInfo) {
+                    JmsConnectionInfo connectionInfo = (JmsConnectionInfo) resource;
+                    closeTimeout = connectionInfo.getCloseTimeout();
+                    sendTimeout = connectionInfo.getSendTimeout();
+                    requestTimeout = connectionInfo.getRequestTimeout();
+                }
+
                 provider.create(resource, this);
             }
         };
@@ -520,7 +535,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
                 int reconnectLimit = reconnectAttemptLimit();
 
-                if (reconnectLimit != INFINITE && reconnectAttempts >= reconnectLimit) {
+                if (reconnectLimit != UNLIMITED && reconnectAttempts >= reconnectLimit) {
                     LOG.error("Failed to connect after: " + reconnectAttempts + " attempt(s)");
                     failed.set(true);
                     failureCause = IOExceptionSupport.create(failure);
@@ -548,7 +563,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
     private int reconnectAttemptLimit() {
         int maxReconnectValue = this.maxReconnectAttempts;
-        if (firstConnection && this.startupMaxReconnectAttempts != INFINITE) {
+        if (firstConnection && this.startupMaxReconnectAttempts != UNLIMITED) {
             maxReconnectValue = this.startupMaxReconnectAttempts;
         }
         return maxReconnectValue;
@@ -680,6 +695,18 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
     public void setUseExponentialBackOff(boolean useExponentialBackOff) {
         this.useExponentialBackOff = useExponentialBackOff;
+    }
+
+    public long getCloseTimeout() {
+        return this.closeTimeout;
+    }
+
+    public long getSendTimeout() {
+        return this.sendTimeout;
+    }
+
+    public long getRequestTimeout() {
+        return this.requestTimeout;
     }
 
     //--------------- FailoverProvider Asynchronous Request --------------------//

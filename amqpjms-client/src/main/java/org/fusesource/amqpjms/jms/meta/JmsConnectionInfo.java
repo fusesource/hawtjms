@@ -24,7 +24,10 @@ import org.fusesource.amqpjms.util.ToStringSupport;
  */
 public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConnectionInfo> {
 
+    public static final long INFINITE = -1;
     public static final long DEFAULT_CLOSE_TIMEOUT = 15000;
+    public static final long DEFAULT_SEND_TIMEOUT = INFINITE;
+    public static final long DEFAULT_REQUEST_TIMEOUT = INFINITE;
 
     private final JmsConnectionId connectionId;
     private String clientId;
@@ -34,8 +37,8 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private boolean forceAsyncSend;
     private boolean omitHost;
     private boolean watchRemoteDestinations;
-    public long sendTimeout;
-    public long requestTimeout;
+    public long sendTimeout = DEFAULT_SEND_TIMEOUT;
+    public long requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     public long closeTimeout = DEFAULT_CLOSE_TIMEOUT;
     private String queuePrefix = "/queue/";
     private String topicPrefix = "/topic/";
