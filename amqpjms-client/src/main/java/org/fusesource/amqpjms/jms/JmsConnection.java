@@ -832,6 +832,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connectionInfo.setCloseTimeout(closeTimeout);
     }
 
+    public long getConnectTimeout() {
+        return this.connectionInfo.getConnectTimeout();
+    }
+
+    public void setConnectTimeout(long connectTimeout) {
+        this.connectionInfo.setConnectTimeout(connectTimeout);
+    }
+
     public long getSendTimeout() {
         return connectionInfo.getSendTimeout();
     }

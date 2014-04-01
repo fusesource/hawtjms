@@ -25,6 +25,7 @@ import org.fusesource.amqpjms.util.ToStringSupport;
 public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConnectionInfo> {
 
     public static final long INFINITE = -1;
+    public static final long DEFAULT_CONNECT_TIMEOUT = 15000;
     public static final long DEFAULT_CLOSE_TIMEOUT = 15000;
     public static final long DEFAULT_SEND_TIMEOUT = INFINITE;
     public static final long DEFAULT_REQUEST_TIMEOUT = INFINITE;
@@ -39,6 +40,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private boolean watchRemoteDestinations;
     public long sendTimeout = DEFAULT_SEND_TIMEOUT;
     public long requestTimeout = DEFAULT_REQUEST_TIMEOUT;
+    public long connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     public long closeTimeout = DEFAULT_CLOSE_TIMEOUT;
     private String queuePrefix = "/queue/";
     private String topicPrefix = "/topic/";
@@ -161,6 +163,14 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setCloseTimeout(long closeTimeout) {
         this.closeTimeout = closeTimeout;
+    }
+
+    public long getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(long connectTimeout) {
+        this.connectTimeout = connectTimeout;
     }
 
     public long getSendTimeout() {

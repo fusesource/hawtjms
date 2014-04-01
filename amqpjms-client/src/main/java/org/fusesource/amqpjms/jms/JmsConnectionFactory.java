@@ -61,9 +61,10 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String topicPrefix = "topic://";
     private String tempQueuePrefix = "temp-queue://";
     private String tempTopicPrefix = "temp-topic://";
-    private long sendTimeout;
-    private long requestTimeout;
+    private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
+    private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
+    private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
     private boolean watchRemoteDestinations = true;
     private IdGenerator clientIdGenerator;
     private String clientIDPrefix;
@@ -488,6 +489,29 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setCloseTimeout(long closeTimeout) {
         this.closeTimeout = closeTimeout;
+    }
+
+    /**
+     * Returns the currently configured wire level connect timeout.
+     *
+     * @return the currently configured wire level connect timeout.
+     */
+    public long getConnectTimeout() {
+        return this.connectTimeout;
+    }
+
+    /**
+     * Sets the timeout value used to control how long a client will wait for a successful
+     * connection to the remote peer to be established before considering the attempt to
+     * have failed.  This value does not control socket level connection timeout but rather
+     * connection handshake at the wire level, to control the socket level timeouts use the
+     * standard socket options configuration values.
+     *
+     * @param connectTimeout
+     *        the time in milliseconds to wait for the protocol connection handshake to complete.
+     */
+    public void setConnectTimeout(long connectTimeout) {
+        this.connectTimeout = connectTimeout;
     }
 
     public long getSendTimeout() {
