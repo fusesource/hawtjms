@@ -18,6 +18,7 @@ package org.hawtjms.provider.discovery;
 
 import io.hawtjms.provider.AsyncProvider;
 import io.hawtjms.provider.BlockingProvider;
+import io.hawtjms.provider.DefaultBlockingProvider;
 import io.hawtjms.provider.ProviderFactory;
 
 import java.net.URI;
@@ -29,14 +30,12 @@ public class DiscoveryProviderFactory extends ProviderFactory {
 
     @Override
     public BlockingProvider createProvider(URI remoteURI) {
-//        return new DefaultBlockingProvider(new DiscoveryProvider(remoteURI));
-        return null;
+        return new DefaultBlockingProvider(new DiscoveryProvider(remoteURI));
     }
 
     @Override
     public AsyncProvider createAsyncProvider(URI remoteURI) throws Exception {
-//        return new DiscoveryProvider(remoteURI);
-        return null;
+        return new DiscoveryProvider(remoteURI);
     }
 
     @Override
