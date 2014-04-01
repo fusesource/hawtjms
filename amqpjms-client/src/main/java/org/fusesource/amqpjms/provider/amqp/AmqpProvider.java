@@ -89,7 +89,10 @@ public class AmqpProvider implements AsyncProvider {
     private ProviderListener listener;
     private boolean traceFrames;
     private boolean traceBytes;
+    private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
+    private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
+    private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
 
     private final EngineFactory engineFactory = new EngineFactoryImpl();
     private final Transport protonTransport = engineFactory.createTransport();
@@ -227,6 +230,10 @@ public class AmqpProvider implements AsyncProvider {
                         @Override
                         public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
                             closeTimeout = connectionInfo.getCloseTimeout();
+                            connectTimeout = connectionInfo.getConnectTimeout();
+                            sendTimeout = connectionInfo.getSendTimeout();
+                            requestTimeout = connectionInfo.getRequestTimeout();
+
                             Connection protonConnection = engineFactory.createConnection();
                             protonTransport.bind(protonConnection);
                             Sasl sasl = protonTransport.sasl();
@@ -697,5 +704,29 @@ public class AmqpProvider implements AsyncProvider {
 
     public long getCloseTimeout() {
         return this.closeTimeout;
+    }
+
+    public long getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(long connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public long getRequestTimeout() {
+        return requestTimeout;
+    }
+
+    public void setRequestTimeout(long requestTimeout) {
+        this.requestTimeout = requestTimeout;
+    }
+
+    public long getSendTimeout() {
+        return sendTimeout;
+    }
+
+    public void setSendTimeout(long sendTimeout) {
+        this.sendTimeout = sendTimeout;
     }
 }
