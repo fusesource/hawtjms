@@ -92,12 +92,10 @@ public abstract class ProviderFactory {
      *
      * @param remoteURI
      *        the URI of the remote peer.
-     * @param sslContext
-     *        the configured SSL Context if the target Provider is SSL capable.
      *
      * @return a new AsyncProvider instance that is ready for use.
      *
-     * @throws Exception if an error occurs while creating the BlockingProvider instance.
+     * @throws Exception if an error occurs while creating the AsyncProvider instance.
      */
     public static AsyncProvider createAsync(URI remoteURI) throws Exception {
         AsyncProvider result = null;
