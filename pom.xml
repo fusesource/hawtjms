@@ -80,6 +80,7 @@
   <modules>
     <module>hawtjms-core</module>
     <module>hawtjms-amqp</module>
+    <module>hawtjms-discovery</module>
   </modules>
 
   <dependencyManagement>
