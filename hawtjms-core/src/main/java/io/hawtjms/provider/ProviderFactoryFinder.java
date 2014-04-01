@@ -22,12 +22,15 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class ProviderFactoryFinder {
+public final class ProviderFactoryFinder {
 
     private static final FactoryFinder PROVIDER_FACTORY_FINDER =
         new FactoryFinder("META-INF/services/io/hawtjms/providers/");
     private static final ConcurrentHashMap<String, ProviderFactory> PROVIDER_FACTORYS =
         new ConcurrentHashMap<String, ProviderFactory>();
+
+    private ProviderFactoryFinder() {
+    }
 
     /**
      * Finds and returns a ProviderFactory for the given URI.  The factory will be returned
