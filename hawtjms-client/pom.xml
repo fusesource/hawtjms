@@ -18,15 +18,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.fusesource.amqpjms</groupId>
-    <artifactId>amqpjms-parent</artifactId>
+    <groupId>io.hawtjms</groupId>
+    <artifactId>hawtjms-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>amqpjms-client</artifactId>
+  <artifactId>hawtjms-client</artifactId>
   <packaging>jar</packaging>
   <name>AMQP Client</name>
-  <description>The AMQP JMS Client implementation</description>
+  <description>The JMS Framework implementation for hawtJMS</description>
 
   <dependencies>
     <!-- =================================== -->

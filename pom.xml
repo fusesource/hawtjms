@@ -23,16 +23,17 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.fusesource.amqpjms</groupId>
-  <artifactId>amqpjms-parent</artifactId>
+  <groupId>io.hawtjms</groupId>
+  <artifactId>hawtjms-parent</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>AMQP-JMS</name>
+  <name>hawtJMS</name>
   <inceptionYear>2013</inceptionYear>
-  <url>https://github.com/fusesource/amqpjms/</url>
+  <url>https://github.com/fusesource/hawtjms/</url>
 
   <description>
-      AMQ-JMS is a JMS implementation using AMQP as the wire protocol
+      hawtJMS is a JMS framework featuring support for a variety of wire level protocols and
+      advance messaging features.
   </description>
 
   <prerequisites>
@@ -77,7 +78,7 @@
   </scm>
 
   <modules>
-    <module>amqpjms-client</module>
+    <module>hawtjms-client</module>
   </modules>
 
   <dependencyManagement>
