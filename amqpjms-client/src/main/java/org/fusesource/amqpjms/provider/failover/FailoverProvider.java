@@ -393,30 +393,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
         return result.get();
     }
 
-    @Override
-    public void setProviderListener(ProviderListener listener) {
-        this.listener = listener;
-    }
-
-    @Override
-    public ProviderListener getProviderListener() {
-        return listener;
-    }
-
-    @Override
-    public URI getRemoteURI() {
-        AsyncProvider provider = this.provider;
-        if (provider != null) {
-            return provider.getRemoteURI();
-        }
-        return null;
-    }
-
-    protected void checkClosed() throws IOException {
-        if (closed.get()) {
-            throw new IOException("The Provider is already closed");
-        }
-    }
+    //--------------- Connection Error and Recovery methods ------------------//
 
     /**
      * This method is always called from within the FailoverProvider's serialization thread.
@@ -583,6 +560,12 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
         return reconnectDelay;
     }
 
+    protected void checkClosed() throws IOException {
+        if (closed.get()) {
+            throw new IOException("The Provider is already closed");
+        }
+    }
+
     //--------------- DefaultProviderListener overrides ----------------------//
 
     @Override
@@ -616,7 +599,46 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
         });
     }
 
+    //--------------- URI update and rebalance methods -----------------------//
+
+    public void add(final URI uri) {
+        serializer.execute(new Runnable() {
+            @Override
+            public void run() {
+                uris.add(uri);
+            }
+        });
+    }
+
+    public void remove(final URI uri) {
+        serializer.execute(new Runnable() {
+            @Override
+            public void run() {
+                uris.remove(uri);
+            }
+        });
+    }
+
     //--------------- Property Getters and Setters ---------------------------//
+
+    @Override
+    public URI getRemoteURI() {
+        AsyncProvider provider = this.provider;
+        if (provider != null) {
+            return provider.getRemoteURI();
+        }
+        return null;
+    }
+
+    @Override
+    public void setProviderListener(ProviderListener listener) {
+        this.listener = listener;
+    }
+
+    @Override
+    public ProviderListener getProviderListener() {
+        return listener;
+    }
 
     public boolean isRandomize() {
         return uris.isRandomize();

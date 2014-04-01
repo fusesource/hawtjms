@@ -16,17 +16,24 @@
  */
 package org.fusesource.amqpjms.provider.failover;
 
+import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Manages the list of available failover URIs that are used to connect
  * and recover a connection.
  */
 public class FailoverUriPool {
+
+    private static final Logger LOG = LoggerFactory.getLogger(FailoverUriPool.class);
 
     private final LinkedList<URI> uris;
     private final Map<String, String> nestedOptions;
@@ -73,10 +80,20 @@ public class FailoverUriPool {
         }
     }
 
+    /**
+     * @return true if this pool returns the URI values in random order.
+     */
     public boolean isRandomize() {
         return randomize;
     }
 
+    /**
+     * Sets whether the URIs that are returned by this pool are returned in random
+     * order or not.  If false the URIs are returned in FIFO order.
+     *
+     * @param randomize
+     *        true to have the URIs returned in a random order.
+     */
     public void setRandomize(boolean randomize) {
         this.randomize = randomize;
         if (randomize) {
@@ -84,7 +101,79 @@ public class FailoverUriPool {
         }
     }
 
+    /**
+     * Adds a new URI to the pool if not already contained within.
+     *
+     * @param uri
+     *        The new URI to add to the pool.
+     */
+    public void add(URI uri) {
+        if (!contains(uri)) {
+            this.uris.add(uri);
+        }
+    }
+
+    /**
+     * Remove a URI from the pool if present, otherwise has no effect.
+     *
+     * @param uri
+     *        The URI to attempt to remove from the pool.
+     */
+    public void remove(URI uri) {
+        this.uris.remove(uri);
+    }
+
+    /**
+     * Returns the currently set value for nested options which will be added to each
+     * URI that is returned from the pool.
+     *
+     * @return the Map instance containing the nest options which can be empty if none set.
+     */
     public Map<String, String> getNestedOptions() {
         return nestedOptions;
+    }
+
+    private boolean contains(URI newURI) {
+        boolean result = false;
+        for (URI uri : uris) {
+            if (compareURIs(newURI, uri)) {
+                result = true;
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    private boolean compareURIs(final URI first, final URI second) {
+        boolean result = false;
+        if (first == null || second == null) {
+            return result;
+        }
+
+        if (first.getPort() == second.getPort()) {
+            InetAddress firstAddr = null;
+            InetAddress secondAddr = null;
+            try {
+                firstAddr = InetAddress.getByName(first.getHost());
+                secondAddr = InetAddress.getByName(second.getHost());
+
+                if (firstAddr.equals(secondAddr)) {
+                    result = true;
+                }
+            } catch(IOException e) {
+                if (firstAddr == null) {
+                    LOG.error("Failed to Lookup INetAddress for URI[ " + first + " ] : " + e);
+                } else {
+                    LOG.error("Failed to Lookup INetAddress for URI[ " + second + " ] : " + e);
+                }
+
+                if (first.getHost().equalsIgnoreCase(second.getHost())) {
+                    result = true;
+                }
+            }
+        }
+
+        return result;
     }
 }
