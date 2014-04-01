@@ -14,8 +14,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
--->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
@@ -54,6 +53,7 @@
     <proton-version>0.6.redhat-002</proton-version>
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
     <jetty-version>8.1.14.v20131031</jetty-version>
+    <vertex-version>2.0.2-final</vertex-version>
 
     <!-- Maven Plugin Version for this Project -->
     <maven-surefire-plugin-version>2.16</maven-surefire-plugin-version>
@@ -78,11 +78,26 @@
   </scm>
 
   <modules>
-    <module>hawtjms-client</module>
+    <module>hawtjms-core</module>
+    <module>hawtjms-amqp</module>
   </modules>
 
   <dependencyManagement>
     <dependencies>
+      <!-- =============================== -->
+      <!-- Internal hawtJMS Dependencies -->
+      <!-- =============================== -->
+      <dependency>
+        <groupId>io.hawtjms</groupId>
+        <artifactId>hawtjms-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.hawtjms</groupId>
+        <artifactId>hawtjms-amqp</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
       <dependency>
         <groupId>org.apache.geronimo.specs</groupId>
         <artifactId>geronimo-jms_1.1_spec</artifactId>
@@ -118,6 +133,16 @@
         <groupId>org.apache.activemq</groupId>
         <artifactId>apollo-selector</artifactId>
         <version>${apollo-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-core</artifactId>
+        <version>${vertex-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-platform</artifactId>
+        <version>${vertex-version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
