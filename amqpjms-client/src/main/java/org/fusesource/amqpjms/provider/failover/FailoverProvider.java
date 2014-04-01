@@ -88,6 +88,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     private IOException failureCause;
 
     // Timeout values configured via JmsConnectionInfo
+    private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
     private long sendTimeout =  JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
@@ -197,6 +198,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
             public void doTask() throws Exception {
                 if (resource instanceof JmsConnectionInfo) {
                     JmsConnectionInfo connectionInfo = (JmsConnectionInfo) resource;
+                    connectTimeout = connectionInfo.getConnectTimeout();
                     closeTimeout = connectionInfo.getCloseTimeout();
                     sendTimeout = connectionInfo.getSendTimeout();
                     requestTimeout = connectionInfo.getRequestTimeout();
@@ -695,6 +697,10 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
     public void setUseExponentialBackOff(boolean useExponentialBackOff) {
         this.useExponentialBackOff = useExponentialBackOff;
+    }
+
+    public long getConnectTimeout() {
+        return this.connectTimeout;
     }
 
     public long getCloseTimeout() {
