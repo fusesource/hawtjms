@@ -24,7 +24,7 @@ import io.hawtjms.provider.ProviderFactory;
 import java.net.URI;
 
 /**
- * Factory for creating the AMQP over TCP provider.
+ * Factory for creating the AMQP provider.
  */
 public class AmqpProviderFactory extends ProviderFactory {
 
