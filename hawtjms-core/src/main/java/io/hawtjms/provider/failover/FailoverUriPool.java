@@ -45,7 +45,12 @@ public class FailoverUriPool {
     }
 
     public FailoverUriPool(URI[] uris, Map<String, String> nestedOptions) {
-        this.uris = new LinkedList<URI>(Arrays.asList(uris));
+        if (uris != null) {
+            this.uris = new LinkedList<URI>(Arrays.asList(uris));
+        } else {
+            this.uris = new LinkedList<URI>();
+        }
+
         if (nestedOptions != null) {
             this.nestedOptions = nestedOptions;
         } else {
