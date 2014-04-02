@@ -16,6 +16,8 @@
  */
 package org.hawtjms.provider.discovery;
 
+import java.io.IOException;
+
 /**
  * Interface for all agents used to detect instances of remote peers on the network.
  */
@@ -28,5 +30,20 @@ public interface DiscoveryAgent {
      *        the listener to notify on discovery events, or null to clear.
      */
     void setDiscoveryListener(DiscoveryListener listener);
+
+    /**
+     * Starts the agent after which new remote peers can start to be found.
+     *
+     * @throws IOException if an IO error occurs while starting the agent.
+     * @throws IllegalStateException if the agent is not properly configured.
+     */
+    void start() throws IOException, IllegalStateException;
+
+    /**
+     * Stops the agent after which no new remote peers will be found.
+     *
+     * @throws IOException if an error occurs while stopping the agent resources.
+     */
+    void stop() throws IOException;
 
 }

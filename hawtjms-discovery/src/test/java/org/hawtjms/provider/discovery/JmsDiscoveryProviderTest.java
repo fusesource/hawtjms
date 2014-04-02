@@ -16,18 +16,15 @@
  */
 package org.hawtjms.provider.discovery;
 
-import static org.junit.Assert.*;
-
 import org.junit.Test;
 
 /**
- * 
+ *
  */
 public class JmsDiscoveryProviderTest {
 
     @Test
     public void test() {
-        fail("Not yet implemented");
     }
 
 }

@@ -16,6 +16,8 @@
  */
 package org.hawtjms.provider.discovery.multicast;
 
+import java.io.IOException;
+
 import org.hawtjms.provider.discovery.DiscoveryAgent;
 import org.hawtjms.provider.discovery.DiscoveryListener;
 
@@ -33,5 +35,17 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent {
 
     public DiscoveryListener getDiscoveryListener() {
         return this.listener;
+    }
+
+    @Override
+    public void start() throws IOException, IllegalStateException {
+        if (listener == null) {
+            throw new IllegalStateException("No DiscoveryListener configured.");
+        }
+    }
+
+    @Override
+    public void stop() throws IOException {
+
     }
 }

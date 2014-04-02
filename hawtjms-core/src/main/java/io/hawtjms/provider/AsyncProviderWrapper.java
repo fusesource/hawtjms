@@ -33,11 +33,11 @@ import javax.jms.JMSException;
  * Allows one AsyncProvider instance to wrap around another and provide some additional
  * features beyond the normal AsyncProvider interface.
  */
-public class AsyncProviderWrapper implements AsyncProvider {
+public class AsyncProviderWrapper<E extends AsyncProvider> implements AsyncProvider {
 
-    protected final AsyncProvider next;
+    protected final E next;
 
-    public AsyncProviderWrapper(AsyncProvider next) {
+    public AsyncProviderWrapper(E next) {
         this.next = next;
     }
 
@@ -129,5 +129,12 @@ public class AsyncProviderWrapper implements AsyncProvider {
     @Override
     public ProviderListener getProviderListener() {
         return next.getProviderListener();
+    }
+
+    /**
+     * @return the wrapped AsyncProvider.
+     */
+    public AsyncProvider getNext() {
+        return this.next;
     }
 }

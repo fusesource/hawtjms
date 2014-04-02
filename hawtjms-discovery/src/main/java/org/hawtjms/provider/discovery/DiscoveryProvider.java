@@ -16,23 +16,55 @@
  */
 package org.hawtjms.provider.discovery;
 
-import io.hawtjms.provider.AsyncProvider;
 import io.hawtjms.provider.AsyncProviderWrapper;
+import io.hawtjms.provider.failover.FailoverProvider;
 
+import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An AsyncProvider instance that wraps the FailoverProvider and listens for
  * events about discovered remote peers using a configured DiscoveryAgent
  * instance.
  */
-public class DiscoveryProvider extends AsyncProviderWrapper {
+public class DiscoveryProvider extends AsyncProviderWrapper<FailoverProvider> {
 
     private final URI discoveryUri;
 
-    public DiscoveryProvider(URI discoveryUri, AsyncProvider next) {
+    private static final Logger LOG = LoggerFactory.getLogger(DiscoveryProviderFactory.class);
+
+    private DiscoveryAgent discoveryAgent;
+    private final ConcurrentHashMap<String, URI> serviceURIs = new ConcurrentHashMap<String, URI>();
+
+    /**
+     * Creates a new instance of the DiscoveryProvider.
+     *
+     * The Provider is created and initialized with the original URI used to create it,
+     * and an instance of a FailoverProcider which it will use to initiate and maintain
+     * connections to the discovered peers.
+     *
+     * @param discoveryUri
+     * @param next
+     */
+    public DiscoveryProvider(URI discoveryUri, FailoverProvider next) {
         super(next);
         this.discoveryUri = discoveryUri;
+    }
+
+    @Override
+    public void start() throws IOException, IllegalStateException {
+        if (this.discoveryAgent == null) {
+            throw new IllegalStateException("No DiscoveryAgent configured.");
+        }
+
+        discoveryAgent.setDiscoveryListener(null);
+        discoveryAgent.start();
+
+        next.start();
     }
 
     /**
