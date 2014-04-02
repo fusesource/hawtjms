@@ -17,6 +17,7 @@
 package org.hawtjms.provider.discovery.multicast;
 
 import java.io.IOException;
+import java.net.URI;
 
 import org.hawtjms.provider.discovery.DiscoveryAgent;
 import org.hawtjms.provider.discovery.DiscoveryListener;
@@ -27,6 +28,11 @@ import org.hawtjms.provider.discovery.DiscoveryListener;
 public class MulticastDiscoveryAgent implements DiscoveryAgent {
 
     private DiscoveryListener listener;
+    private final URI discoveryURI;
+
+    public MulticastDiscoveryAgent(URI discoveryURI) {
+        this.discoveryURI = discoveryURI;
+    }
 
     @Override
     public void setDiscoveryListener(DiscoveryListener listener) {
@@ -57,5 +63,9 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent {
     @Override
     public void resume() {
         // TODO Auto-generated method stub
+    }
+
+    public URI getDiscvoeryURI() {
+        return this.discoveryURI;
     }
 }
