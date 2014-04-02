@@ -30,12 +30,12 @@ public class DiscoveryProviderFactory extends ProviderFactory {
 
     @Override
     public BlockingProvider createProvider(URI remoteURI) {
-        return new DefaultBlockingProvider(new DiscoveryProvider(remoteURI));
+        return new DefaultBlockingProvider(new DiscoveryProvider(remoteURI, null));
     }
 
     @Override
     public AsyncProvider createAsyncProvider(URI remoteURI) throws Exception {
-        return new DiscoveryProvider(remoteURI);
+        return new DiscoveryProvider(remoteURI, null);
     }
 
     @Override
