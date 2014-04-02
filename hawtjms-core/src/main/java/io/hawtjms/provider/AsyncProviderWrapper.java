@@ -33,12 +33,14 @@ import javax.jms.JMSException;
  * Allows one AsyncProvider instance to wrap around another and provide some additional
  * features beyond the normal AsyncProvider interface.
  */
-public class AsyncProviderWrapper<E extends AsyncProvider> implements AsyncProvider {
+public class AsyncProviderWrapper<E extends AsyncProvider> implements AsyncProvider, ProviderListener {
 
     protected final E next;
+    protected ProviderListener listener;
 
     public AsyncProviderWrapper(E next) {
         this.next = next;
+        this.next.setProviderListener(this);
     }
 
     @Override
@@ -48,6 +50,9 @@ public class AsyncProviderWrapper<E extends AsyncProvider> implements AsyncProvi
 
     @Override
     public void start() throws IOException, IllegalStateException {
+        if (this.listener == null) {
+            throw new IllegalStateException("Cannot start with null ProviderListener");
+        }
         next.start();
     }
 
@@ -123,12 +128,42 @@ public class AsyncProviderWrapper<E extends AsyncProvider> implements AsyncProvi
 
     @Override
     public void setProviderListener(ProviderListener listener) {
-        next.setProviderListener(listener);
+        this.listener = listener;
     }
 
     @Override
     public ProviderListener getProviderListener() {
-        return next.getProviderListener();
+        return this.listener;
+    }
+
+    @Override
+    public void onMessage(JmsInboundMessageDispatch envelope) {
+        this.listener.onMessage(envelope);
+    }
+
+    @Override
+    public void onConnectionInterrupted() {
+        this.listener.onConnectionInterrupted();
+    }
+
+    @Override
+    public void onConnectionRecovery(BlockingProvider provider) throws Exception {
+        this.listener.onConnectionRecovery(provider);
+    }
+
+    @Override
+    public void onConnectionRecovered(BlockingProvider provider) throws Exception {
+        this.listener.onConnectionRecovered(provider);
+    }
+
+    @Override
+    public void onConnectionRestored() {
+        this.listener.onConnectionRestored();
+    }
+
+    @Override
+    public void onConnectionFailure(IOException ex) {
+        this.listener.onConnectionInterrupted();
     }
 
     /**
