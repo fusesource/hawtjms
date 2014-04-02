@@ -23,9 +23,11 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- *
+ * A Factory finding helper class used to locate objects that serve as Factories for
+ * other Object types.  The search an instantiate mechanism is configurable so that
+ * in a non-stand-alone environment such as OSGI the finder and be configured to work.
  */
-public class FactoryFinder {
+public class FactoryFinder<T extends Object> {
 
     /**
      * The strategy that the FactoryFinder uses to find load and instantiate Objects can be
@@ -40,12 +42,101 @@ public class FactoryFinder {
     public interface ObjectFactory {
 
         /**
+         * Creates the requested factory instance.
+         *
          * @param path
          *        the full service path
-         * @return
+         *
+         * @return instance of the factory object being searched for.
+         *
+         * @throws IllegalAccessException if an error occurs while accessing the search path.
+         * @throws InstantiationException if the factory object fails on create.
+         * @throws IOException if the search encounter an IO error.
+         * @throws ClassNotFoundException if the class that is to be loaded cannot be found.
          */
         public Object create(String path) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException;
 
+    }
+
+    private static ObjectFactory objectFactory = new StandaloneObjectFactory();
+
+    private final ConcurrentHashMap<String, T> cachedFactories = new ConcurrentHashMap<String, T>();
+    private final String path;
+    private final Class<T> factoryType;
+
+    /**
+     * Creates a new instance of the FactoryFinder using the given search path.
+     *
+     * @param path
+     *        The path to use when searching for the factory definitions.
+     */
+    public FactoryFinder(Class<T> factoryType, String path) {
+        this.path = path;
+        this.factoryType = factoryType;
+    }
+
+    /**
+     * @return the currently configured ObjectFactory instance used to locate the Factory objects.
+     */
+    public static ObjectFactory getObjectFactory() {
+        return objectFactory;
+    }
+
+    /**
+     * Sets the ObjectFactory instance to use when searching for the Factory class.  This allows
+     * the default instance to be overridden in an environment where the basic version will not
+     * work.
+     *
+     * @param objectFactory
+     *        the new object factory to use when searching for a Factory instance.
+     */
+    public static void setObjectFactory(ObjectFactory objectFactory) {
+        FactoryFinder.objectFactory = objectFactory;
+    }
+
+    /**
+     * Creates a new instance of the given key.  The method first checks the cache of previously
+     * found factory instances for one that matches the key.  If no cached version exists then
+     * the factory will be searched for using the configured ObjectFactory instance.
+     *
+     * @param key
+     *        is the key to add to the path to find a text file containing the factory name
+     *
+     * @return a newly created instance
+     *
+     * @throws IllegalAccessException if an error occurs while accessing the search path.
+     * @throws InstantiationException if the factory object fails on create.
+     * @throws IOException if the search encounter an IO error.
+     * @throws ClassNotFoundException if the class that is to be loaded cannot be found.
+     * @throws ClassCastException if the found object is not assignable to the request factory type.
+     */
+    public T newInstance(String key) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException, ClassCastException {
+        T factory = cachedFactories.get(key);
+        if (factory == null) {
+
+            Object found = objectFactory.create(path + key);
+            if (found != null && factoryType.isInstance(found)) {
+                factory = factoryType.cast(found);
+                cachedFactories.put(key, factory);
+            } else {
+                throw new ClassCastException("Cannot cast " + found.getClass().getName() +
+                    " to " + factoryType.getName());
+            }
+        }
+
+        return factory;
+    }
+
+    /**
+     * Allow registration of a Provider factory without wiring via META-INF classes
+     *
+     * @param scheme
+     *        The URI scheme value that names the target Provider instance.
+     * @param factory
+     *        The factory to register in this finder.
+     */
+    public void registerProviderFactory(String scheme, T factory) {
+        cachedFactories.put(scheme, factory);
     }
 
     /**
@@ -115,32 +206,5 @@ public class FactoryFinder {
                 }
             }
         }
-    }
-
-    private static ObjectFactory objectFactory = new StandaloneObjectFactory();
-
-    public static ObjectFactory getObjectFactory() {
-        return objectFactory;
-    }
-
-    public static void setObjectFactory(ObjectFactory objectFactory) {
-        FactoryFinder.objectFactory = objectFactory;
-    }
-
-    private final String path;
-
-    public FactoryFinder(String path) {
-        this.path = path;
-    }
-
-    /**
-     * Creates a new instance of the given key
-     *
-     * @param key
-     *        is the key to add to the path to find a text file containing the factory name
-     * @return a newly created instance
-     */
-    public Object newInstance(String key) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException {
-        return objectFactory.create(path + key);
     }
 }

@@ -16,6 +16,9 @@
  */
 package io.hawtjms.provider;
 
+import io.hawtjms.util.FactoryFinder;
+
+import java.io.IOException;
 import java.net.URI;
 
 import org.slf4j.Logger;
@@ -27,6 +30,9 @@ import org.slf4j.LoggerFactory;
 public abstract class ProviderFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(ProviderFactory.class);
+
+    private static final FactoryFinder<ProviderFactory> PROVIDER_FACTORY_FINDER =
+        new FactoryFinder<ProviderFactory>(ProviderFactory.class, "META-INF/services/io/hawtjms/providers/");
 
     /**
      * Creates an instance of the given BlockingProvider and configures it using the
@@ -74,7 +80,7 @@ public abstract class ProviderFactory {
         BlockingProvider result = null;
 
         try {
-            ProviderFactory factory = ProviderFactoryFinder.findProviderFactory(remoteURI);
+            ProviderFactory factory = findProviderFactory(remoteURI);
             result = factory.createProvider(remoteURI);
             result.connect();
         } catch (Exception ex) {
@@ -101,7 +107,7 @@ public abstract class ProviderFactory {
         AsyncProvider result = null;
 
         try {
-            ProviderFactory factory = ProviderFactoryFinder.findProviderFactory(remoteURI);
+            ProviderFactory factory = findProviderFactory(remoteURI);
             result = factory.createAsyncProvider(remoteURI);
             result.connect();
         } catch (Exception ex) {
@@ -111,5 +117,34 @@ public abstract class ProviderFactory {
         }
 
         return result;
+    }
+
+    /**
+     * Searches for a ProviderFactory by using the scheme from the given URI.
+     *
+     * The search first checks the local cache of provider factories before moving on
+     * to search in the classpath.
+     *
+     * @param location
+     *        The URI whose scheme will be used to locate a ProviderFactory.
+     *
+     * @return a provider factory instance matching the URI's scheme.
+     *
+     * @throws IOException if an error occurs while locating the factory.
+     */
+    public static ProviderFactory findProviderFactory(URI location) throws IOException {
+        String scheme = location.getScheme();
+        if (scheme == null) {
+            throw new IOException("No Provider scheme specified: [" + location + "]");
+        }
+
+        ProviderFactory factory = null;
+        try {
+            factory = PROVIDER_FACTORY_FINDER.newInstance(scheme);
+        } catch (Throwable e) {
+            throw new IOException("Provider scheme NOT recognized: [" + scheme + "]", e);
+        }
+
+        return factory;
     }
 }

@@ -16,6 +16,8 @@
  */
 package io.hawtjms.sasl;
 
+import io.hawtjms.util.FactoryFinder;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,6 +39,9 @@ public class SaslMechanismFinder {
 
     private static final Logger LOG = LoggerFactory.getLogger(SaslMechanismFinder.class);
 
+    private static final FactoryFinder<MechanismFactory> MECHANISM_FACTORY_FINDER =
+        new FactoryFinder<MechanismFactory>(MechanismFactory.class, "META-INF/services/io/hawtjms/sasl/");
+
     /**
      * Attempts to find a matching Mechanism implementation given a list of supported
      * mechanisms from a remote peer.  Can return null if no matching Mechanisms are
@@ -54,7 +59,7 @@ public class SaslMechanismFinder {
 
         for (String remoteMechanism : remoteMechanisms) {
             try {
-                MechanismFactory factory = MechanismFactoryFinder.findMechanismFactory(remoteMechanism);
+                MechanismFactory factory = findMechanismFactory(remoteMechanism);
                 found.add(factory.createMechanism());
             } catch (IOException e) {
                 LOG.warn("Caught exception while searching for SASL mechanisms: {}", e.getMessage());
@@ -71,5 +76,33 @@ public class SaslMechanismFinder {
         LOG.info("Best match for SASL auth was: {}", match);
 
         return match;
+    }
+
+    /**
+     * Searches for a MechanismFactory by using the scheme from the given name.
+     *
+     * The search first checks the local cache of mechanism factories before moving on
+     * to search in the classpath.
+     *
+     * @param name
+     *        The name of the authentication mechanism to search for..
+     *
+     * @return a mechanism factory instance matching the URI's scheme.
+     *
+     * @throws IOException if an error occurs while locating the factory.
+     */
+    protected static MechanismFactory findMechanismFactory(String name) throws IOException {
+        if (name == null || name.isEmpty()) {
+            throw new IOException("No Mechanism name specified: [" + name + "]");
+        }
+
+        MechanismFactory factory = null;
+        try {
+            factory = MECHANISM_FACTORY_FINDER.newInstance(name);
+        } catch (Throwable e) {
+            throw new IOException("Mechanism scheme NOT recognized: [" + name + "]", e);
+        }
+
+        return factory;
     }
 }

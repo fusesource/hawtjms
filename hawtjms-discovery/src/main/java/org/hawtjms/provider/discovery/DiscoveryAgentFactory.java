@@ -16,6 +16,9 @@
  */
 package org.hawtjms.provider.discovery;
 
+import io.hawtjms.util.FactoryFinder;
+
+import java.io.IOException;
 import java.net.URI;
 
 import org.slf4j.Logger;
@@ -28,6 +31,9 @@ import org.slf4j.LoggerFactory;
 public abstract class DiscoveryAgentFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(DiscoveryAgentFactory.class);
+
+    private static final FactoryFinder<DiscoveryAgentFactory> AGENT_FACTORY_FINDER =
+        new FactoryFinder<DiscoveryAgentFactory>(DiscoveryAgentFactory.class, "META-INF/services/io/hawtjms/discovery/agents");
 
     /**
      * Creates an instance of the given AsyncProvider and configures it using the
@@ -62,7 +68,7 @@ public abstract class DiscoveryAgentFactory {
         DiscoveryAgent result = null;
 
         try {
-            DiscoveryAgentFactory factory = DiscoveryAgentFactoryFinder.findAgentFactory(remoteURI);
+            DiscoveryAgentFactory factory = findAgentFactory(remoteURI);
             result = factory.createDiscoveryAgent(remoteURI);
         } catch (Exception ex) {
             LOG.error("Failed to create BlockingProvider instance for: {}", remoteURI.getScheme());
@@ -71,5 +77,36 @@ public abstract class DiscoveryAgentFactory {
         }
 
         return result;
+    }
+
+    /**
+     * Searches for a DiscoveryAgentFactory by using the scheme from the given URI.
+     *
+     * The search first checks the local cache of discovery agent factories before moving on
+     * to search in the classpath.
+     *
+     * @param location
+     *        The URI whose scheme will be used to locate a DiscoveryAgentFactory.
+     *
+     * @return a Discovery Agent factory instance matching the URI's scheme.
+     *
+     * @throws IOException if an error occurs while locating the factory.
+     */
+    protected static DiscoveryAgentFactory findAgentFactory(URI location) throws IOException {
+        String scheme = location.getScheme();
+        if (scheme == null) {
+            throw new IOException("No Discovery Agent scheme specified: [" + location + "]");
+        }
+
+        DiscoveryAgentFactory factory = null;
+        if (factory == null) {
+            try {
+                factory = AGENT_FACTORY_FINDER.newInstance(scheme);
+            } catch (Throwable e) {
+                throw new IOException("Discovery Agent scheme NOT recognized: [" + scheme + "]", e);
+            }
+        }
+
+        return factory;
     }
 }
