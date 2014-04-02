@@ -102,6 +102,10 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     private int startupMaxReconnectAttempts = UNLIMITED;
     private int warnAfterReconnectAttempts = 10;
 
+    public FailoverProvider(Map<String, String> nestedOptions) {
+        this(null, nestedOptions);
+    }
+
     public FailoverProvider(URI[] uris) {
         this(uris, null);
     }
