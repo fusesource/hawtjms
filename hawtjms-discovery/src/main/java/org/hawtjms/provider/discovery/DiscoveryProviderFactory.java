@@ -43,6 +43,11 @@ public class DiscoveryProviderFactory extends ProviderFactory {
         FailoverProvider failover = new FailoverProvider(nested);
         PropertyUtil.setProperties(failover, options);
 
+        // TODO - Revisit URI options setting and enhance the ProperyUtils to provide a
+        //        means of setting some properties on a object and obtaining the leftovers
+        //        so we can pass those along to the next until we consume them all or we
+        //        have leftovers which implies a bad URI.
+
         DiscoveryProvider discovery = new DiscoveryProvider(remoteURI, failover);
         PropertyUtil.setProperties(discovery, options);
 
