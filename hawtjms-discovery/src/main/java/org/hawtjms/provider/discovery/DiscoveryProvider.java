@@ -18,7 +18,6 @@ package org.hawtjms.provider.discovery;
 
 import io.hawtjms.provider.AsyncProviderWrapper;
 import io.hawtjms.provider.failover.FailoverProvider;
-import io.hawtjms.util.URISupport;
 
 import java.io.IOException;
 import java.net.URI;
@@ -38,7 +37,6 @@ import org.slf4j.LoggerFactory;
 public class DiscoveryProvider extends AsyncProviderWrapper<FailoverProvider> implements DiscoveryListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(DiscoveryProviderFactory.class);
-    private static final String DISCOVERED_OPTION_PREFIX = "discovered.";
 
     private final URI discoveryUri;
     private DiscoveryAgent discoveryAgent;
@@ -121,7 +119,6 @@ public class DiscoveryProvider extends AsyncProviderWrapper<FailoverProvider> im
             try {
                 URI uri = new URI(url);
                 LOG.info("Adding new peer connection URL: {}", uri);
-                uri = URISupport.applyParameters(uri, discoveredOptions, DISCOVERED_OPTION_PREFIX);
                 serviceURIs.put(event.getPeerName(), uri);
                 next.add(uri);
             } catch (URISyntaxException e) {

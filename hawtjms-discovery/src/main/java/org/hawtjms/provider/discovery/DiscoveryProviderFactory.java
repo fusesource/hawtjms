@@ -20,22 +20,38 @@ import io.hawtjms.provider.AsyncProvider;
 import io.hawtjms.provider.BlockingProvider;
 import io.hawtjms.provider.DefaultBlockingProvider;
 import io.hawtjms.provider.ProviderFactory;
+import io.hawtjms.provider.failover.FailoverProvider;
+import io.hawtjms.util.PropertyUtil;
+import io.hawtjms.util.URISupport;
 
 import java.net.URI;
+import java.util.Map;
 
 /**
  * Factory for creating the Discovery Provider
  */
 public class DiscoveryProviderFactory extends ProviderFactory {
 
+    private static final String DISCOVERED_OPTION_PREFIX = "discovered.";
+
     @Override
-    public BlockingProvider createProvider(URI remoteURI) {
-        return new DefaultBlockingProvider(new DiscoveryProvider(remoteURI, null));
+    public BlockingProvider createProvider(URI remoteURI) throws Exception {
+        Map<String, String> options = URISupport.parseParameters(remoteURI);
+
+        // Failover will apply the nested options to each URI while attempting to connect.
+        Map<String, String> nested = PropertyUtil.filterProperties(options, DISCOVERED_OPTION_PREFIX);
+        FailoverProvider failover = new FailoverProvider(nested);
+        PropertyUtil.setProperties(failover, options);
+
+        DiscoveryProvider discovery = new DiscoveryProvider(remoteURI, failover);
+        PropertyUtil.setProperties(discovery, options);
+
+        return new DefaultBlockingProvider(discovery);
     }
 
     @Override
     public AsyncProvider createAsyncProvider(URI remoteURI) throws Exception {
-        return new DiscoveryProvider(remoteURI, null);
+        throw new UnsupportedOperationException("Async create not supported.");
     }
 
     @Override
