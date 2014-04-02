@@ -35,9 +35,9 @@ import io.hawtjms.jms.meta.JmsSessionInfo;
 import io.hawtjms.jms.meta.JmsTransactionInfo;
 import io.hawtjms.provider.AsyncProvider;
 import io.hawtjms.provider.AsyncResult;
+import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
 import io.hawtjms.provider.ProviderListener;
 import io.hawtjms.provider.ProviderRequest;
-import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
 import io.hawtjms.util.IOExceptionSupport;
 
 import java.io.IOException;
@@ -139,6 +139,15 @@ public class AmqpProvider implements AsyncProvider {
 
         transport = createTransport(remoteURI);
         transport.connect();
+    }
+
+    @Override
+    public void start() throws IOException, IllegalStateException {
+        checkClosed();
+
+        if (listener == null) {
+            throw new IllegalStateException("No ProviderListener registered.");
+        }
     }
 
     @Override

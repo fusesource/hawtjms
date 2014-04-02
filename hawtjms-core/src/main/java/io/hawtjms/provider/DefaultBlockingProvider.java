@@ -48,6 +48,11 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
+    public void start() throws IOException, IllegalStateException {
+        next.start();
+    }
+
+    @Override
     public void close() {
         next.close();
     }

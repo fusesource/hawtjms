@@ -47,6 +47,16 @@ public interface AsyncProvider {
     void connect() throws IOException;
 
     /**
+     * Starts the Provider.  The start method provides a place for the Provider to perform
+     * and pre-start configuration checks to ensure that the current state is valid and that
+     * all contracts have been met prior to starting.
+     *
+     * @throws IOException if an error occurs during start processing.
+     * @throws IllegalStateException if the Provider is improperly configured.
+     */
+    void start() throws IOException, IllegalStateException;
+
+    /**
      * Closes this Provider terminating all connections and canceling any pending
      * operations.  The Provider is considered unusable after this call.  This call
      * is a blocking call and will not return until the Provider has closed or an

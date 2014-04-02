@@ -144,6 +144,15 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     }
 
     @Override
+    public void start() throws IOException, IllegalStateException {
+        checkClosed();
+
+        if (listener == null) {
+            throw new IllegalStateException("No ProviderListener registered.");
+        }
+    }
+
+    @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
             final ProviderRequest<Void> request = new ProviderRequest<Void>();

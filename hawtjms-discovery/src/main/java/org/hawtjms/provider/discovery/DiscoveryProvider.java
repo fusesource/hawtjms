@@ -52,6 +52,11 @@ public class DiscoveryProvider implements AsyncProvider {
     }
 
     @Override
+    public void start() throws IOException, IllegalStateException {
+        // TODO
+    }
+
+    @Override
     public void close() {
         // TODO Auto-generated method stub
 
