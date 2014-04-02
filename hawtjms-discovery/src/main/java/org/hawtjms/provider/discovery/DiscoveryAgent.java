@@ -40,10 +40,24 @@ public interface DiscoveryAgent {
     void start() throws IOException, IllegalStateException;
 
     /**
-     * Stops the agent after which no new remote peers will be found.
-     *
-     * @throws IOException if an error occurs while stopping the agent resources.
+     * Stops the agent after which no new remote peers will be found.  This
+     * method should attempt to close any agent resources and if an error occurs
+     * it should handle it and not re-throw to the calling entity.
      */
-    void stop() throws IOException;
+    void close();
+
+    /**
+     * Suspends the Agent which suppresses any new attempts to discover remote
+     * peers until the agent is resumed.  If the service is not able to be suspended
+     * then this method should not throw an Exception, simply return as if successful.
+     */
+    void suspend();
+
+    /**
+     * Resumes discovery by this agent if it was previously suspended.  If the agent
+     * does not support being suspended or is closed this method should simply return
+     * without throwing any exceptions.
+     */
+    void resume();
 
 }

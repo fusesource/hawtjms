@@ -45,7 +45,17 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent {
     }
 
     @Override
-    public void stop() throws IOException {
+    public void close() {
+        // TODO
+    }
 
+    @Override
+    public void suspend() {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void resume() {
+        // TODO Auto-generated method stub
     }
 }
