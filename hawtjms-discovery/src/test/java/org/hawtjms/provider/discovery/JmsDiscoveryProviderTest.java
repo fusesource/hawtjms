@@ -16,12 +16,13 @@
  */
 package org.hawtjms.provider.discovery;
 
+import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 /**
  *
  */
-public class JmsDiscoveryProviderTest {
+public class JmsDiscoveryProviderTest extends AmqpTestSupport {
 
     @Test
     public void test() {

@@ -53,12 +53,6 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
     private static final int DEFAULT_IDLE_TIME = 500;
     private static final int HEARTBEAT_MISS_BEFORE_DEATH = 10;
 
-    private long initialReconnectDelay = 1000 * 5;
-    private long maxReconnectDelay = 1000 * 30;
-    private long backOffMultiplier = 2;
-    private boolean useExponentialBackOff;
-    private int maxReconnectAttempts;
-
     private DiscoveryListener listener;
     private URI discoveryURI;
     private int timeToLive = 1;
@@ -74,7 +68,6 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
     private String mcNetworkInterface;
     private String mcJoinNetworkInterface;
     private String service;
-    private long lastAdvertizeTime;
     private final AtomicBoolean started = new AtomicBoolean(false);
     private PacketParser parser;
 
@@ -311,46 +304,6 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
 
     public void setJoinNetworkInterface(String mcJoinNetwrokInterface) {
         this.mcJoinNetworkInterface = mcJoinNetwrokInterface;
-    }
-
-    public long getBackOffMultiplier() {
-        return backOffMultiplier;
-    }
-
-    public void setBackOffMultiplier(long backOffMultiplier) {
-        this.backOffMultiplier = backOffMultiplier;
-    }
-
-    public long getInitialReconnectDelay() {
-        return initialReconnectDelay;
-    }
-
-    public void setInitialReconnectDelay(long initialReconnectDelay) {
-        this.initialReconnectDelay = initialReconnectDelay;
-    }
-
-    public int getMaxReconnectAttempts() {
-        return maxReconnectAttempts;
-    }
-
-    public void setMaxReconnectAttempts(int maxReconnectAttempts) {
-        this.maxReconnectAttempts = maxReconnectAttempts;
-    }
-
-    public long getMaxReconnectDelay() {
-        return maxReconnectDelay;
-    }
-
-    public void setMaxReconnectDelay(long maxReconnectDelay) {
-        this.maxReconnectDelay = maxReconnectDelay;
-    }
-
-    public boolean isUseExponentialBackOff() {
-        return useExponentialBackOff;
-    }
-
-    public void setUseExponentialBackOff(boolean useExponentialBackOff) {
-        this.useExponentialBackOff = useExponentialBackOff;
     }
 
     /**
