@@ -71,7 +71,7 @@ public abstract class DiscoveryAgentFactory {
             DiscoveryAgentFactory factory = findAgentFactory(remoteURI);
             result = factory.createDiscoveryAgent(remoteURI);
         } catch (Exception ex) {
-            LOG.error("Failed to create BlockingProvider instance for: {}", remoteURI.getScheme());
+            LOG.error("Failed to create DiscoveryAgent instance for: {}", remoteURI.getScheme());
             LOG.trace("Error: ", ex);
             throw ex;
         }
@@ -88,7 +88,7 @@ public abstract class DiscoveryAgentFactory {
      * @param location
      *        The URI whose scheme will be used to locate a DiscoveryAgentFactory.
      *
-     * @return a Discovery Agent factory instance matching the URI's scheme.
+     * @return a DiscoveryAgentFactory instance matching the URI's scheme.
      *
      * @throws IOException if an error occurs while locating the factory.
      */
