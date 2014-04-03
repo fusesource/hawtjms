@@ -57,6 +57,12 @@
       <artifactId>slf4j-log4j12</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.hawtjms</groupId>
+      <artifactId>hawtjms-amqp</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.apache.activemq</groupId>
