@@ -14,32 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawtjms.provider.discovery;
+package org.hawtjms.provider.discovery.multicast.parsers;
+
+import org.hawtjms.provider.discovery.multicast.PacketParser;
+import org.hawtjms.provider.discovery.multicast.PacketParserFactory;
 
 /**
- * Event class used to convey discovered remote peer information to the
- * DiscoveryProvider.
+ * Factory class for the ActiveMQ Packet Parser used to process data set over
+ * multicast when discovering ActiveMQ Brokers.
  */
-public class DiscoveryEvent {
+public class ActiveMQPacketParserFactory extends PacketParserFactory {
 
-    public enum EventType {
-        ALIVE,
-        SHUTDOWN
-    };
-
-    private final String peerUri;
-    private final EventType type;
-
-    public DiscoveryEvent(String peerUri, EventType type) {
-        this.peerUri = peerUri;
-        this.type = type;
+    @Override
+    public PacketParser createPacketParser(String key) throws Exception {
+        return new ActiveMQPacketParser();
     }
 
-    public String getPeerUri() {
-        return peerUri;
+    @Override
+    public String getName() {
+        return "ActiveMQ";
     }
 
-    public EventType getType() {
-        return type;
+    @Override
+    public String toString() {
+        return getName() + ": Discovery Parser.";
     }
 }

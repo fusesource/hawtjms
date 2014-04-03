@@ -33,7 +33,7 @@ public abstract class DiscoveryAgentFactory {
     private static final Logger LOG = LoggerFactory.getLogger(DiscoveryAgentFactory.class);
 
     private static final FactoryFinder<DiscoveryAgentFactory> AGENT_FACTORY_FINDER =
-        new FactoryFinder<DiscoveryAgentFactory>(DiscoveryAgentFactory.class, "META-INF/services/io/hawtjms/discovery/agents");
+        new FactoryFinder<DiscoveryAgentFactory>(DiscoveryAgentFactory.class, "META-INF/services/io/hawtjms/providers/agents");
 
     /**
      * Creates an instance of the given DiscoveryAgent and configures it using the

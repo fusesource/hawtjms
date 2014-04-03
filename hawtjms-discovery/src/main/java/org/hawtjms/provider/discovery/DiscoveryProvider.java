@@ -119,7 +119,7 @@ public class DiscoveryProvider extends AsyncProviderWrapper<FailoverProvider> im
             try {
                 URI uri = new URI(url);
                 LOG.info("Adding new peer connection URL: {}", uri);
-                serviceURIs.put(event.getPeerName(), uri);
+                serviceURIs.put(event.getPeerUri(), uri);
                 next.add(uri);
             } catch (URISyntaxException e) {
                 LOG.warn("Could not add remote URI: {} due to bad URI syntax: {}", url, e.getMessage());
@@ -129,7 +129,7 @@ public class DiscoveryProvider extends AsyncProviderWrapper<FailoverProvider> im
 
     @Override
     public void onServiceRemove(DiscoveryEvent event) {
-        URI uri = serviceURIs.get(event.getPeerName());
+        URI uri = serviceURIs.get(event.getPeerUri());
         if (uri != null) {
             next.remove(uri);
         }

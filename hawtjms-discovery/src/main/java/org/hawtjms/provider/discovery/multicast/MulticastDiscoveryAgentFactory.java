@@ -30,11 +30,24 @@ import org.hawtjms.provider.discovery.DiscoveryAgentFactory;
  */
 public class MulticastDiscoveryAgentFactory extends DiscoveryAgentFactory {
 
+    private static final String DEFAULT_SERVICE = "activemq";
+
     @Override
     public DiscoveryAgent createDiscoveryAgent(URI discoveryURI) throws Exception {
         MulticastDiscoveryAgent agent = new MulticastDiscoveryAgent(discoveryURI);
         Map<String, String> options = URISupport.parseParameters(discoveryURI);
         PropertyUtil.setProperties(agent, options);
+
+        String service = agent.getService();
+        if (service == null || service.isEmpty()) {
+            service = DEFAULT_SERVICE;
+        }
+
+        PacketParser packetParser = PacketParserFactory.createAgent(service);
+        packetParser.setGroup(agent.getGroup());
+
+        agent.setParser(packetParser);
+
         return agent;
     }
 
