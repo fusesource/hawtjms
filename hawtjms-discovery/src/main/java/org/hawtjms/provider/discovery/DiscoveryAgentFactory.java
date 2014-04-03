@@ -36,20 +36,20 @@ public abstract class DiscoveryAgentFactory {
         new FactoryFinder<DiscoveryAgentFactory>(DiscoveryAgentFactory.class, "META-INF/services/io/hawtjms/discovery/agents");
 
     /**
-     * Creates an instance of the given AsyncProvider and configures it using the
+     * Creates an instance of the given DiscoveryAgent and configures it using the
      * properties set on the given remote broker URI.
      *
      * @param remoteURI
-     *        The URI used to connect to a remote Broker.
+     *        The URI used to configure remote discovery.
      *
-     * @return a new AsyncProvider instance.
+     * @return a new DiscoveryAgent instance.
      *
-     * @throws Exception if an error occurs while creating the Provider instance.
+     * @throws Exception if an error occurs while creating the DiscoveryAgent instance.
      */
     public abstract DiscoveryAgent createDiscoveryAgent(URI remoteURI) throws Exception;
 
     /**
-     * @return the name of this JMS Provider, e.g. STOMP, AMQP, MQTT...etc
+     * @return the name of this discovery agent, e.g. Multicast, Zeroconf, etc.
      */
     public abstract String getName();
 
