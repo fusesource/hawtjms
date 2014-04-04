@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.hawtjms.tests;
+package io.hawtjms.tests.discovery;
 
 import org.junit.Test;
 
