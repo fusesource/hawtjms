@@ -21,6 +21,7 @@ import io.hawtjms.provider.DefaultBlockingProvider;
 import io.hawtjms.provider.DefaultProviderListener;
 import io.hawtjms.provider.discovery.DiscoveryProviderFactory;
 
+import java.io.IOException;
 import java.net.URI;
 
 import org.hawtjms.util.AmqpTestSupport;
@@ -56,6 +57,14 @@ public class JmsDiscoveryProviderTest extends AmqpTestSupport {
             DiscoveryProviderFactory.createBlocking(discoveryUri);
         assertNotNull(blocking);
         blocking.start();
+        blocking.close();
+    }
+
+    @Test(timeout=30000, expected=IOException.class)
+    public void testCreateFailsWithUnknownAgent() throws Exception {
+        URI discoveryUri = new URI("discovery:unknown://default");
+        DefaultBlockingProvider blocking = (DefaultBlockingProvider)
+            DiscoveryProviderFactory.createBlocking(discoveryUri);
         blocking.close();
     }
 }
