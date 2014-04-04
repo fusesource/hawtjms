@@ -101,6 +101,27 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         assertTrue(restored.await(20, TimeUnit.SECONDS));
     }
 
+    @Test(timeout=600000)
+    public void testDiscoversAndReconnectsToSecondaryBroker() throws Exception {
+
+        connection = createConnection();
+        connection.start();
+
+        assertTrue("connection never connected.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return jmsConnection.isConnected();
+            }
+        }));
+
+        startNewBroker();
+        stopPrimaryBroker();
+
+        assertTrue(interrupted.await(20, TimeUnit.SECONDS));
+        assertTrue(restored.await(20, TimeUnit.SECONDS));
+    }
+
     @Override
     protected boolean isAmqpDiscovery() {
         return true;
