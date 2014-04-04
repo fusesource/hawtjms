@@ -29,8 +29,8 @@ import io.hawtjms.jms.meta.JmsResource;
 import io.hawtjms.jms.meta.JmsSessionId;
 import io.hawtjms.jms.meta.JmsTransactionId;
 import io.hawtjms.provider.BlockingProvider;
-import io.hawtjms.provider.ProviderListener;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
+import io.hawtjms.provider.ProviderListener;
 import io.hawtjms.util.IdGenerator;
 import io.hawtjms.util.ThreadPoolUtils;
 
@@ -127,6 +127,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         this.provider = provider;
         this.provider.setProviderListener(this);
+        try {
+            this.provider.start();
+        } catch (Exception e) {
+            throw JmsExceptionSupport.create(e);
+        }
+
         this.clientIdGenerator = clientIdGenerator;
         this.connectionInfo = new JmsConnectionInfo(new JmsConnectionId(connectionId));
     }
