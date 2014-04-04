@@ -511,18 +511,20 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
                     return;
                 }
 
+                reconnectAttempts++;
                 Throwable failure = null;
                 URI target = uris.getNext();
-
-                reconnectAttempts++;
-                try {
-                    JmsSslContext.setCurrentSslContext(sslContext);
-                    AsyncProvider provider = ProviderFactory.createAsync(target);
-                    initializeNewConnection(provider);
-                    return;
-                } catch (Throwable e) {
-                    LOG.info("Connection attempt to: {} failed.", target);
-                    failure = e;
+                if (target != null) {
+                    try {
+                        LOG.debug("Attempting connection to: {}", target);
+                        JmsSslContext.setCurrentSslContext(sslContext);
+                        AsyncProvider provider = ProviderFactory.createAsync(target);
+                        initializeNewConnection(provider);
+                        return;
+                    } catch (Throwable e) {
+                        LOG.info("Connection attempt to: {} failed.", target);
+                        failure = e;
+                    }
                 }
 
                 int reconnectLimit = reconnectAttemptLimit();

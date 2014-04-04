@@ -16,10 +16,12 @@
  */
 package io.hawtjms.provider.failover;
 
+import io.hawtjms.util.URISupport;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
-import java.util.Arrays;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Map;
@@ -45,16 +47,17 @@ public class FailoverUriPool {
     }
 
     public FailoverUriPool(URI[] uris, Map<String, String> nestedOptions) {
-        if (uris != null) {
-            this.uris = new LinkedList<URI>(Arrays.asList(uris));
-        } else {
-            this.uris = new LinkedList<URI>();
-        }
-
+        this.uris = new LinkedList<URI>();
         if (nestedOptions != null) {
             this.nestedOptions = nestedOptions;
         } else {
             this.nestedOptions = Collections.emptyMap();
+        }
+
+        if (uris != null) {
+            for (URI uri : uris) {
+                this.add(uri);
+            }
         }
     }
 
@@ -66,10 +69,11 @@ public class FailoverUriPool {
      * @return the next URI that should be used for a connection attempt.
      */
     public URI getNext() {
-        URI next = uris.removeFirst();
-        uris.addLast(next);
-
-        // TODO add nested query options
+        URI next = null;
+        if (!uris.isEmpty()) {
+            next = uris.removeFirst();
+            uris.addLast(next);
+        }
 
         return next;
     }
@@ -107,13 +111,22 @@ public class FailoverUriPool {
     }
 
     /**
-     * Adds a new URI to the pool if not already contained within.
+     * Adds a new URI to the pool if not already contained within.  The URI will have
+     * any nest options that have been configured added to its existing set of options.
      *
      * @param uri
      *        The new URI to add to the pool.
      */
     public void add(URI uri) {
         if (!contains(uri)) {
+            if (!nestedOptions.isEmpty()) {
+                try {
+                    URISupport.applyParameters(uri, nestedOptions);
+                } catch (URISyntaxException e) {
+                    LOG.debug("Failed to add nested options to uri: {}", uri);
+                }
+            }
+
             this.uris.add(uri);
         }
     }
