@@ -430,6 +430,10 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
         this.provider = null;
 
         if (reconnectAllowed()) {
+            ProviderListener listener = this.listener;
+            if (listener != null) {
+                listener.onConnectionInterrupted();
+            }
             triggerReconnectionAttempt();
         } else {
             ProviderListener listener = this.listener;
