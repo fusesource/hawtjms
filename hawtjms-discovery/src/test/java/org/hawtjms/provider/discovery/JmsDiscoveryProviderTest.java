@@ -18,6 +18,7 @@ package org.hawtjms.provider.discovery;
 
 import static org.junit.Assert.assertNotNull;
 import io.hawtjms.provider.DefaultBlockingProvider;
+import io.hawtjms.provider.DefaultProviderListener;
 import io.hawtjms.provider.discovery.DiscoveryProviderFactory;
 
 import java.net.URI;
@@ -35,8 +36,21 @@ public class JmsDiscoveryProviderTest extends AmqpTestSupport {
         return true;
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testCreateDiscvoeryProvider() throws Exception {
+        URI discoveryUri = new URI("discovery:multicast://default");
+        DefaultBlockingProvider blocking = (DefaultBlockingProvider)
+            DiscoveryProviderFactory.createBlocking(discoveryUri);
+        assertNotNull(blocking);
+
+        DefaultProviderListener listener = new DefaultProviderListener();
+        blocking.setProviderListener(listener);
+        blocking.start();
+        blocking.close();
+    }
+
+    @Test(timeout=30000, expected=IllegalStateException.class)
+    public void testStartFailsWithNoListener() throws Exception {
         URI discoveryUri = new URI("discovery:multicast://default");
         DefaultBlockingProvider blocking = (DefaultBlockingProvider)
             DiscoveryProviderFactory.createBlocking(discoveryUri);
@@ -44,5 +58,4 @@ public class JmsDiscoveryProviderTest extends AmqpTestSupport {
         blocking.start();
         blocking.close();
     }
-
 }

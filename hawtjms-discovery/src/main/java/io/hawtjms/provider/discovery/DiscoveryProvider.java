@@ -64,13 +64,13 @@ public class DiscoveryProvider extends AsyncProviderWrapper<FailoverProvider> im
         discoveryAgent.setDiscoveryListener(this);
         discoveryAgent.start();
 
-        next.start();
+        super.start();
     }
 
     @Override
     public void close() {
         discoveryAgent.close();
-        next.close();
+        super.close();
     }
 
     //------------------- Property Accessors ---------------------------------//
