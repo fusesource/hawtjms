@@ -21,8 +21,8 @@ import io.hawtjms.jms.JmsConnection;
 import io.hawtjms.jms.JmsConnectionFactory;
 import io.hawtjms.jms.JmsConnectionListener;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
-import io.hawtjms.test.util.AmqpTestSupport;
-import io.hawtjms.test.util.Wait;
+import io.hawtjms.tests.util.AmqpTestSupport;
+import io.hawtjms.tests.util.Wait;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
