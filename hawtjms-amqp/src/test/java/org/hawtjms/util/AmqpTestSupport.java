@@ -105,6 +105,10 @@ public class AmqpTestSupport {
         return false;
     }
 
+    protected boolean isAmqpDiscovery() {
+        return false;
+    }
+
     protected BrokerService createBroker(String name, boolean deleteAllMessages, int amqpPort, int openwirePort) throws Exception {
         KahaDBStore kaha = new KahaDBStore();
         kaha.setDirectory(new File(KAHADB_DIRECTORY + "/" + name));
@@ -155,6 +159,9 @@ public class AmqpTestSupport {
     protected void addAMQPConnector(BrokerService brokerService, int port) throws Exception {
         TransportConnector connector = brokerService.addConnector("amqp://0.0.0.0:" + port);
         connector.setName("amqp");
+        if (isAmqpDiscovery()) {
+            connector.setDiscoveryUri(new URI("multicast://default"));
+        }
         amqpPort = connector.getConnectUri().getPort();
         LOG.debug("Using amqp port: {}", port);
     }
