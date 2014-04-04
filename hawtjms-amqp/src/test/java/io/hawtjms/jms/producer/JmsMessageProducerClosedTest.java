@@ -16,13 +16,14 @@
  */
 package io.hawtjms.jms.producer;
 
+import io.hawtjms.util.AmqpTestSupport;
+
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 /**

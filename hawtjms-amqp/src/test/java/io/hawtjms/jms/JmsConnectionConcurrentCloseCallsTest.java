@@ -19,6 +19,7 @@ package io.hawtjms.jms;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import io.hawtjms.jms.JmsConnection;
+import io.hawtjms.util.AmqpTestSupport;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -27,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.Session;
 
-import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 public class JmsConnectionConcurrentCloseCallsTest extends AmqpTestSupport {

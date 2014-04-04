@@ -20,6 +20,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import io.hawtjms.jms.JmsConnection;
 import io.hawtjms.jms.JmsConnectionFactory;
+import io.hawtjms.util.AmqpTestSupport;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -30,7 +31,6 @@ import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.Session;
 
-import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 /**

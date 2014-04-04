@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import io.hawtjms.jms.JmsConnection;
+import io.hawtjms.util.AmqpTestSupport;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -30,7 +31,6 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Ignore;
 import org.junit.Test;
 

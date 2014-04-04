@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import io.hawtjms.jms.JmsConnection;
 import io.hawtjms.jms.JmsConnectionFactory;
+import io.hawtjms.util.AmqpTestSupport;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,7 +30,6 @@ import java.net.URISyntaxException;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 
-import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 public class JmsConnectionFactoryTest extends AmqpTestSupport {

@@ -19,6 +19,8 @@ package io.hawtjms.jms.consumer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import io.hawtjms.util.AmqpTestSupport;
+import io.hawtjms.util.Wait;
 
 import javax.jms.Connection;
 import javax.jms.Message;
@@ -29,8 +31,6 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
-import org.hawtjms.util.AmqpTestSupport;
-import org.hawtjms.util.Wait;
 import org.junit.Test;
 
 /**

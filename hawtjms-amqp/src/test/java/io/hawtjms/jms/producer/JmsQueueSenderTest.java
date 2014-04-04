@@ -19,6 +19,7 @@ package io.hawtjms.jms.producer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import io.hawtjms.jms.JmsConnectionFactory;
+import io.hawtjms.util.AmqpTestSupport;
 
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
@@ -27,7 +28,6 @@ import javax.jms.QueueSession;
 import javax.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
-import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 /**

@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import io.hawtjms.jms.JmsConnection;
+import io.hawtjms.util.AmqpTestSupport;
 
 import java.util.Enumeration;
 
@@ -30,7 +31,6 @@ import javax.jms.QueueBrowser;
 import javax.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
-import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import io.hawtjms.util.AmqpTestSupport;
 
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -40,7 +41,6 @@ import javax.jms.Session;
 import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
 
-import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 /**

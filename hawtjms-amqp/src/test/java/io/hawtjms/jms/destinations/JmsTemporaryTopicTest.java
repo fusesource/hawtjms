@@ -19,12 +19,12 @@ package io.hawtjms.jms.destinations;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import io.hawtjms.jms.consumer.JmsMessageConsumerTest;
+import io.hawtjms.util.AmqpTestSupport;
 
 import javax.jms.Connection;
 import javax.jms.Session;
 import javax.jms.TemporaryTopic;
 
-import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;

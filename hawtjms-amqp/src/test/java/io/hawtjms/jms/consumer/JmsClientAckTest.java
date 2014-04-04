@@ -19,6 +19,8 @@ package io.hawtjms.jms.consumer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import io.hawtjms.util.AmqpTestSupport;
+import io.hawtjms.util.Wait;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -36,8 +38,6 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
-import org.hawtjms.util.AmqpTestSupport;
-import org.hawtjms.util.Wait;
 import org.junit.After;
 import org.junit.Test;
 import org.slf4j.Logger;

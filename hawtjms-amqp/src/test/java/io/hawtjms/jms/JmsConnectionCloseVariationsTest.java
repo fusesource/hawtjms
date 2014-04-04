@@ -16,9 +16,10 @@
  */
 package io.hawtjms.jms;
 
+import io.hawtjms.util.AmqpTestSupport;
+
 import javax.jms.Connection;
 
-import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 /**

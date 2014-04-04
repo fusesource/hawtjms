@@ -16,6 +16,8 @@
  */
 package io.hawtjms.jms;
 
+import io.hawtjms.util.AmqpTestSupport;
+
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.ExceptionListener;
@@ -23,7 +25,6 @@ import javax.jms.JMSException;
 import javax.jms.Session;
 import javax.jms.Topic;
 
-import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 /**

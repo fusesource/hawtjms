@@ -24,13 +24,13 @@ import io.hawtjms.provider.DefaultBlockingProvider;
 import io.hawtjms.provider.DefaultProviderListener;
 import io.hawtjms.provider.failover.FailoverProvider;
 import io.hawtjms.provider.failover.FailoverProviderFactory;
+import io.hawtjms.util.AmqpTestSupport;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 /**
