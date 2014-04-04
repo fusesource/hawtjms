@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawtjms.provider.discovery;
+package io.hawtjms.provider.discovery;
 
 import io.hawtjms.provider.AsyncProviderWrapper;
 import io.hawtjms.provider.failover.FailoverProvider;
@@ -22,8 +22,6 @@ import io.hawtjms.provider.failover.FailoverProvider;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -41,7 +39,6 @@ public class DiscoveryProvider extends AsyncProviderWrapper<FailoverProvider> im
     private final URI discoveryUri;
     private DiscoveryAgent discoveryAgent;
     private final ConcurrentHashMap<String, URI> serviceURIs = new ConcurrentHashMap<String, URI>();
-    private Map<String, String> discoveredOptions = Collections.emptyMap();
 
     /**
      * Creates a new instance of the DiscoveryProvider.
@@ -64,7 +61,7 @@ public class DiscoveryProvider extends AsyncProviderWrapper<FailoverProvider> im
             throw new IllegalStateException("No DiscoveryAgent configured.");
         }
 
-        discoveryAgent.setDiscoveryListener(null);
+        discoveryAgent.setDiscoveryListener(this);
         discoveryAgent.start();
 
         next.start();
@@ -93,21 +90,13 @@ public class DiscoveryProvider extends AsyncProviderWrapper<FailoverProvider> im
     }
 
     /**
-     * @return the Map of options that will be added to the URI of discovered peers.
-     */
-    public Map<String, String> getDiscoveredOptions() {
-        return this.discoveredOptions;
-    }
-
-    /**
-     * Sets the Map of key / value options that are added and URI properties to the discovered
-     * URI of each remote peer.
+     * Sets the discovery agent used by this provider to locate remote peer instance.
      *
-     * @param discoveredOptions
-     *        a Map<String, String> that is added as key / value to a discovered remote peer URI.
+     * @param agent
+     *        the agent to use to discover remote peers
      */
-    public void setDiscoveredOptions(Map<String, String> discoveredOptions) {
-        this.discoveredOptions = discoveredOptions;
+    public void setDiscoveryAgent(DiscoveryAgent agent) {
+        this.discoveryAgent = agent;
     }
 
     //------------------- Discovery Event Handlers ---------------------------//

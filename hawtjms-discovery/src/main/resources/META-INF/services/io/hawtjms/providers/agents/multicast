@@ -14,4 +14,4 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 ## ---------------------------------------------------------------------------
-class=io.hawtjms.provider.discovery.multicast.MultcastDiscoveryAgentFactory
+class=io.hawtjms.provider.discovery.multicast.MulticastDiscoveryAgentFactory

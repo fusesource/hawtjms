@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawtjms.provider.discovery;
+package io.hawtjms.provider.discovery;
 
 /**
  * Event class used to convey discovered remote peer information to the

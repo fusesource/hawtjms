@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawtjms.provider.discovery;
+package io.hawtjms.provider.discovery;
 
 /**
  * A listener of services being added or removed from a network

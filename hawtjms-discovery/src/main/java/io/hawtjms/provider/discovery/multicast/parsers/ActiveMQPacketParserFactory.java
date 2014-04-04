@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawtjms.provider.discovery.multicast.parsers;
+package io.hawtjms.provider.discovery.multicast.parsers;
 
-import org.hawtjms.provider.discovery.multicast.PacketParser;
-import org.hawtjms.provider.discovery.multicast.PacketParserFactory;
+import io.hawtjms.provider.discovery.multicast.PacketParser;
+import io.hawtjms.provider.discovery.multicast.PacketParserFactory;
 
 /**
  * Factory class for the ActiveMQ Packet Parser used to process data set over

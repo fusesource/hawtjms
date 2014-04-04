@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawtjms.provider.discovery;
+package io.hawtjms.provider.discovery;
 
 import io.hawtjms.provider.AsyncProvider;
 import io.hawtjms.provider.BlockingProvider;
@@ -23,6 +23,7 @@ import io.hawtjms.provider.ProviderFactory;
 import io.hawtjms.provider.failover.FailoverProvider;
 import io.hawtjms.util.PropertyUtil;
 import io.hawtjms.util.URISupport;
+import io.hawtjms.util.URISupport.CompositeData;
 
 import java.net.URI;
 import java.util.Map;
@@ -36,7 +37,9 @@ public class DiscoveryProviderFactory extends ProviderFactory {
 
     @Override
     public BlockingProvider createProvider(URI remoteURI) throws Exception {
-        Map<String, String> options = URISupport.parseParameters(remoteURI);
+
+        CompositeData composite = URISupport.parseComposite(remoteURI);
+        Map<String, String> options = composite.getParameters();
 
         // Failover will apply the nested options to each URI while attempting to connect.
         Map<String, String> nested = PropertyUtil.filterProperties(options, DISCOVERED_OPTION_PREFIX);
@@ -50,6 +53,9 @@ public class DiscoveryProviderFactory extends ProviderFactory {
 
         DiscoveryProvider discovery = new DiscoveryProvider(remoteURI, failover);
         PropertyUtil.setProperties(discovery, options);
+
+        DiscoveryAgent agent = DiscoveryAgentFactory.createAgent(composite.getComponents()[0]);
+        discovery.setDiscoveryAgent(agent);
 
         return new DefaultBlockingProvider(discovery);
     }

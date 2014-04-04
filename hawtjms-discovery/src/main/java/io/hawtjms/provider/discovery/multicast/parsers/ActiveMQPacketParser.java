@@ -14,11 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawtjms.provider.discovery.multicast.parsers;
+package io.hawtjms.provider.discovery.multicast.parsers;
 
-import org.hawtjms.provider.discovery.DiscoveryEvent;
-import org.hawtjms.provider.discovery.DiscoveryEvent.EventType;
-import org.hawtjms.provider.discovery.multicast.PacketParser;
+import io.hawtjms.provider.discovery.DiscoveryEvent;
+import io.hawtjms.provider.discovery.DiscoveryEvent.EventType;
+import io.hawtjms.provider.discovery.multicast.PacketParser;
 
 /**
  * Parser instance for ActiveMQ multicast discovery processing.

@@ -14,9 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawtjms.provider.discovery.multicast;
+package io.hawtjms.provider.discovery.multicast;
 
-import org.hawtjms.provider.discovery.DiscoveryEvent;
+import io.hawtjms.provider.discovery.DiscoveryEvent;
 
 /**
  * Interface for a DatagramPacket parser object which is used by the

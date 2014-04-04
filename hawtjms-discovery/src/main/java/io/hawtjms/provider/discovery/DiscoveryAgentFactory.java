@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawtjms.provider.discovery;
+package io.hawtjms.provider.discovery;
 
 import io.hawtjms.util.FactoryFinder;
 
@@ -33,7 +33,7 @@ public abstract class DiscoveryAgentFactory {
     private static final Logger LOG = LoggerFactory.getLogger(DiscoveryAgentFactory.class);
 
     private static final FactoryFinder<DiscoveryAgentFactory> AGENT_FACTORY_FINDER =
-        new FactoryFinder<DiscoveryAgentFactory>(DiscoveryAgentFactory.class, "META-INF/services/io/hawtjms/providers/agents");
+        new FactoryFinder<DiscoveryAgentFactory>(DiscoveryAgentFactory.class, "META-INF/services/io/hawtjms/providers/agents/");
 
     /**
      * Creates an instance of the given DiscoveryAgent and configures it using the

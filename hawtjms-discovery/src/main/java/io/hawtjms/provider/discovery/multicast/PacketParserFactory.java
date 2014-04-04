@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawtjms.provider.discovery.multicast;
+package io.hawtjms.provider.discovery.multicast;
 
 import io.hawtjms.util.FactoryFinder;
 
@@ -33,7 +33,7 @@ public abstract class PacketParserFactory {
 
     private static final FactoryFinder<PacketParserFactory> AGENT_FACTORY_FINDER =
         new FactoryFinder<PacketParserFactory>(
-            PacketParserFactory.class, "META-INF/services/io/hawtjms/providers/agents/multicast-parsers");
+            PacketParserFactory.class, "META-INF/services/io/hawtjms/providers/agents/multicast-parsers/");
 
     /**
      * Creates an instance of the given PacketParser

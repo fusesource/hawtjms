@@ -14,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawtjms.provider.discovery.multicast;
+package io.hawtjms.provider.discovery.multicast;
 
+import io.hawtjms.provider.discovery.DiscoveryAgent;
+import io.hawtjms.provider.discovery.DiscoveryAgentFactory;
 import io.hawtjms.util.PropertyUtil;
 import io.hawtjms.util.URISupport;
 
 import java.net.URI;
 import java.util.Map;
-
-import org.hawtjms.provider.discovery.DiscoveryAgent;
-import org.hawtjms.provider.discovery.DiscoveryAgentFactory;
 
 /**
  * Creates and configures a new instance of the mutlicast agent.

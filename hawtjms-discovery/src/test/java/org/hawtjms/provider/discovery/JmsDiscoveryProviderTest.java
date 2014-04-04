@@ -16,16 +16,33 @@
  */
 package org.hawtjms.provider.discovery;
 
+import static org.junit.Assert.assertNotNull;
+import io.hawtjms.provider.DefaultBlockingProvider;
+import io.hawtjms.provider.discovery.DiscoveryProviderFactory;
+
+import java.net.URI;
+
 import org.hawtjms.util.AmqpTestSupport;
 import org.junit.Test;
 
 /**
- *
+ * Test basic discovery of remote brokers
  */
 public class JmsDiscoveryProviderTest extends AmqpTestSupport {
 
+    @Override
+    protected boolean isAmqpDiscovery() {
+        return true;
+    }
+
     @Test
-    public void test() {
+    public void testCreateDiscvoeryProvider() throws Exception {
+        URI discoveryUri = new URI("discovery:multicast://default");
+        DefaultBlockingProvider blocking = (DefaultBlockingProvider)
+            DiscoveryProviderFactory.createBlocking(discoveryUri);
+        assertNotNull(blocking);
+        blocking.start();
+        blocking.close();
     }
 
 }

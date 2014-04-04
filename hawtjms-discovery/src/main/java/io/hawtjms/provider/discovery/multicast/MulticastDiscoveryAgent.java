@@ -14,7 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawtjms.provider.discovery.multicast;
+package io.hawtjms.provider.discovery.multicast;
+
+import io.hawtjms.provider.discovery.DiscoveryAgent;
+import io.hawtjms.provider.discovery.DiscoveryEvent;
+import io.hawtjms.provider.discovery.DiscoveryListener;
+import io.hawtjms.provider.discovery.DiscoveryEvent.EventType;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -31,10 +36,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.hawtjms.provider.discovery.DiscoveryAgent;
-import org.hawtjms.provider.discovery.DiscoveryEvent;
-import org.hawtjms.provider.discovery.DiscoveryEvent.EventType;
-import org.hawtjms.provider.discovery.DiscoveryListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
