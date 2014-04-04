@@ -20,8 +20,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import io.hawtjms.jms.JmsConnectionFactory;
-import io.hawtjms.util.AmqpTestSupport;
-import io.hawtjms.util.Wait;
+import io.hawtjms.tests.util.AmqpTestSupport;
+import io.hawtjms.tests.util.Wait;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;

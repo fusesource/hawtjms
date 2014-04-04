@@ -24,7 +24,7 @@ import io.hawtjms.provider.DefaultBlockingProvider;
 import io.hawtjms.provider.DefaultProviderListener;
 import io.hawtjms.provider.failover.FailoverProvider;
 import io.hawtjms.provider.failover.FailoverProviderFactory;
-import io.hawtjms.util.AmqpTestSupport;
+import io.hawtjms.tests.util.AmqpTestSupport;
 
 import java.io.IOException;
 import java.net.URI;

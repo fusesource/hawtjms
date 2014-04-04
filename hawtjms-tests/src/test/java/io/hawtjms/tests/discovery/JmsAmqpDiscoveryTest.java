@@ -101,7 +101,7 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         assertTrue(restored.await(20, TimeUnit.SECONDS));
     }
 
-    @Test(timeout=600000)
+    @Test(timeout=60000)
     public void testDiscoversAndReconnectsToSecondaryBroker() throws Exception {
 
         connection = createConnection();

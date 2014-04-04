@@ -21,8 +21,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import io.hawtjms.jms.JmsConnection;
 import io.hawtjms.provider.BlockingProvider;
-import io.hawtjms.util.AmqpTestSupport;
-import io.hawtjms.util.Wait;
+import io.hawtjms.tests.util.AmqpTestSupport;
+import io.hawtjms.tests.util.Wait;
 
 import java.net.URI;
 import java.util.List;
