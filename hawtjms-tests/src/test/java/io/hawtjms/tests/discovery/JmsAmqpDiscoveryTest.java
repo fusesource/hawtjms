@@ -33,7 +33,7 @@ import org.junit.Test;
  */
 public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnectionListener {
 
-    @Test
+    @Test(timeout=60000)
     public void testRunningBrokerIsDiscovered() throws Exception {
         connection = createConnection();
         final JmsConnection jmsConnection = (JmsConnection) connection;
@@ -54,7 +54,8 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
     }
 
     protected Connection createConnection() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory("discovery:multicast://default");
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "discovery:(multicast://default)?maxReconnectDelay=500");
         return factory.createConnection();
     }
 
