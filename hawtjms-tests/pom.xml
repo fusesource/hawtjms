@@ -23,9 +23,9 @@
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>hawtjms-discovery</artifactId>
-  <name>hawtjms-discovery</name>
-  <description>The Broker Discovery module for hawtJMS</description>
+  <artifactId>hawtjms-tests</artifactId>
+  <name>hawtjms-tests</name>
+  <description>An overall set of tests covering the range of hawJMS modules</description>
   <packaging>jar</packaging>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -40,8 +40,26 @@
       <artifactId>hawtjms-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.hawtjms</groupId>
+      <artifactId>hawtjms-amqp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.hawtjms</groupId>
+      <artifactId>hawtjms-stomp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.hawtjms</groupId>
+      <artifactId>hawtjms-discovery</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>apollo-selector</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <!-- =================================== -->
@@ -58,6 +76,20 @@
       <scope>test</scope>
     </dependency>
 
+    <!--  Joram JMS conformance tests -->
+    <dependency>
+      <groupId>org.fusesource.joram-jms-tests</groupId>
+      <artifactId>joram-jms-tests</artifactId>
+      <version>${fuse-joram-tests-version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <!-- using it for Jetty's JNDI context to work /w Joram tests. -->
+      <groupId>org.eclipse.jetty.aggregate</groupId>
+      <artifactId>jetty-all-server</artifactId>
+      <version>${jetty-version}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-broker</artifactId>
@@ -89,5 +121,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
 </project>

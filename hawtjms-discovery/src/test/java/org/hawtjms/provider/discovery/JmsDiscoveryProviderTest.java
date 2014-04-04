@@ -24,17 +24,41 @@ import io.hawtjms.provider.discovery.DiscoveryProviderFactory;
 import java.io.IOException;
 import java.net.URI;
 
-import org.hawtjms.util.AmqpTestSupport;
+import org.apache.activemq.broker.BrokerService;
+import org.apache.activemq.broker.TransportConnector;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test basic discovery of remote brokers
  */
-public class JmsDiscoveryProviderTest extends AmqpTestSupport {
+public class JmsDiscoveryProviderTest {
 
-    @Override
-    protected boolean isAmqpDiscovery() {
-        return true;
+    protected static final Logger LOG = LoggerFactory.getLogger(JmsDiscoveryProviderTest.class);
+
+    @Rule public TestName name = new TestName();
+
+    private BrokerService broker;
+
+    @Before
+    public void setup() throws Exception {
+        broker = createBroker();
+        broker.start();
+        broker.waitUntilStarted();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (broker != null) {
+            broker.stop();
+            broker.waitUntilStopped();
+            broker = null;
+        }
     }
 
     @Test(timeout=30000)
@@ -66,5 +90,20 @@ public class JmsDiscoveryProviderTest extends AmqpTestSupport {
         DefaultBlockingProvider blocking = (DefaultBlockingProvider)
             DiscoveryProviderFactory.createBlocking(discoveryUri);
         blocking.close();
+    }
+
+    protected BrokerService createBroker() throws Exception {
+
+        BrokerService brokerService = new BrokerService();
+        brokerService.setBrokerName("localhost");
+        brokerService.setPersistent(false);
+        brokerService.setAdvisorySupport(false);
+        brokerService.setUseJmx(false);
+
+        TransportConnector connector = brokerService.addConnector("amqp://0.0.0.0:0");
+        connector.setName("amqp");
+        connector.setDiscoveryUri(new URI("multicast://default"));
+
+        return brokerService;
     }
 }

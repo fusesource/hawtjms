@@ -82,6 +82,7 @@
     <module>hawtjms-amqp</module>
     <module>hawtjms-discovery</module>
     <module>hawtjms-stomp</module>
+    <module>hawtjms-tests</module>
   </modules>
 
   <dependencyManagement>
@@ -101,10 +102,13 @@
       </dependency>
       <dependency>
         <groupId>io.hawtjms</groupId>
-        <artifactId>hawtjms-amqp</artifactId>
+        <artifactId>hawtjms-stomp</artifactId>
         <version>${project.version}</version>
-        <type>test-jar</type>
-        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.hawtjms</groupId>
+        <artifactId>hawtjms-discovery</artifactId>
+        <version>${project.version}</version>
       </dependency>
 
       <dependency>
