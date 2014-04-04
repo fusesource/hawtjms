@@ -24,8 +24,12 @@ import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.test.util.AmqpTestSupport;
 import io.hawtjms.test.util.Wait;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import javax.jms.Connection;
 
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -33,10 +37,22 @@ import org.junit.Test;
  */
 public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnectionListener {
 
+    private CountDownLatch interrupted;
+    private CountDownLatch restored;
+    private JmsConnection jmsConnection;
+
+    @Override
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+
+        interrupted = new CountDownLatch(1);
+        restored = new CountDownLatch(1);
+    }
+
     @Test(timeout=60000)
     public void testRunningBrokerIsDiscovered() throws Exception {
         connection = createConnection();
-        final JmsConnection jmsConnection = (JmsConnection) connection;
         connection.start();
 
         assertTrue("connection never connected.", Wait.waitFor(new Wait.Condition() {
@@ -48,6 +64,43 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         }));
     }
 
+    @Test(timeout=60000)
+    public void testConnectionFailsWhenBrokerGoesDown() throws Exception {
+        connection = createConnection();
+        connection.start();
+
+        assertTrue("connection never connected.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return jmsConnection.isConnected();
+            }
+        }));
+
+        stopPrimaryBroker();
+
+        assertTrue(interrupted.await(20, TimeUnit.SECONDS));
+    }
+
+    @Test(timeout=60000)
+    public void testConnectionRestoresAfterBrokerRestarted() throws Exception {
+        connection = createConnection();
+        connection.start();
+
+        assertTrue("connection never connected.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return jmsConnection.isConnected();
+            }
+        }));
+
+        stopPrimaryBroker();
+        assertTrue(interrupted.await(20, TimeUnit.SECONDS));
+        startPrimaryBroker();
+        assertTrue(restored.await(20, TimeUnit.SECONDS));
+    }
+
     @Override
     protected boolean isAmqpDiscovery() {
         return true;
@@ -56,7 +109,10 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
     protected Connection createConnection() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "discovery:(multicast://default)?maxReconnectDelay=500");
-        return factory.createConnection();
+        connection = factory.createConnection();
+        jmsConnection = (JmsConnection) connection;
+        jmsConnection.addConnectionListener(this);
+        return connection;
     }
 
     @Override
@@ -65,10 +121,12 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
 
     @Override
     public void onConnectionInterrupted() {
+        interrupted.countDown();
     }
 
     @Override
     public void onConnectionRestored() {
+        restored.countDown();
     }
 
     @Override
