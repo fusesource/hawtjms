@@ -66,14 +66,14 @@
   </properties>
 
   <issueManagement>
-    <url>https://github.com/fusesource/amqpjms/issues</url>
+    <url>https://github.com/fusesource/hawtjms/issues</url>
     <system>GitHub Issues</system>
   </issueManagement>
 
   <scm>
-    <connection>scm:git:git://github.com/fusesource/amqpjms.git</connection>
-    <developerConnection>scm:git:git://github.com/fusesource/amqpjms.git</developerConnection>
-    <url>hhttps://github.com/fusesource/amqpjms</url>
+    <connection>scm:git:git://github.com/fusesource/hawtjms.git</connection>
+    <developerConnection>scm:git:git://github.com/fusesource/hawtjms.git</developerConnection>
+    <url>hhttps://github.com/fusesource/hawtjms</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -81,6 +81,7 @@
     <module>hawtjms-core</module>
     <module>hawtjms-amqp</module>
     <module>hawtjms-discovery</module>
+    <module>hawtjms-stomp</module>
   </modules>
 
   <dependencyManagement>
