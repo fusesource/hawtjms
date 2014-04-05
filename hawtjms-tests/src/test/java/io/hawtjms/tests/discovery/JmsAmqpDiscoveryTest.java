@@ -31,11 +31,15 @@ import javax.jms.Connection;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test that a Broker using AMQP can be discovered and JMS operations can be performed.
  */
 public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnectionListener {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JmsAmqpDiscoveryTest.class);
 
     private CountDownLatch interrupted;
     private CountDownLatch restored;
@@ -77,9 +81,10 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
             }
         }));
 
+        LOG.info("Connection established, stopping broker.");
         stopPrimaryBroker();
 
-        assertTrue(interrupted.await(20, TimeUnit.SECONDS));
+        assertTrue("Interrupted event never fired", interrupted.await(30, TimeUnit.SECONDS));
     }
 
     @Test(timeout=60000)
@@ -138,15 +143,18 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
 
     @Override
     public void onConnectionFailure(Throwable error) {
+        LOG.info("Connection reported failover: {}", error.getMessage());
     }
 
     @Override
     public void onConnectionInterrupted() {
+        LOG.info("Connection reports interrupted.");
         interrupted.countDown();
     }
 
     @Override
     public void onConnectionRestored() {
+        LOG.info("Connection reports restored.");
         restored.countDown();
     }
 

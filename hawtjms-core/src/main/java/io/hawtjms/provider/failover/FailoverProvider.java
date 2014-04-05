@@ -86,6 +86,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
     private long reconnectAttempts;
     private long reconnectDelay = TimeUnit.SECONDS.toMillis(5);
     private IOException failureCause;
+    private URI connectedURI;
 
     // Timeout values configured via JmsConnectionInfo
     private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
@@ -419,7 +420,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
      */
     private void handleProviderFailure(final IOException cause) {
         LOG.debug("handling Provider failure: {}", cause.getMessage());
-        LOG.debug("stack", cause);
+        LOG.trace("stack", cause);
 
         this.provider.setProviderListener(closedListener);
         try {
@@ -486,6 +487,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
                         reconnectDelay = initialReconnectDelay;
                         reconnectAttempts = 0;
+                        connectedURI = provider.getRemoteURI();
                         uris.connected();
                     }
                 } catch (Throwable error) {
@@ -756,6 +758,12 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
         return this.requestTimeout;
     }
 
+    @Override
+    public String toString() {
+        return "FailoverProvider: " +
+               (connectedURI == null ? "unconnected" : connectedURI.toString());
+    }
+
     //--------------- FailoverProvider Asynchronous Request --------------------//
 
     /**
@@ -775,7 +783,6 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
 
         @Override
         public void run() {
-            LOG.debug("Attempting execution of Failover Task: {}", this);
             requests.put(id, this);
             if (provider == null) {
                 if (failureWhenOffline()) {
