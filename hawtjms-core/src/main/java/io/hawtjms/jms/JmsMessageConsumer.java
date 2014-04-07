@@ -271,7 +271,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
      * Called from the session when a new Message has been dispatched to this Consumer
      * from the connection.
      *
-     * @param message
+     * @param facade
      *        the newly arrived message.
      */
     @Override

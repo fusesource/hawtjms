@@ -490,7 +490,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
             assertTrue(end >= message.getJMSTimestamp());
         }
         {
-            TextMessage message = (TextMessage)consumer.receive(1000);
+            TextMessage message = (TextMessage)consumer.receive(10000);
             assertNotNull(message);
             assertEquals("Hello", message.getText());
             assertEquals("value", message.getStringProperty("test"));

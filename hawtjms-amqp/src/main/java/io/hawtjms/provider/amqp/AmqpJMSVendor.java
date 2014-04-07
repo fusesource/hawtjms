@@ -104,24 +104,24 @@ public class AmqpJMSVendor extends JMSVendor {
 
     @Override
     public void setJMSXUserID(Message msg, String value) {
-        ((JmsMessage) msg).setUserId(value);
+        ((JmsMessage) msg).getFacade().setUserId(value);
     }
 
     @Override
     public void setJMSXGroupID(Message msg, String value) {
-        ((JmsMessage) msg).setGroupId(value);
+        ((JmsMessage) msg).getFacade().setGroupId(value);
     }
 
     @Override
     public void setJMSXGroupSequence(Message msg, int value) {
-        ((JmsMessage) msg).setGroupSequence(value);
+        ((JmsMessage) msg).getFacade().setGroupSequence(value);
     }
 
     @Override
     public void setJMSXDeliveryCount(Message msg, long value) {
         // Delivery count tracks total deliveries which is always one higher than
         // re-delivery count since first delivery counts to.
-        ((JmsMessage) msg).setRedeliveryCounter((int) (value == 0 ? value : value - 1));
+        ((JmsMessage) msg).getFacade().setRedeliveryCounter((int) (value == 0 ? value : value - 1));
     }
 
     @Override

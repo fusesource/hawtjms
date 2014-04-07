@@ -20,9 +20,7 @@ import static org.fusesource.hawtbuf.Buffer.ascii;
 import io.hawtjms.jms.JmsConnection;
 import io.hawtjms.jms.JmsDestination;
 import io.hawtjms.jms.exceptions.JmsExceptionSupport;
-import io.hawtjms.jms.meta.JmsConsumerId;
 import io.hawtjms.jms.meta.JmsMessageId;
-import io.hawtjms.jms.meta.JmsTransactionId;
 import io.hawtjms.util.PropertyExpression;
 import io.hawtjms.util.TypeConversionSupport;
 
@@ -46,7 +44,8 @@ import org.fusesource.hawtbuf.AsciiBuffer;
 
 public class JmsMessage implements javax.jms.Message {
 
-    private static final Map<String, PropertySetter> JMS_PROPERTY_SETERS = new HashMap<String, PropertySetter>();
+    private static final Map<String, PropertySetter> JMS_PROPERTY_SETERS =
+        new HashMap<String, PropertySetter>();
 
     public static enum JmsMsgType {
         MESSAGE("jms/message"),
@@ -68,27 +67,9 @@ public class JmsMessage implements javax.jms.Message {
     protected transient Callable<Void> acknowledgeCallback;
     protected transient JmsConnection connection;
 
-    protected byte priority = javax.jms.Message.DEFAULT_PRIORITY;
-    protected String groupId;
-    protected int groupSequence;
-    protected JmsMessageId messageId;
-    protected long expiration;
-    protected long timestamp;
-    protected String correlationId;
-    protected boolean persistent;
-    protected int redeliveryCount;
-    protected String type;
-    protected JmsDestination destination;
-    protected JmsDestination replyTo;
-    protected String userId;
-
+    protected JmsMessageFacade facade = new JmsDefaultMessageFacade();
     protected boolean readOnlyBody;
     protected boolean readOnlyProperties;
-    protected Map<String, Object> properties;
-    protected JmsTransactionId transactionId;
-
-    // TODO - Remove
-    protected JmsConsumerId consumerId;
 
     public JmsMessage() {
     }
@@ -104,32 +85,10 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     protected void copy(JmsMessage other) {
-        this.priority = other.priority;
-        this.groupId = other.groupId;
-        this.userId = other.userId;
-        this.groupSequence = other.groupSequence;
-        this.messageId = other.messageId != null ? other.messageId.copy() : null;
-        this.expiration = other.expiration;
-        this.timestamp = other.timestamp;
-        this.correlationId = other.correlationId;
-        this.persistent = other.persistent;
-        this.redeliveryCount = other.redeliveryCount;
-        this.type = other.type;
-        this.consumerId = other.consumerId;
-        this.destination = other.destination;
-        this.replyTo = other.replyTo;
-
+        this.facade = other.facade.copy();
         this.readOnlyBody = other.readOnlyBody;
         this.readOnlyProperties = other.readOnlyBody;
-
-        if (other.properties != null) {
-            this.properties = new HashMap<String, Object>(other.properties);
-        } else {
-            this.properties = null;
-        }
-
         this.acknowledgeCallback = other.acknowledgeCallback;
-        this.transactionId = other.transactionId;
         this.connection = other.connection;
     }
 
@@ -153,8 +112,8 @@ public class JmsMessage implements javax.jms.Message {
         }
 
         JmsMessage msg = (JmsMessage) o;
-        JmsMessageId oMsg = msg.getMessageId();
-        JmsMessageId thisMsg = this.getMessageId();
+        JmsMessageId oMsg = msg.facade.getMessageId();
+        JmsMessageId thisMsg = facade.getMessageId();
         return thisMsg != null && oMsg != null && oMsg.equals(thisMsg);
     }
 
@@ -188,101 +147,98 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public String getJMSMessageID() {
-        if (this.messageId == null) {
+        if (facade.getMessageId() == null) {
             return null;
         }
-        return this.messageId.toString();
+        return facade.getMessageId().toString();
     }
 
-    /**
-     * Seems to be invalid because the parameter doesn't initialize MessageId
-     * instance variables ProducerId and ProducerSequenceId
-     *
-     * @param value
-     * @throws JMSException
-     */
     @Override
     public void setJMSMessageID(String value) {
         if (value != null) {
             JmsMessageId id = new JmsMessageId(value);
-            setMessageId(id);
+            facade.setMessageId(id);
         } else {
-            this.setMessageId(null);
+            facade.setMessageId(null);
         }
+    }
+
+    public void setJMSMessageID(JmsMessageId messageId) {
+        facade.setMessageId(messageId);
     }
 
     @Override
     public long getJMSTimestamp() {
-        return this.getTimestamp();
+        return facade.getTimestamp();
     }
 
     @Override
     public void setJMSTimestamp(long timestamp) {
-        this.setTimestamp(timestamp);
+        facade.setTimestamp(timestamp);
     }
 
     @Override
     public String getJMSCorrelationID() {
-        return getCorrelationId();
+        return facade.getCorrelationId();
     }
 
     @Override
     public void setJMSCorrelationID(String correlationId) {
-        this.setCorrelationId(correlationId);
+        facade.setCorrelationId(correlationId);
     }
 
     @Override
     public byte[] getJMSCorrelationIDAsBytes() throws JMSException {
-        return encodeString(this.getCorrelationId());
+        return encodeString(facade.getCorrelationId());
     }
 
     @Override
     public void setJMSCorrelationIDAsBytes(byte[] correlationId) throws JMSException {
-        this.setCorrelationId(decodeString(correlationId));
+        facade.setCorrelationId(decodeString(correlationId));
     }
 
     @Override
     public Destination getJMSReplyTo() throws JMSException {
-        return getReplyTo();
+        return facade.getReplyTo();
     }
 
     @Override
     public void setJMSReplyTo(Destination destination) throws JMSException {
-        setReplyTo(JmsMessageTransformation.transformDestination(connection, destination));
+        facade.setReplyTo(JmsMessageTransformation.transformDestination(connection, destination));
     }
 
     @Override
     public Destination getJMSDestination() throws JMSException {
-        return getDestination();
+        return facade.getDestination();
     }
 
     @Override
     public void setJMSDestination(Destination destination) throws JMSException {
-        setDestination(JmsMessageTransformation.transformDestination(connection, destination));
+        facade.setDestination(JmsMessageTransformation.transformDestination(connection, destination));
     }
 
     @Override
     public int getJMSDeliveryMode() {
-        return this.isPersistent() ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
+        return facade.isPersistent() ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
     }
 
     @Override
     public void setJMSDeliveryMode(int mode) {
-        this.setPersistent(mode == DeliveryMode.PERSISTENT);
+        facade.setPersistent(mode == DeliveryMode.PERSISTENT);
     }
 
     public boolean isRedelivered() {
-        return getRedeliveryCounter() > 0;
+        return facade.getRedeliveryCounter() > 0;
     }
 
     public void setRedelivered(boolean redelivered) {
         if (redelivered) {
             if (!isRedelivered()) {
-                setRedeliveryCounter(1);
+                facade.setRedeliveryCounter(1);
             }
         } else {
             if (isRedelivered()) {
-                setRedeliveryCounter(0);
+                facade.setRedeliveryCounter(0);
             }
         }
     }
@@ -299,27 +255,27 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public String getJMSType() {
-        return getType();
+        return facade.getType();
     }
 
     @Override
     public void setJMSType(String type) {
-        setType(type);
+        facade.setType(type);
     }
 
     @Override
     public long getJMSExpiration() {
-        return getExpiration();
+        return facade.getExpiration();
     }
 
     @Override
     public void setJMSExpiration(long expiration) {
-        setExpiration(expiration);
+        facade.setExpiration(expiration);
     }
 
     @Override
     public int getJMSPriority() {
-        return getPriority();
+        return facade.getPriority();
     }
 
     @Override
@@ -334,33 +290,24 @@ public class JmsMessage implements javax.jms.Message {
             scaled = (byte) priority;
         }
 
-        setPriority(scaled);
+        facade.setPriority(scaled);
     }
 
     public Map<String, Object> getProperties() throws IOException {
-        lazyCreateProperties();
-        return Collections.unmodifiableMap(properties);
+        return Collections.unmodifiableMap(facade.getProperties());
     }
 
     @Override
     public void clearProperties() {
-        properties = null;
+        facade.clearProperties();
     }
 
     public void setProperty(String name, Object value) throws IOException {
-        lazyCreateProperties();
-        properties.put(name, value);
+        facade.getProperties().put(name, value);
     }
 
     public void removeProperty(String name) throws IOException {
-        lazyCreateProperties();
-        properties.remove(name);
-    }
-
-    protected void lazyCreateProperties() throws IOException {
-        if (properties == null) {
-            properties = new HashMap<String, Object>();
-        }
+        facade.getProperties().remove(name);
     }
 
     @Override
@@ -377,16 +324,16 @@ public class JmsMessage implements javax.jms.Message {
     public Enumeration getPropertyNames() throws JMSException {
         try {
             Vector<String> result = new Vector<String>(this.getProperties().keySet());
-            if (getRedeliveryCounter() != 0) {
+            if (getFacade().getRedeliveryCounter() != 0) {
                 result.add("JMSXDeliveryCount");
             }
-            if (getGroupId() != null) {
+            if (getFacade().getGroupId() != null) {
                 result.add("JMSXGroupID");
             }
-            if (getGroupId() != null) {
+            if (getFacade().getGroupId() != null) {
                 result.add("JMSXGroupSeq");
             }
-            if (getUserId() != null) {
+            if (getFacade().getUserId() != null) {
                 result.add("JMSXUserID");
             }
             return result.elements();
@@ -405,7 +352,7 @@ public class JmsMessage implements javax.jms.Message {
     @SuppressWarnings("rawtypes")
     public Enumeration getAllPropertyNames() throws JMSException {
         try {
-            Vector<String> result = new Vector<String>(this.getProperties().keySet());
+            Vector<String> result = new Vector<String>(facade.getProperties().keySet());
             result.addAll(JMS_PROPERTY_SETERS.keySet());
             return result.elements();
         } catch (IOException e) {
@@ -425,7 +372,7 @@ public class JmsMessage implements javax.jms.Message {
                 if (rc == null) {
                     throw new MessageFormatException("Property JMSXDeliveryCount cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setRedeliveryCounter(rc.intValue() - 1);
+                message.getFacade().setRedeliveryCounter(rc.intValue() - 1);
             }
         });
         JMS_PROPERTY_SETERS.put("JMSXGroupID", new PropertySetter() {
@@ -435,7 +382,7 @@ public class JmsMessage implements javax.jms.Message {
                 if (rc == null) {
                     throw new MessageFormatException("Property JMSXGroupID cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setGroupId(rc);
+                message.getFacade().setGroupId(rc);
             }
         });
         JMS_PROPERTY_SETERS.put("JMSXGroupSeq", new PropertySetter() {
@@ -445,7 +392,7 @@ public class JmsMessage implements javax.jms.Message {
                 if (rc == null) {
                     throw new MessageFormatException("Property JMSXGroupSeq cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setGroupSequence(rc.intValue());
+                message.getFacade().setGroupSequence(rc.intValue());
             }
         });
         JMS_PROPERTY_SETERS.put("JMSCorrelationID", new PropertySetter() {
@@ -510,7 +457,7 @@ public class JmsMessage implements javax.jms.Message {
                 if (rc == null) {
                     throw new MessageFormatException("Property JMSReplyTo cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setReplyTo(rc);
+                message.getFacade().setReplyTo(rc);
             }
         });
         JMS_PROPERTY_SETERS.put("JMSTimestamp", new PropertySetter() {
@@ -766,7 +713,10 @@ public class JmsMessage implements javax.jms.Message {
     public void onSend() throws JMSException {
         setReadOnlyBody(true);
         setReadOnlyProperties(true);
-        storeContent();
+        facade.storeContent();
+
+        // TODO - Remove once facade is complete.
+        this.storeContent();
     }
 
     /**
@@ -775,6 +725,7 @@ public class JmsMessage implements javax.jms.Message {
      * @throws JMSException
      */
     public void storeContent() throws JMSException {
+        // TODO - Remove once facade is complete.
     }
 
     protected static String decodeString(byte[] data) throws JMSException {
@@ -799,29 +750,6 @@ public class JmsMessage implements javax.jms.Message {
         }
     }
 
-    /**
-     * @return the transactionId
-     */
-    public JmsTransactionId getTransactionId() {
-        return this.transactionId;
-    }
-
-    /**
-     * @param transactionId
-     *        the transactionId to set
-     */
-    public void setTransactionId(JmsTransactionId transactionId) {
-        this.transactionId = transactionId;
-    }
-
-    public JmsMessageId getMessageId() {
-        return this.messageId;
-    }
-
-    public void setMessageId(JmsMessageId messageId) {
-        this.messageId = messageId;
-    }
-
     public JmsConnection getConnection() {
         return connection;
     }
@@ -830,116 +758,16 @@ public class JmsMessage implements javax.jms.Message {
         this.connection = connection;
     }
 
-    public long getTimestamp() {
-        return this.timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public String getCorrelationId() {
-        return correlationId;
-    }
-
-    public void setCorrelationId(String correlationId) {
-        this.correlationId = correlationId;
-    }
-
-    public boolean isPersistent() {
-        return this.persistent;
-    }
-
-    public void setPersistent(boolean value) {
-        this.persistent = value;
-    }
-
-    public int getRedeliveryCounter() {
-        return this.redeliveryCount;
-    }
-
-    public void setRedeliveryCounter(int redeliveryCount) {
-        this.redeliveryCount = redeliveryCount;
+    public boolean isExpired() {
+        long expireTime = facade.getExpiration();
+        return expireTime > 0 && System.currentTimeMillis() > expireTime;
     }
 
     public void incrementRedeliveryCount() {
-        this.redeliveryCount++;
+         facade.setRedeliveryCounter(facade.getRedeliveryCounter() + 1);
     }
 
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public byte getPriority() {
-        return priority;
-    }
-
-    public void setPriority(byte priority) {
-        this.priority = priority;
-    }
-
-    public long getExpiration() {
-        return expiration;
-    }
-
-    public void setExpiration(long expiration) {
-        this.expiration = expiration;
-    }
-
-    public JmsConsumerId getConsumerId() {
-        return this.consumerId;
-    }
-
-    public void setConsumerId(JmsConsumerId consumerId) {
-        this.consumerId = consumerId;
-    }
-
-    public JmsDestination getDestination() throws JMSException {
-        return this.destination;
-    }
-
-    public void setDestination(JmsDestination destination) {
-        this.destination = destination;
-    }
-
-    public JmsDestination getReplyTo() throws JMSException {
-        return this.replyTo;
-    }
-
-    public void setReplyTo(JmsDestination replyTo) {
-        this.replyTo = replyTo;
-    }
-
-    public String getUserId() {
-        return this.userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getGroupId() {
-        return this.groupId;
-    }
-
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
-    }
-
-    public int getGroupSequence() {
-        return this.groupSequence;
-    }
-
-    public void setGroupSequence(int groupSequence) {
-        this.groupSequence = groupSequence;
-    }
-
-    public boolean isExpired() {
-        long expireTime = getExpiration();
-        return expireTime > 0 && System.currentTimeMillis() > expireTime;
+    public JmsMessageFacade getFacade() {
+        return this.facade;
     }
 }

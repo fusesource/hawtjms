@@ -694,7 +694,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             if (isJmsMessageType) {
                 ((JmsMessage) original).setConnection(connection);
                 if (!disableMsgId) {
-                    ((JmsMessage) original).setMessageId(msgId);
+                    ((JmsMessage) original).setJMSMessageID(msgId);
                 }
                 original.setJMSDestination(destination);
             }
@@ -705,7 +705,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             if (!isJmsMessageType) {
                 if (!disableMsgId) {
                     original.setJMSMessageID(msgId.toString());
-                    copy.setMessageId(msgId);
+                    copy.setJMSMessageID(msgId);
                 }
                 original.setJMSDestination(destination);
                 copy.setJMSDestination(destination);

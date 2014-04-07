@@ -69,7 +69,7 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     @Override
     public void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException {
-        LOG.info("Producer sending message: {}", envelope.getMessage().getMessageId());
+        LOG.info("Producer sending message: {}", envelope.getMessage().getFacade().getMessageId());
 
         // TODO - Handle the case where remote has no credit which means we can't send to it.
         //        We need to hold the send until remote credit becomes available but we should

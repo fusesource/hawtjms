@@ -49,30 +49,15 @@ public class JmsTextMessage extends JmsMessage implements TextMessage {
     public void setText(String text) throws MessageNotWriteableException {
         checkReadOnlyBody();
         this.text = text;
-//        setContent(null);
     }
 
     @Override
     public String getText() throws JMSException {
-//        Buffer buffer = getContent();
-//        if (text == null && buffer != null) {
-//            this.text = new String(buffer.getData(), buffer.getOffset(), buffer.getLength());
-//            setContent(null);
-//        }
         return text;
     }
 
     @Override
     public void storeContent() throws JMSException {
-//        try {
-//            if (text == null) {
-//                setContent(new Buffer(0));
-//            } else {
-//                setContent(new Buffer(text.getBytes("UTF-8")));
-//            }
-//        } catch (UnsupportedEncodingException e) {
-//            throw JmsExceptionSupport.create(e.getMessage(), e);
-//        }
     }
 
     /**

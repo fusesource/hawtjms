@@ -103,23 +103,6 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
         this.map = other.map;
     }
 
-//    @Override
-//    public void storeContent() throws JMSException {
-//        Buffer buffer = getContent();
-//        if (buffer == null && !this.map.isEmpty()) {
-//            ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
-//            OutputStream os = bytesOut;
-//            DataOutputStream dataOut = new DataOutputStream(os);
-//            try {
-//                MarshallingSupport.marshalPrimitiveMap(map, dataOut);
-//                dataOut.close();
-//            } catch (IOException e) {
-//                throw JmsExceptionSupport.create(e);
-//            }
-//            setContent(new Buffer(bytesOut.toByteArray()));
-//        }
-//    }
-//
 //    /**
 //     * Builds the message body from data
 //     *
@@ -812,10 +795,5 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
     @Override
     public String toString() {
         return super.toString() + " ActiveMQMapMessage{ " + "theTable = " + map + " }";
-    }
-
-    public Map<String, Object> getContentMap() throws JMSException {
-        initializeReading();
-        return map;
     }
 }

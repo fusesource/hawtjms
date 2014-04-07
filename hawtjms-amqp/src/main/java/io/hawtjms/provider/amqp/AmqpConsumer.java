@@ -23,8 +23,8 @@ import io.hawtjms.jms.meta.JmsConsumerId;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
 import io.hawtjms.jms.meta.JmsMessageId;
 import io.hawtjms.provider.AsyncResult;
-import io.hawtjms.provider.ProviderListener;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
+import io.hawtjms.provider.ProviderListener;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -188,7 +188,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
      *        the type of acknowledgment to perform.
      */
     public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) {
-        JmsMessageId messageId = envelope.getMessage().getMessageId();
+        JmsMessageId messageId = envelope.getMessage().getFacade().getMessageId();
         Delivery delivery = null;
 
         if (messageId.getProviderHint() instanceof Delivery) {
@@ -196,7 +196,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         } else {
             delivery = delivered.get(messageId);
             if (delivery == null) {
-                LOG.warn("Received Ack for unknown message: {}", envelope.getMessage().getMessageId());
+                LOG.warn("Received Ack for unknown message: {}", messageId);
                 return;
             }
         }
@@ -293,7 +293,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         }
 
         // Store link to delivery in the hint for use in acknowledge requests.
-        message.getMessageId().setProviderHint(incoming);
+        message.getFacade().getMessageId().setProviderHint(incoming);
 
         JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch();
         envelope.setMessage(message);
@@ -352,7 +352,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         ProviderListener listener = session.getProvider().getProviderListener();
         if (listener != null) {
             if (envelope.getMessage() != null) {
-                LOG.debug("Dispatching received message: {}", envelope.getMessage().getMessageId());
+                LOG.debug("Dispatching received message: {}", envelope.getMessage().getFacade().getMessageId());
             } else {
                 LOG.debug("Dispatching end of browse to: {}", envelope.getConsumerId());
             }
