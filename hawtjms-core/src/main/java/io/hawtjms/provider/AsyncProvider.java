@@ -96,7 +96,8 @@ public interface AsyncProvider {
      * @throws JMSException if an error occurs due to JMS violation such as bad credentials.
      * @throws UnsupportedOperationException is the provider cannot create the indicated resource.
      */
-    void create(JmsResource resource, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException;
+    void create(JmsResource resource, AsyncResult<Void> request)
+        throws IOException, JMSException, UnsupportedOperationException;
 
     /**
      * Starts the Provider version of the given JmsResource.
@@ -120,8 +121,9 @@ public interface AsyncProvider {
      *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws JMSException if an error occurs due to JMS violation such as already closed resource.
      */
-    void start(JmsResource resource, AsyncResult<Void> request) throws IOException;
+    void start(JmsResource resource, AsyncResult<Void> request) throws IOException, JMSException;
 
     /**
      * Instruct the Provider to dispose of a given JmsResource.
@@ -141,7 +143,7 @@ public interface AsyncProvider {
      *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
-     * @throws JMSException if an error occurs due to JMS violation such not authorized.
+     * @throws JMSException if an error occurs due to JMS violation such as not authorized.
      * @throws UnsupportedOperationException is the provider cannot destroy the indicated resource.
      */
     void destroy(JmsResource resourceId, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException;
@@ -175,8 +177,9 @@ public interface AsyncProvider {
      *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws JMSException if an error occurs due to JMS violation such as unmatched ack.
      */
-    void acknowledge(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException;
+    void acknowledge(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException, JMSException;
 
     /**
      * Called to acknowledge a JmsMessage has been delivered, consumed, re-delivered...etc.
@@ -195,8 +198,10 @@ public interface AsyncProvider {
      *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws JMSException if an error occurs due to JMS violation such as unmatched ack.
      */
-    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult<Void> request) throws IOException;
+    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult<Void> request)
+        throws IOException, JMSException;
 
     /**
      * Called to commit an open transaction.

@@ -113,8 +113,9 @@ public interface BlockingProvider {
      *        The JmsResouce instance that indicates what is being started.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws JMSException if an JMS violation occurs such as resource already closed.
      */
-    void start(JmsResource resource) throws IOException;
+    void start(JmsResource resource) throws IOException, JMSException;
 
     /**
      * Instruct the Provider to dispose of a given JmsResource.
@@ -159,8 +160,9 @@ public interface BlockingProvider {
      *        the Session Id whose delivered messages should be acknowledged.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws JMSException if an error occurs due to JMS violation such unmatched ack.
      */
-    void acknowledge(JmsSessionId sessionId) throws IOException;
+    void acknowledge(JmsSessionId sessionId) throws IOException, JMSException;
 
     /**
      * Called to acknowledge a JmsMessage has been delivered, consumed, re-delivered...etc.
@@ -174,8 +176,9 @@ public interface BlockingProvider {
      *        The type of acknowledgment being done.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws JMSException if an error occurs due to JMS violation such unmatched ack.
      */
-    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws IOException;
+    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws IOException, JMSException;
 
     /**
      * Called to commit an open transaction.
@@ -217,8 +220,6 @@ public interface BlockingProvider {
      *
      * @param sessionId
      *        the Id of the JmsSession that is recovering unacknowledged messages..
-     * @param request
-     *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */
@@ -248,10 +249,10 @@ public interface BlockingProvider {
      * should still initiate the message pull if possible even if this leaves the pull
      * window open indefinitely.
      *
+     * @param consumerId
+     *        the ID of the consumer that is initiating the pull request.
      * @param timeout
      *        the amount of time to tell the remote peer to keep this pull request valid.
-     * @param request
-     *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      */

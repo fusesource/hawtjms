@@ -72,7 +72,7 @@ public class AsyncProviderWrapper<E extends AsyncProvider> implements AsyncProvi
     }
 
     @Override
-    public void start(JmsResource resource, AsyncResult<Void> request) throws IOException {
+    public void start(JmsResource resource, AsyncResult<Void> request) throws IOException, JMSException {
         next.start(resource, request);
     }
 
@@ -87,12 +87,12 @@ public class AsyncProviderWrapper<E extends AsyncProvider> implements AsyncProvi
     }
 
     @Override
-    public void acknowledge(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException {
+    public void acknowledge(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException, JMSException {
         next.acknowledge(sessionId, request);
     }
 
     @Override
-    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult<Void> request) throws IOException {
+    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult<Void> request) throws IOException, JMSException {
         next.acknowledge(envelope, ackType, request);
     }
 

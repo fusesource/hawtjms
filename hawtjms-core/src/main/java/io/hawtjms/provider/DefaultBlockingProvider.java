@@ -70,7 +70,7 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
-    public void start(JmsResource resource) throws IOException {
+    public void start(JmsResource resource) throws IOException, JMSException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.start(resource, request);
         request.getResponse();
@@ -91,14 +91,14 @@ public class DefaultBlockingProvider implements BlockingProvider {
     }
 
     @Override
-    public void acknowledge(JmsSessionId sessionId) throws IOException {
+    public void acknowledge(JmsSessionId sessionId) throws IOException, JMSException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.acknowledge(sessionId, request);
         request.getResponse();
     }
 
     @Override
-    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws IOException {
+    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws IOException, JMSException {
         ProviderRequest<Void> request = new ProviderRequest<Void>();
         next.acknowledge(envelope, ackType, request);
         request.getResponse();
