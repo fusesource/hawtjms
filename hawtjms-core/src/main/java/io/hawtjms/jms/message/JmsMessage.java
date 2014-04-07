@@ -227,22 +227,6 @@ public class JmsMessage implements javax.jms.Message {
         facade.setPersistent(mode == DeliveryMode.PERSISTENT);
     }
 
-    public boolean isRedelivered() {
-        return facade.getRedeliveryCounter() > 0;
-    }
-
-    public void setRedelivered(boolean redelivered) {
-        if (redelivered) {
-            if (!isRedelivered()) {
-                facade.setRedeliveryCounter(1);
-            }
-        } else {
-            if (isRedelivered()) {
-                facade.setRedeliveryCounter(0);
-            }
-        }
-    }
-
     @Override
     public boolean getJMSRedelivered() {
         return this.isRedelivered();
@@ -293,13 +277,13 @@ public class JmsMessage implements javax.jms.Message {
         facade.setPriority(scaled);
     }
 
-    public Map<String, Object> getProperties() throws IOException {
-        return Collections.unmodifiableMap(facade.getProperties());
-    }
-
     @Override
     public void clearProperties() {
         facade.clearProperties();
+    }
+
+    public Map<String, Object> getProperties() throws IOException {
+        return Collections.unmodifiableMap(facade.getProperties());
     }
 
     public void setProperty(String name, Object value) throws IOException {
@@ -685,18 +669,6 @@ public class JmsMessage implements javax.jms.Message {
         setObjectProperty(name, value);
     }
 
-    private void checkReadOnlyProperties() throws MessageNotWriteableException {
-        if (readOnlyProperties) {
-            throw new MessageNotWriteableException("Message properties are read-only");
-        }
-    }
-
-    protected void checkReadOnlyBody() throws MessageNotWriteableException {
-        if (readOnlyBody) {
-            throw new MessageNotWriteableException("Message body is read-only");
-        }
-    }
-
     public Callable<Void> getAcknowledgeCallback() {
         return acknowledgeCallback;
     }
@@ -728,6 +700,43 @@ public class JmsMessage implements javax.jms.Message {
         // TODO - Remove once facade is complete.
     }
 
+    public JmsConnection getConnection() {
+        return connection;
+    }
+
+    public void setConnection(JmsConnection connection) {
+        this.connection = connection;
+    }
+
+    public boolean isExpired() {
+        long expireTime = facade.getExpiration();
+        return expireTime > 0 && System.currentTimeMillis() > expireTime;
+    }
+
+    public void incrementRedeliveryCount() {
+         facade.setRedeliveryCounter(facade.getRedeliveryCounter() + 1);
+    }
+
+    public JmsMessageFacade getFacade() {
+        return this.facade;
+    }
+
+    public boolean isRedelivered() {
+        return facade.getRedeliveryCounter() > 0;
+    }
+
+    public void setRedelivered(boolean redelivered) {
+        if (redelivered) {
+            if (!isRedelivered()) {
+                facade.setRedeliveryCounter(1);
+            }
+        } else {
+            if (isRedelivered()) {
+                facade.setRedeliveryCounter(0);
+            }
+        }
+    }
+
     protected static String decodeString(byte[] data) throws JMSException {
         try {
             if (data == null) {
@@ -750,24 +759,15 @@ public class JmsMessage implements javax.jms.Message {
         }
     }
 
-    public JmsConnection getConnection() {
-        return connection;
+    protected void checkReadOnlyProperties() throws MessageNotWriteableException {
+        if (readOnlyProperties) {
+            throw new MessageNotWriteableException("Message properties are read-only");
+        }
     }
 
-    public void setConnection(JmsConnection connection) {
-        this.connection = connection;
-    }
-
-    public boolean isExpired() {
-        long expireTime = facade.getExpiration();
-        return expireTime > 0 && System.currentTimeMillis() > expireTime;
-    }
-
-    public void incrementRedeliveryCount() {
-         facade.setRedeliveryCounter(facade.getRedeliveryCounter() + 1);
-    }
-
-    public JmsMessageFacade getFacade() {
-        return this.facade;
+    protected void checkReadOnlyBody() throws MessageNotWriteableException {
+        if (readOnlyBody) {
+            throw new MessageNotWriteableException("Message body is read-only");
+        }
     }
 }
