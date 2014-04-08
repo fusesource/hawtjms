@@ -16,11 +16,6 @@
  */
 package io.hawtjms.stomp;
 
-import java.io.IOException;
-import java.net.URI;
-
-import javax.jms.JMSException;
-
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.message.JmsMessageFactory;
 import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
@@ -32,27 +27,29 @@ import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
 import io.hawtjms.provider.ProviderListener;
 
+import java.io.IOException;
+import java.net.URI;
+
+import javax.jms.JMSException;
+
 /**
- * 
+ * Async Provider implementation for the STOMP protocol.
  */
 public class StompProvider implements AsyncProvider {
 
     @Override
     public void connect() throws IOException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void start() throws IOException, IllegalStateException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void close() {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -64,67 +61,56 @@ public class StompProvider implements AsyncProvider {
     @Override
     public void create(JmsResource resource, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void start(JmsResource resource, AsyncResult<Void> request) throws IOException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void destroy(JmsResource resourceId, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException, JMSException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void acknowledge(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult<Void> request) throws IOException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void commit(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void rollback(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void recover(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException, UnsupportedOperationException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void unsubscribe(String subscription, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void pull(JmsConsumerId consumerId, long timeout, AsyncResult<Void> request) throws IOException, UnsupportedOperationException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -136,7 +122,6 @@ public class StompProvider implements AsyncProvider {
     @Override
     public void setProviderListener(ProviderListener listener) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -144,5 +129,4 @@ public class StompProvider implements AsyncProvider {
         // TODO Auto-generated method stub
         return null;
     }
-
 }
