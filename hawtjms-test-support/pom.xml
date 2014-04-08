@@ -23,9 +23,9 @@
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>hawtjms-tests</artifactId>
-  <name>hawtjms-tests</name>
-  <description>An overall set of tests covering the range of hawJMS modules</description>
+  <artifactId>hawtjms-test-support</artifactId>
+  <name>hawtjms-test-support</name>
+  <description>Common Functionality needed in hawtJMS projects for testing.</description>
   <packaging>jar</packaging>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -38,91 +38,69 @@
     <dependency>
       <groupId>io.hawtjms</groupId>
       <artifactId>hawtjms-core</artifactId>
+      <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>io.hawtjms</groupId>
-      <artifactId>hawtjms-amqp</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.hawtjms</groupId>
-      <artifactId>hawtjms-stomp</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.hawtjms</groupId>
-      <artifactId>hawtjms-discovery</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.hawtjms</groupId>
-      <artifactId>hawtjms-test-support</artifactId>
-    </dependency>
-
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>apollo-selector</artifactId>
-      <optional>true</optional>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <!-- =================================== -->
     <!-- Testing Dependencies                -->
     <!-- =================================== -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <scope>test</scope>
-    </dependency>
 
     <!--  Joram JMS conformance tests -->
     <dependency>
       <groupId>org.fusesource.joram-jms-tests</groupId>
       <artifactId>joram-jms-tests</artifactId>
       <version>${fuse-joram-tests-version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <!-- using it for Jetty's JNDI context to work /w Joram tests. -->
       <groupId>org.eclipse.jetty.aggregate</groupId>
       <artifactId>jetty-all-server</artifactId>
       <version>${jetty-version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-broker</artifactId>
       <version>${activemq-version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-kahadb-store</artifactId>
       <version>${activemq-version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-amqp</artifactId>
       <version>${activemq-version}</version>
-      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-stomp</artifactId>
+      <version>${activemq-version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-jaas</artifactId>
       <version>${activemq-version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-spring</artifactId>
       <version>${activemq-version}</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

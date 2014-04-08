@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import io.hawtjms.jms.JmsConnection;
 import io.hawtjms.jms.JmsConnectionFactory;
-import io.hawtjms.util.AmqpTestSupport;
+import io.hawtjms.test.support.AmqpTestSupport;
 
 import javax.jms.BytesMessage;
 import javax.jms.MapMessage;

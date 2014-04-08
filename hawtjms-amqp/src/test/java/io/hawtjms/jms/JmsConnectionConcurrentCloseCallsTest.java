@@ -18,8 +18,7 @@ package io.hawtjms.jms;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import io.hawtjms.jms.JmsConnection;
-import io.hawtjms.util.AmqpTestSupport;
+import io.hawtjms.test.support.AmqpTestSupport;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;

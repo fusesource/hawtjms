@@ -20,9 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import io.hawtjms.jms.JmsConnection;
-import io.hawtjms.jms.JmsConnectionFactory;
-import io.hawtjms.util.AmqpTestSupport;
+import io.hawtjms.test.support.AmqpTestSupport;
 
 import java.net.URI;
 import java.net.URISyntaxException;

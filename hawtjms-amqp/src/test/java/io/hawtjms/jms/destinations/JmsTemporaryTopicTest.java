@@ -19,7 +19,7 @@ package io.hawtjms.jms.destinations;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import io.hawtjms.jms.consumer.JmsMessageConsumerTest;
-import io.hawtjms.util.AmqpTestSupport;
+import io.hawtjms.test.support.AmqpTestSupport;
 
 import javax.jms.Connection;
 import javax.jms.Session;

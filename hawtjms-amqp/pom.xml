@@ -79,6 +79,11 @@
       <artifactId>slf4j-log4j12</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.hawtjms</groupId>
+      <artifactId>hawtjms-test-support</artifactId>
+      <scope>test</scope>
+    </dependency>
 
     <!--  Joram JMS conformance tests -->
     <dependency>

@@ -83,6 +83,7 @@
     <module>hawtjms-discovery</module>
     <module>hawtjms-stomp</module>
     <module>hawtjms-tests</module>
+    <module>hawtjms-test-support</module>
   </modules>
 
   <dependencyManagement>
@@ -103,6 +104,11 @@
       <dependency>
         <groupId>io.hawtjms</groupId>
         <artifactId>hawtjms-stomp</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.hawtjms</groupId>
+        <artifactId>hawtjms-test-support</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

@@ -17,8 +17,7 @@
 package io.hawtjms.jms;
 
 import static org.junit.Assert.assertNotNull;
-import io.hawtjms.jms.JmsConnectionFactory;
-import io.hawtjms.util.AmqpTestSupport;
+import io.hawtjms.test.support.AmqpTestSupport;
 
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;

@@ -21,8 +21,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import io.hawtjms.util.AmqpTestSupport;
-import io.hawtjms.util.Wait;
+import io.hawtjms.test.support.AmqpTestSupport;
+import io.hawtjms.test.support.Wait;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

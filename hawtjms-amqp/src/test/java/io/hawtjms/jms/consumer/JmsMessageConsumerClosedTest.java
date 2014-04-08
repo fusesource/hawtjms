@@ -16,7 +16,7 @@
  */
 package io.hawtjms.jms.consumer;
 
-import io.hawtjms.util.AmqpTestSupport;
+import io.hawtjms.test.support.AmqpTestSupport;
 
 import javax.jms.JMSException;
 import javax.jms.Message;

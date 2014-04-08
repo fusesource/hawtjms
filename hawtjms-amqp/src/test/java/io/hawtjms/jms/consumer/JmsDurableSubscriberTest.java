@@ -19,7 +19,7 @@ package io.hawtjms.jms.consumer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import io.hawtjms.util.AmqpTestSupport;
+import io.hawtjms.test.support.AmqpTestSupport;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

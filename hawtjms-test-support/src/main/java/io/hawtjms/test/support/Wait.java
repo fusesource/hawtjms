@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.hawtjms.tests.util;
+package io.hawtjms.test.support;
 
 import java.util.concurrent.TimeUnit;
 
 public class Wait {
 
-    public static final long MAX_WAIT_MILLIS = 30*1000;
+    public static final long MAX_WAIT_MILLIS = 30 * 1000;
     public static final int SLEEP_MILLIS = 1000;
 
     public interface Condition {

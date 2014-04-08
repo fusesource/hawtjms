@@ -19,8 +19,8 @@ package io.hawtjms.jms.consumer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import io.hawtjms.jms.JmsConnection;
-import io.hawtjms.util.AmqpTestSupport;
-import io.hawtjms.util.Wait;
+import io.hawtjms.test.support.AmqpTestSupport;
+import io.hawtjms.test.support.Wait;
 
 import java.util.concurrent.TimeUnit;
 

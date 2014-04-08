@@ -19,7 +19,7 @@ package io.hawtjms.jms.producer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import io.hawtjms.jms.JmsConnectionFactory;
-import io.hawtjms.util.AmqpTestSupport;
+import io.hawtjms.test.support.AmqpTestSupport;
 
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
