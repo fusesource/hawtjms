@@ -14,17 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.hawtjms.stomp;
+package io.hawtjms.provider.stomp;
 
-import static io.hawtjms.stomp.StompConstants.COLON_BYTE;
-import static io.hawtjms.stomp.StompConstants.COLON_ESCAPE_SEQ;
-import static io.hawtjms.stomp.StompConstants.CONTENT_LENGTH;
-import static io.hawtjms.stomp.StompConstants.ESCAPE_BYTE;
-import static io.hawtjms.stomp.StompConstants.ESCAPE_ESCAPE_SEQ;
-import static io.hawtjms.stomp.StompConstants.MESSAGE_HEADER;
-import static io.hawtjms.stomp.StompConstants.NEWLINE_BYTE;
-import static io.hawtjms.stomp.StompConstants.NEWLINE_ESCAPE_SEQ;
-import static io.hawtjms.stomp.StompConstants.NULL_BYTE;
+import static io.hawtjms.provider.stomp.StompConstants.COLON_BYTE;
+import static io.hawtjms.provider.stomp.StompConstants.COLON_ESCAPE_SEQ;
+import static io.hawtjms.provider.stomp.StompConstants.CONTENT_LENGTH;
+import static io.hawtjms.provider.stomp.StompConstants.ESCAPE_BYTE;
+import static io.hawtjms.provider.stomp.StompConstants.ESCAPE_ESCAPE_SEQ;
+import static io.hawtjms.provider.stomp.StompConstants.MESSAGE_HEADER;
+import static io.hawtjms.provider.stomp.StompConstants.NEWLINE_BYTE;
+import static io.hawtjms.provider.stomp.StompConstants.NEWLINE_ESCAPE_SEQ;
+import static io.hawtjms.provider.stomp.StompConstants.NULL_BYTE;
 
 import java.io.DataOutput;
 import java.io.IOException;
