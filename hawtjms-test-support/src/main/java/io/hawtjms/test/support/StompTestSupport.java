@@ -37,7 +37,7 @@ public class StompTestSupport extends HawtJmsTestSupport {
 
     protected int stompPort;
 
-    protected boolean isAmqpDiscovery() {
+    protected boolean isStompDiscovery() {
         return false;
     }
 
@@ -45,7 +45,7 @@ public class StompTestSupport extends HawtJmsTestSupport {
     protected void addAdditionalConnectors(BrokerService brokerService) throws Exception {
         TransportConnector connector = brokerService.addConnector("stomp://0.0.0.0:" + stompPort);
         connector.setName("stomp");
-        if (isAmqpDiscovery()) {
+        if (isStompDiscovery()) {
             connector.setDiscoveryUri(new URI("multicast://default"));
         }
         stompPort = connector.getPublishableConnectURI().getPort();
