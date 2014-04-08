@@ -32,6 +32,10 @@ import javax.jms.JMSException;
 /**
  * Allows one AsyncProvider instance to wrap around another and provide some additional
  * features beyond the normal AsyncProvider interface.
+ *
+ * This wrapper is meant primarily for Providers that are adding some additional feature
+ * on-top of an existing provider such as a discovery based provider that only needs to
+ * pass along discovered remote peer information.
  */
 public class AsyncProviderWrapper<E extends AsyncProvider> implements AsyncProvider, ProviderListener {
 
