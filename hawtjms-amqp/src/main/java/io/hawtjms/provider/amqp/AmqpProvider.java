@@ -121,7 +121,7 @@ public class AmqpProvider implements AsyncProvider {
         this.remoteURI = remoteURI;
         this.sslContext = JmsSslContext.getCurrentSslContext();
         updateTracer();
-        this.serializer = Executors.newSingleThreadExecutor(new ThreadFactory() {
+        this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 
             @Override
             public Thread newThread(Runnable runner) {

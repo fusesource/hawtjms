@@ -115,7 +115,7 @@ public class FailoverProvider extends DefaultProviderListener implements AsyncPr
         this.uris = new FailoverUriPool(uris, nestedOptions);
         this.sslContext = JmsSslContext.getCurrentSslContext();
 
-        this.serializer = Executors.newSingleThreadExecutor(new ThreadFactory() {
+        this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 
             @Override
             public Thread newThread(Runnable runner) {
