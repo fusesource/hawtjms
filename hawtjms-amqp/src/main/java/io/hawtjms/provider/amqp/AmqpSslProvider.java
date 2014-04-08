@@ -16,30 +16,30 @@
  */
 package io.hawtjms.provider.amqp;
 
-import io.hawtjms.provider.AsyncProvider;
-import io.hawtjms.provider.BlockingProvider;
-import io.hawtjms.provider.DefaultBlockingProvider;
-import io.hawtjms.provider.ProviderFactory;
+import io.hawtjms.jms.JmsSslContext;
 
 import java.net.URI;
+import java.util.Map;
 
 /**
- * Factory for creating the AMQP provider.
+ * AmqpProvider extension that enables SSL based transports.
  */
-public class AmqpProviderFactory extends ProviderFactory {
+public class AmqpSslProvider extends AmqpProvider {
 
-    @Override
-    public BlockingProvider createProvider(URI remoteURI) throws Exception {
-        return new DefaultBlockingProvider(createAsyncProvider(remoteURI));
+    private final JmsSslContext sslContext;
+
+    public AmqpSslProvider(URI remoteURI) {
+        super(remoteURI);
+        this.sslContext = JmsSslContext.getCurrentSslContext();
+    }
+
+    public AmqpSslProvider(URI remoteURI, Map<String, String> extraOptions) {
+        super(remoteURI, extraOptions);
+        this.sslContext = JmsSslContext.getCurrentSslContext();
     }
 
     @Override
-    public AsyncProvider createAsyncProvider(URI remoteURI) throws Exception {
-        return new AmqpProvider(remoteURI);
-    }
-
-    @Override
-    public String getName() {
-        return "AMQP";
+    protected AmqpTransport createTransport(URI remoteLocation) {
+        return new AmqpSslTransport(this, remoteLocation, sslContext);
     }
 }

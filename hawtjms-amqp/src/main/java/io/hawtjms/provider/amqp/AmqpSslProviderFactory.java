@@ -17,29 +17,16 @@
 package io.hawtjms.provider.amqp;
 
 import io.hawtjms.provider.AsyncProvider;
-import io.hawtjms.provider.BlockingProvider;
-import io.hawtjms.provider.DefaultBlockingProvider;
-import io.hawtjms.provider.ProviderFactory;
 
 import java.net.URI;
 
 /**
- * Factory for creating the AMQP provider.
+ * Extends the AmqpProviderFactory to create an SSL based Provider instance.
  */
-public class AmqpProviderFactory extends ProviderFactory {
-
-    @Override
-    public BlockingProvider createProvider(URI remoteURI) throws Exception {
-        return new DefaultBlockingProvider(createAsyncProvider(remoteURI));
-    }
+public class AmqpSslProviderFactory extends AmqpProviderFactory {
 
     @Override
     public AsyncProvider createAsyncProvider(URI remoteURI) throws Exception {
-        return new AmqpProvider(remoteURI);
-    }
-
-    @Override
-    public String getName() {
-        return "AMQP";
+        return new AmqpSslProvider(remoteURI);
     }
 }

@@ -17,7 +17,6 @@
 package io.hawtjms.provider.amqp;
 
 import io.hawtjms.jms.JmsDestination;
-import io.hawtjms.jms.JmsSslContext;
 import io.hawtjms.jms.message.JmsDefaultMessageFactory;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.message.JmsMessageFactory;
@@ -83,7 +82,6 @@ public class AmqpProvider implements AsyncProvider {
     private static final Logger TRACE_BYTES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".BYTES");
     private static final Logger TRACE_FRAMES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".FRAMES");
 
-    private final JmsSslContext sslContext;
     private final URI remoteURI;
     private AmqpConnection connection;
     private AmqpTransport transport;
@@ -119,7 +117,6 @@ public class AmqpProvider implements AsyncProvider {
      */
     public AmqpProvider(URI remoteURI, Map<String, String> extraOptions) {
         this.remoteURI = remoteURI;
-        this.sslContext = JmsSslContext.getCurrentSslContext();
         updateTracer();
         this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 
@@ -551,14 +548,7 @@ public class AmqpProvider implements AsyncProvider {
      * @return the newly created transport instance.
      */
     protected AmqpTransport createTransport(URI remoteLocation) {
-        AmqpTransport result = null;
-        if (remoteLocation.getScheme().equalsIgnoreCase("amqp")) {
-            result = new AmqpTcpTransport(this, remoteLocation);
-        } else if (remoteLocation.getScheme().equalsIgnoreCase("amqps")) {
-            result = new AmqpSslTransport(this, remoteLocation, sslContext);
-        }
-
-        return result;
+        return new AmqpTcpTransport(this, remoteLocation);
     }
 
     protected void checkClosed() throws IOException {
