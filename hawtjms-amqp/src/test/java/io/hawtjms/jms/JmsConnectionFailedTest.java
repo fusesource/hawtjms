@@ -43,7 +43,7 @@ public class JmsConnectionFailedTest extends JmsConnectionClosedTest {
         });
         connection.start();
         stopPrimaryBroker();
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
         return connection;
     }
 }
