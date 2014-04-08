@@ -37,6 +37,12 @@ import javax.jms.JMSException;
  */
 public class StompProvider implements AsyncProvider {
 
+    private final URI remoteURI;
+
+    public StompProvider(URI remoteURI) {
+        this.remoteURI = remoteURI;
+    }
+
     @Override
     public void connect() throws IOException {
         // TODO Auto-generated method stub
