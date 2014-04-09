@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.hawtjms.provider.amqp;
+package io.hawtjms.transports;
 
 import io.hawtjms.util.IOExceptionSupport;
 
@@ -37,15 +37,15 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 
 /**
- * Vertex based TCP transport for AMQP raw data packets.
+ * Vertex based TCP transport for raw data packets.
  */
-public class AmqpTcpTransport implements AmqpTransport {
+public class TcpTransport implements Transport {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TcpTransport.class);
 
     private final Vertx vertx = VertxFactory.newVertx();
     private final NetClient client = vertx.createNetClient();
-    private final AmqpProvider parent;
+    private final TransportListener listener;
     private final URI remoteLocation;
     private final AtomicBoolean connected = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -56,13 +56,13 @@ public class AmqpTcpTransport implements AmqpTransport {
     /**
      * Create a new instance of the transport.
      *
-     * @param parent
-     *        The AmqpConnection instance that this transport is bound to
+     * @param listener
+     *        The TransportListener that will receive data from this Transport instance.
      * @param remoteLocation
      *        The remote location where this transport should connection to.
      */
-    public AmqpTcpTransport(AmqpProvider parent, URI remoteLocation) {
-        this.parent = parent;
+    public TcpTransport(TransportListener listener, URI remoteLocation) {
+        this.listener = listener;
         this.remoteLocation = remoteLocation;
     }
 
@@ -86,21 +86,21 @@ public class AmqpTcpTransport implements AmqpTransport {
                         socket.dataHandler(new Handler<Buffer>() {
                             @Override
                             public void handle(Buffer event) {
-                                parent.onAmqpData(event);
+                                listener.onData(event);
                             }
                         });
 
                         socket.closeHandler(new Handler<Void>() {
                             @Override
                             public void handle(Void event) {
-                                parent.onTransportClosed();
+                                listener.onTransportClosed();
                             }
                         });
 
                         socket.exceptionHandler(new Handler<Throwable>() {
                             @Override
                             public void handle(Throwable event) {
-                                parent.onTransportError(event);
+                                listener.onTransportError(event);
                             }
                         });
 
@@ -155,7 +155,7 @@ public class AmqpTcpTransport implements AmqpTransport {
      * @throws IOException if an error occurs.
      */
     protected void configureNetClient(NetClient client) throws IOException {
-
+        // NO-OP for this Transport.
     }
 
     private void checkConnected() throws IOException {

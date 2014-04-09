@@ -36,6 +36,8 @@ import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
 import io.hawtjms.provider.ProviderListener;
 import io.hawtjms.provider.ProviderRequest;
+import io.hawtjms.transports.TcpTransport;
+import io.hawtjms.transports.TransportListener;
 import io.hawtjms.util.IOExceptionSupport;
 
 import java.io.IOException;
@@ -73,7 +75,7 @@ import org.vertx.java.core.buffer.Buffer;
  * All work within this Provider is serialized to a single Thread.  Any asynchronous exceptions
  * will be dispatched from that Thread and all in-bound requests are handled there as well.
  */
-public class AmqpProvider extends AbstractAsyncProvider {
+public class AmqpProvider extends AbstractAsyncProvider implements TransportListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpProvider.class);
 
@@ -81,7 +83,7 @@ public class AmqpProvider extends AbstractAsyncProvider {
     private static final Logger TRACE_FRAMES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".FRAMES");
 
     private AmqpConnection connection;
-    private AmqpTransport transport;
+    private io.hawtjms.transports.Transport transport;
     private boolean traceFrames;
     private boolean traceBytes;
     private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
@@ -522,8 +524,8 @@ public class AmqpProvider extends AbstractAsyncProvider {
      *
      * @return the newly created transport instance.
      */
-    protected AmqpTransport createTransport(URI remoteLocation) {
-        return new AmqpTcpTransport(this, remoteLocation);
+    protected io.hawtjms.transports.Transport createTransport(URI remoteLocation) {
+        return new TcpTransport(this, remoteLocation);
     }
 
     private void updateTracer() {
@@ -542,7 +544,8 @@ public class AmqpProvider extends AbstractAsyncProvider {
         }
     }
 
-    void onAmqpData(Buffer input) {
+    @Override
+    public void onData(Buffer input) {
 
         // Create our own copy since we will process later.
         final ByteBuffer source = ByteBuffer.wrap(input.getBytes());
@@ -578,7 +581,8 @@ public class AmqpProvider extends AbstractAsyncProvider {
      * @param error
      *        the error that causes the transport to fail.
      */
-    void onTransportError(final Throwable error) {
+    @Override
+    public void onTransportError(final Throwable error) {
         if (!closed.get()) {
             serializer.execute(new Runnable() {
                 @Override
@@ -598,7 +602,8 @@ public class AmqpProvider extends AbstractAsyncProvider {
      * the closed state on this transport and if not closed then an exception is raied
      * to the registered ProviderListener to indicate connection loss.
      */
-    void onTransportClosed() {
+    @Override
+    public void onTransportClosed() {
         if (!closed.get()) {
             serializer.execute(new Runnable() {
                 @Override

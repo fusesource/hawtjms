@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.hawtjms.provider.amqp;
+package io.hawtjms.transports;
 
 import io.hawtjms.jms.JmsSslContext;
 
@@ -24,23 +24,25 @@ import java.net.URI;
 import org.vertx.java.core.net.NetClient;
 
 /**
- * Provides SSL configuration to the vertx NetClient object used by the underling
+ * Provides SSL configuration to the Vert.x NetClient object used by the underling
  * TCP based Transport.
  */
-public class AmqpSslTransport extends AmqpTcpTransport {
+public class SslTransport extends TcpTransport {
 
     private final JmsSslContext context;
 
     /**
      * Create an instance of the SSL transport
      *
-     * @param parent
-     *        The provider that owns this Transport
+     * @param listener
+     *        The TransportListener that will handle events from this Transport instance.
      * @param remoteLocation
      *        The location that is being connected to.
+     * @param JmsSslContext
+     *        The JMS Framework SslContext to use for this SSL connection.
      */
-    public AmqpSslTransport(AmqpProvider parent, URI remoteLocation, JmsSslContext context) {
-        super(parent, remoteLocation);
+    public SslTransport(TransportListener listener, URI remoteLocation, JmsSslContext context) {
+        super(listener, remoteLocation);
 
         this.context = context;
     }

@@ -57,14 +57,6 @@
       <artifactId>proton-jms</artifactId>
       <version>${proton-version}</version>
     </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-platform</artifactId>
-    </dependency>
 
     <!-- =================================== -->
     <!-- Testing Dependencies                -->

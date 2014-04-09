@@ -17,6 +17,8 @@
 package io.hawtjms.provider.amqp;
 
 import io.hawtjms.jms.JmsSslContext;
+import io.hawtjms.transports.Transport;
+import io.hawtjms.transports.SslTransport;
 
 import java.net.URI;
 import java.util.Map;
@@ -39,7 +41,7 @@ public class AmqpSslProvider extends AmqpProvider {
     }
 
     @Override
-    protected AmqpTransport createTransport(URI remoteLocation) {
-        return new AmqpSslTransport(this, remoteLocation, sslContext);
+    protected Transport createTransport(URI remoteLocation) {
+        return new SslTransport(this, remoteLocation, sslContext);
     }
 }

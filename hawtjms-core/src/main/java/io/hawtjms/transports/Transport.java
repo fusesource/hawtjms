@@ -14,17 +14,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.hawtjms.provider.amqp;
+package io.hawtjms.transports;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public interface AmqpTransport {
+/**
+ * Base class for all hawtJMS Transport instances.
+ */
+public interface Transport {
 
+    /**
+     * Performs the protocol connect operation for the implemented Transport type
+     * such as a TCP socket connection etc.
+     *
+     * @throws IOException if an error occurs while attempting the connect.
+     */
     void connect() throws IOException;
 
+    /**
+     * Close the Transport, no additional send operations are accepted.
+     *
+     * @throws IOException if an error occurs while closing the connection.
+     */
     void close() throws IOException;
 
+    /**
+     * Sends a chunk of data over the Transport connection.
+     *
+     * @param output
+     *        The buffer of data that is to be transmitted.
+     *
+     * @throws IOException if an error occurs during the send operation.
+     */
     void send(ByteBuffer output) throws IOException;
 
 }
