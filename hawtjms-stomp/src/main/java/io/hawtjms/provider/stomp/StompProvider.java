@@ -16,31 +16,32 @@
  */
 package io.hawtjms.provider.stomp;
 
+import io.hawtjms.jms.message.JmsDefaultMessageFactory;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
-import io.hawtjms.jms.message.JmsMessageFactory;
 import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
-import io.hawtjms.jms.meta.JmsConsumerId;
 import io.hawtjms.jms.meta.JmsResource;
 import io.hawtjms.jms.meta.JmsSessionId;
-import io.hawtjms.provider.AsyncProvider;
+import io.hawtjms.provider.AbstractAsyncProvider;
 import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
-import io.hawtjms.provider.ProviderListener;
 
 import java.io.IOException;
 import java.net.URI;
 
 import javax.jms.JMSException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Async Provider implementation for the STOMP protocol.
  */
-public class StompProvider implements AsyncProvider {
+public class StompProvider extends AbstractAsyncProvider {
 
-    private final URI remoteURI;
+    private static final Logger LOG = LoggerFactory.getLogger(StompProvider.class);
 
     public StompProvider(URI remoteURI) {
-        this.remoteURI = remoteURI;
+        super(remoteURI, new JmsDefaultMessageFactory());
     }
 
     @Override
@@ -49,19 +50,8 @@ public class StompProvider implements AsyncProvider {
     }
 
     @Override
-    public void start() throws IOException, IllegalStateException {
-        // TODO Auto-generated method stub
-    }
-
-    @Override
     public void close() {
         // TODO Auto-generated method stub
-    }
-
-    @Override
-    public URI getRemoteURI() {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
@@ -112,27 +102,5 @@ public class StompProvider implements AsyncProvider {
     @Override
     public void unsubscribe(String subscription, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
         // TODO Auto-generated method stub
-    }
-
-    @Override
-    public void pull(JmsConsumerId consumerId, long timeout, AsyncResult<Void> request) throws IOException, UnsupportedOperationException {
-        // TODO Auto-generated method stub
-    }
-
-    @Override
-    public JmsMessageFactory getMessageFactory() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void setProviderListener(ProviderListener listener) {
-        // TODO Auto-generated method stub
-    }
-
-    @Override
-    public ProviderListener getProviderListener() {
-        // TODO Auto-generated method stub
-        return null;
     }
 }

@@ -19,7 +19,6 @@ package io.hawtjms.provider.amqp;
 import io.hawtjms.jms.JmsDestination;
 import io.hawtjms.jms.message.JmsDefaultMessageFactory;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
-import io.hawtjms.jms.message.JmsMessageFactory;
 import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
 import io.hawtjms.jms.meta.JmsConnectionInfo;
 import io.hawtjms.jms.meta.JmsConsumerId;
@@ -32,7 +31,7 @@ import io.hawtjms.jms.meta.JmsResourceVistor;
 import io.hawtjms.jms.meta.JmsSessionId;
 import io.hawtjms.jms.meta.JmsSessionInfo;
 import io.hawtjms.jms.meta.JmsTransactionInfo;
-import io.hawtjms.provider.AsyncProvider;
+import io.hawtjms.provider.AbstractAsyncProvider;
 import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
 import io.hawtjms.provider.ProviderListener;
@@ -47,7 +46,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.JMSException;
 
@@ -75,17 +73,15 @@ import org.vertx.java.core.buffer.Buffer;
  * All work within this Provider is serialized to a single Thread.  Any asynchronous exceptions
  * will be dispatched from that Thread and all in-bound requests are handled there as well.
  */
-public class AmqpProvider implements AsyncProvider {
+public class AmqpProvider extends AbstractAsyncProvider {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpProvider.class);
 
     private static final Logger TRACE_BYTES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".BYTES");
     private static final Logger TRACE_FRAMES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".FRAMES");
 
-    private final URI remoteURI;
     private AmqpConnection connection;
     private AmqpTransport transport;
-    private ProviderListener listener;
     private boolean traceFrames;
     private boolean traceBytes;
     private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
@@ -96,8 +92,6 @@ public class AmqpProvider implements AsyncProvider {
     private final EngineFactory engineFactory = new EngineFactoryImpl();
     private final Transport protonTransport = engineFactory.createTransport();
     private final ExecutorService serializer;
-    private final AtomicBoolean closed = new AtomicBoolean();
-    private final JmsMessageFactory messageFactory = new JmsDefaultMessageFactory();
 
     /**
      * Create a new instance of an AmqpProvider bonded to the given remote URI.
@@ -116,7 +110,7 @@ public class AmqpProvider implements AsyncProvider {
      *        The URI of the AMQP broker this Provider instance will connect to.
      */
     public AmqpProvider(URI remoteURI, Map<String, String> extraOptions) {
-        this.remoteURI = remoteURI;
+        super(remoteURI, new JmsDefaultMessageFactory());
         updateTracer();
         this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 
@@ -124,7 +118,7 @@ public class AmqpProvider implements AsyncProvider {
             public Thread newThread(Runnable runner) {
                 Thread serial = new Thread(runner);
                 serial.setDaemon(true);
-                serial.setName("AmqpProvider: " + AmqpProvider.this.remoteURI.getHost());
+                serial.setName("AmqpProvider: " + AmqpProvider.this.getRemoteURI().getHost());
                 return serial;
             }
         });
@@ -134,22 +128,8 @@ public class AmqpProvider implements AsyncProvider {
     public void connect() throws IOException {
         checkClosed();
 
-        transport = createTransport(remoteURI);
+        transport = createTransport(getRemoteURI());
         transport.connect();
-    }
-
-    @Override
-    public void start() throws IOException, IllegalStateException {
-        checkClosed();
-
-        if (listener == null) {
-            throw new IllegalStateException("No ProviderListener registered.");
-        }
-    }
-
-    @Override
-    public JmsMessageFactory getMessageFactory() {
-        return messageFactory;
     }
 
     @Override
@@ -196,11 +176,6 @@ public class AmqpProvider implements AsyncProvider {
                 }
             }
         }
-    }
-
-    @Override
-    public URI getRemoteURI() {
-        return remoteURI;
     }
 
     @Override
@@ -551,12 +526,6 @@ public class AmqpProvider implements AsyncProvider {
         return new AmqpTcpTransport(this, remoteLocation);
     }
 
-    protected void checkClosed() throws IOException {
-        if (closed.get()) {
-            throw new IOException("The Provider is already closed");
-        }
-    }
-
     private void updateTracer() {
         if (isTraceFrames()) {
             ((TransportImpl) protonTransport).setProtocolTracer(new ProtocolTracer() {
@@ -674,16 +643,6 @@ public class AmqpProvider implements AsyncProvider {
         } catch (IOException e) {
             fireProviderException(e);
         }
-    }
-
-    @Override
-    public void setProviderListener(ProviderListener listener) {
-        this.listener = listener;
-    }
-
-    @Override
-    public ProviderListener getProviderListener() {
-        return this.listener;
     }
 
     public void setTraceFrames(boolean trace) {
