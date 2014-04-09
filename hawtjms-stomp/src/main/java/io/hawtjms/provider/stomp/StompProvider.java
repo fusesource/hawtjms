@@ -19,17 +19,22 @@ package io.hawtjms.provider.stomp;
 import io.hawtjms.jms.message.JmsDefaultMessageFactory;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
+import io.hawtjms.jms.meta.JmsConnectionInfo;
+import io.hawtjms.jms.meta.JmsDefaultResourceVisitor;
 import io.hawtjms.jms.meta.JmsResource;
 import io.hawtjms.jms.meta.JmsSessionId;
+import io.hawtjms.jms.meta.JmsSessionInfo;
 import io.hawtjms.provider.AbstractAsyncProvider;
 import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
+import io.hawtjms.provider.ProviderRequest;
 import io.hawtjms.transports.TcpTransport;
 import io.hawtjms.transports.Transport;
 import io.hawtjms.transports.TransportListener;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.JMSException;
 
@@ -45,6 +50,8 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
     private static final Logger LOG = LoggerFactory.getLogger(StompProvider.class);
 
     private Transport transport;
+    private StompConnection connection;
+    private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
 
     public StompProvider(URI remoteURI) {
         super(remoteURI, new JmsDefaultMessageFactory());
@@ -60,56 +67,121 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
 
     @Override
     public void close() {
+        if (closed.compareAndSet(false, true)) {
+            final ProviderRequest<Void> request = new ProviderRequest<Void>();
+            serializer.execute(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        // TODO
+                    } catch (Exception e) {
+                        LOG.debug("Caught exception while closing proton connection");
+                    } finally {
+                        if (transport != null) {
+                            try {
+                                transport.close();
+                            } catch (Exception e) {
+                                LOG.debug("Cuaght exception while closing down Transport: {}", e.getMessage());
+                            }
+                        }
+
+                        request.onSuccess();
+                    }
+                }
+            });
+
+            try {
+                if (closeTimeout < 0) {
+                    request.getResponse();
+                } else {
+                    request.getResponse(closeTimeout, TimeUnit.MILLISECONDS);
+                }
+            } catch (IOException e) {
+                LOG.warn("Error caught while closing Provider: ", e.getMessage());
+            } finally {
+                if (serializer != null) {
+                    serializer.shutdown();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void create(final JmsResource resource, final AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    resource.visit(new JmsDefaultResourceVisitor() {
+
+                        @Override
+                        public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
+                            connection.createSession(sessionInfo);
+                            request.onSuccess();
+                        }
+
+                        @Override
+                        public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
+                            closeTimeout = connectionInfo.getCloseTimeout();
+
+                            connection = new StompConnection(connectionInfo);
+                            StompFrame connectFrame = connection.connect(request);
+                        }
+                    });
+
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void start(final JmsResource resource, final AsyncResult<Void> request) throws IOException {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void create(JmsResource resource, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
+    public void destroy(final JmsResource resourceId, final AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void start(JmsResource resource, AsyncResult<Void> request) throws IOException {
+    public void send(final JmsOutboundMessageDispatch envelope, final AsyncResult<Void> request) throws IOException, JMSException {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void destroy(JmsResource resourceId, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
+    public void acknowledge(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException, JMSException {
+    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, final AsyncResult<Void> request) throws IOException {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void acknowledge(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException {
+    public void commit(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult<Void> request) throws IOException {
+    public void rollback(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void commit(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
+    public void recover(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException, UnsupportedOperationException {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void rollback(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
-        // TODO Auto-generated method stub
-    }
-
-    @Override
-    public void recover(JmsSessionId sessionId, AsyncResult<Void> request) throws IOException, UnsupportedOperationException {
-        // TODO Auto-generated method stub
-    }
-
-    @Override
-    public void unsubscribe(String subscription, AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
+    public void unsubscribe(final String subscription, final AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
         // TODO Auto-generated method stub
     }
 
@@ -172,5 +244,15 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                 }
             });
         }
+    }
+
+    //------------- Property Getters / Setters -------------------------------//
+
+    public long getCloseTimeout() {
+        return this.closeTimeout;
+    }
+
+    public void setCloseTimeout(long closeTimeout) {
+        this.closeTimeout = closeTimeout;
     }
 }
