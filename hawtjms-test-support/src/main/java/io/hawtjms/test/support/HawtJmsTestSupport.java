@@ -18,9 +18,11 @@ package io.hawtjms.test.support;
 
 import java.io.File;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
@@ -74,7 +76,6 @@ public class HawtJmsTestSupport {
     protected final List<BrokerService> brokers = new ArrayList<BrokerService>();
     protected final Vector<Throwable> exceptions = new Vector<Throwable>();
     protected int numberOfMessages;
-    protected int openwirePort;
     protected Connection connection;
 
     @Before
@@ -99,8 +100,9 @@ public class HawtJmsTestSupport {
 
     public URI getBrokerOpenWireConnectionURI() {
         try {
-            return new URI("tcp://127.0.0.1:" + openwirePort);
-        } catch (URISyntaxException e) {
+            return new URI("tcp://127.0.0.1:" +
+                brokerService.getTransportConnectorByName("openwire").getPublishableConnectURI().getPort());
+        } catch (Exception e) {
             throw new RuntimeException();
         }
     }
@@ -113,7 +115,11 @@ public class HawtJmsTestSupport {
         return false;
     }
 
-    protected BrokerService createBroker(String name, boolean deleteAllMessages, int openwirePort) throws Exception {
+    protected BrokerService createBroker(String name, boolean deleteAllMessages) throws Exception {
+        return createBroker(name, deleteAllMessages, Collections.<String, Integer> emptyMap());
+    }
+
+    protected BrokerService createBroker(String name, boolean deleteAllMessages, Map<String, Integer> portMap) throws Exception {
         KahaDBStore kaha = new KahaDBStore();
         kaha.setDirectory(new File(KAHADB_DIRECTORY + "/" + name));
 
@@ -143,13 +149,17 @@ public class HawtJmsTestSupport {
             brokerService.setPlugins(plugins.toArray(array));
         }
 
-        addOpenWireConnector(brokerService, openwirePort);
-        addAdditionalConnectors(brokerService);
+        addOpenWireConnector(brokerService, portMap);
+        addAdditionalConnectors(brokerService, portMap);
 
         return brokerService;
     }
 
-    protected int addOpenWireConnector(BrokerService brokerService, int port) throws Exception {
+    protected int addOpenWireConnector(BrokerService brokerService, Map<String, Integer> portMap) throws Exception {
+        int port = 0;
+        if (portMap.containsKey("openwire")) {
+            port = portMap.get("openwire");
+        }
         TransportConnector connector = brokerService.addConnector("tcp://0.0.0.0:" + port);
         connector.setName("openwire");
         int openwirePort = connector.getPublishableConnectURI().getPort();
@@ -157,7 +167,7 @@ public class HawtJmsTestSupport {
         return openwirePort;
     }
 
-    protected void addAdditionalConnectors(BrokerService brokerService) throws Exception {
+    protected void addAdditionalConnectors(BrokerService brokerService, Map<String, Integer> portMap) throws Exception {
         // Subclasses can add their own connectors, we don't add any here.
     }
 
@@ -166,8 +176,7 @@ public class HawtJmsTestSupport {
             throw new IllegalStateException("Broker is already created.");
         }
 
-        brokerService = createBroker("localhost", true, openwirePort);
-        openwirePort = brokerService.getTransportConnectorByName("openwire").getPublishableConnectURI().getPort();
+        brokerService = createBroker("localhost", true);
         brokerService.start();
         brokerService.waitUntilStarted();
     }
@@ -184,7 +193,7 @@ public class HawtJmsTestSupport {
     public void startNewBroker() throws Exception {
         String brokerName = "localhost" + (brokers.size() + 1);
 
-        BrokerService brokerService = createBroker(brokerName, true, 0);
+        BrokerService brokerService = createBroker(brokerName, true);
         brokerService.setUseJmx(false);
         brokerService.start();
         brokerService.waitUntilStarted();
@@ -194,10 +203,13 @@ public class HawtJmsTestSupport {
 
     public BrokerService restartBroker(BrokerService brokerService) throws Exception {
         String name = brokerService.getBrokerName();
-        int openwirePort = brokerService.getTransportConnectorByName("openwire").getConnectUri().getPort();
+        Map<String, Integer> portMap = new HashMap<String, Integer>();
+        for (TransportConnector connector : brokerService.getTransportConnectors()) {
+            portMap.put(connector.getName(), connector.getPublishableConnectURI().getPort());
+        }
 
         stopBroker(brokerService);
-        BrokerService broker = createBroker(name, false, openwirePort);
+        BrokerService broker = createBroker(name, false, portMap);
         broker.start();
         broker.waitUntilStarted();
         return broker;

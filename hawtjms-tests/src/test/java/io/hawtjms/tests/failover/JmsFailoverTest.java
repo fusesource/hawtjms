@@ -123,9 +123,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertEquals(1, brokerService.getAdminView().getQueueSubscribers().length);
         assertEquals(1, brokerService.getAdminView().getQueueProducers().length);
 
-        stopPrimaryBroker();
-        TimeUnit.SECONDS.sleep(2);
-        startPrimaryBroker();
+        restartPrimaryBroker();
 
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 
@@ -156,9 +154,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
         assertEquals(1, brokerService.getAdminView().getDurableTopicSubscribers().length);
 
-        stopPrimaryBroker();
-        TimeUnit.SECONDS.sleep(2);
-        startPrimaryBroker();
+        restartPrimaryBroker();
 
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 

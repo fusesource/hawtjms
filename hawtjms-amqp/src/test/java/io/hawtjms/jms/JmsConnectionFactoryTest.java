@@ -36,7 +36,7 @@ public class JmsConnectionFactoryTest extends AmqpTestSupport {
     private final String password = "PASSWORD";
 
     protected String getGoodProviderAddress() {
-        return "amqp://127.0.0.1:" + amqpPort;
+        return getBrokerAmqpConnectionURI().toString();
     }
 
     protected URI getGoodProviderAddressURI() throws URISyntaxException {
@@ -44,7 +44,7 @@ public class JmsConnectionFactoryTest extends AmqpTestSupport {
     }
 
     protected String getBadProviderAddress() {
-        return "bad://127.0.0.1:" + amqpPort;
+        return "bad://127.0.0.1:" + 5763;
     }
 
     protected URI getBadProviderAddressURI() throws URISyntaxException {

@@ -19,7 +19,7 @@ package io.hawtjms.test.support;
 import io.hawtjms.jms.JmsConnectionFactory;
 
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.Map;
 
 import javax.jms.Connection;
 
@@ -32,27 +32,30 @@ public class AmqpTestSupport extends HawtJmsTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(AmqpTestSupport.class);
 
-    protected int amqpPort;
-
     protected boolean isAmqpDiscovery() {
         return false;
     }
 
     @Override
-    protected void addAdditionalConnectors(BrokerService brokerService) throws Exception {
-        TransportConnector connector = brokerService.addConnector("amqp://0.0.0.0:" + amqpPort);
+    protected void addAdditionalConnectors(BrokerService brokerService, Map<String, Integer> portMap) throws Exception {
+        int port = 0;
+        if (portMap.containsKey("amqp")) {
+            port = portMap.get("amqp");
+        }
+        TransportConnector connector = brokerService.addConnector("amqp://0.0.0.0:" + port);
         connector.setName("amqp");
         if (isAmqpDiscovery()) {
             connector.setDiscoveryUri(new URI("multicast://default"));
         }
-        amqpPort = connector.getPublishableConnectURI().getPort();
-        LOG.debug("Using amqp port: {}", amqpPort);
+        port = connector.getPublishableConnectURI().getPort();
+        LOG.debug("Using amqp port: {}", port);
     }
 
     public URI getBrokerAmqpConnectionURI() {
         try {
-            return new URI("amqp://127.0.0.1:" + amqpPort);
-        } catch (URISyntaxException e) {
+            return new URI("amqp://127.0.0.1:" +
+                brokerService.getTransportConnectorByName("amqp").getPublishableConnectURI().getPort());
+        } catch (Exception e) {
             throw new RuntimeException();
         }
     }

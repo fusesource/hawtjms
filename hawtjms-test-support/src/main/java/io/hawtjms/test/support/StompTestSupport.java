@@ -19,7 +19,7 @@ package io.hawtjms.test.support;
 import io.hawtjms.jms.JmsConnectionFactory;
 
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.Map;
 
 import javax.jms.Connection;
 
@@ -35,27 +35,30 @@ public class StompTestSupport extends HawtJmsTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(StompTestSupport.class);
 
-    protected int stompPort;
-
     protected boolean isStompDiscovery() {
         return false;
     }
 
     @Override
-    protected void addAdditionalConnectors(BrokerService brokerService) throws Exception {
-        TransportConnector connector = brokerService.addConnector("stomp://0.0.0.0:" + stompPort);
+    protected void addAdditionalConnectors(BrokerService brokerService, Map<String, Integer> portMap) throws Exception {
+        int port = 0;
+        if (portMap.containsKey("stomp")) {
+            port = portMap.get("stomp");
+        }
+        TransportConnector connector = brokerService.addConnector("stomp://0.0.0.0:" + port);
         connector.setName("stomp");
         if (isStompDiscovery()) {
             connector.setDiscoveryUri(new URI("multicast://default"));
         }
-        stompPort = connector.getPublishableConnectURI().getPort();
-        LOG.debug("Using stomp port: {}", stompPort);
+        port = connector.getPublishableConnectURI().getPort();
+        LOG.debug("Using stomp port: {}", port);
     }
 
     public URI getBrokerStompConnectionURI() {
         try {
-            return new URI("stomp://127.0.0.1:" + stompPort);
-        } catch (URISyntaxException e) {
+            return new URI("stomp://127.0.0.1:" +
+                brokerService.getTransportConnectorByName("stomp").getPublishableConnectURI().getPort());
+        } catch (Exception e) {
             throw new RuntimeException();
         }
     }
