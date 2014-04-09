@@ -19,9 +19,13 @@ package io.hawtjms.provider;
 import io.hawtjms.jms.message.JmsMessageFactory;
 import io.hawtjms.jms.meta.JmsConsumerId;
 import io.hawtjms.jms.meta.JmsSessionId;
+import io.hawtjms.util.IOExceptionSupport;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.JMSException;
@@ -37,12 +41,24 @@ public abstract class AbstractAsyncProvider implements AsyncProvider {
     protected final URI remoteURI;
     protected final JmsMessageFactory messageFactory;
     protected final AtomicBoolean closed = new AtomicBoolean();
+    protected final ScheduledExecutorService serializer;
 
     protected ProviderListener listener;
 
     public AbstractAsyncProvider(URI remoteURI, JmsMessageFactory messageFactory) {
         this.remoteURI = remoteURI;
         this.messageFactory = messageFactory;
+
+        this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+
+            @Override
+            public Thread newThread(Runnable runner) {
+                Thread serial = new Thread(runner);
+                serial.setDaemon(true);
+                serial.setName(toString());
+                return serial;
+            }
+        });
     }
 
     @Override
@@ -92,6 +108,13 @@ public abstract class AbstractAsyncProvider implements AsyncProvider {
     @Override
     public URI getRemoteURI() {
         return remoteURI;
+    }
+
+    public void fireProviderException(Throwable ex) {
+        ProviderListener listener = this.listener;
+        if (listener != null) {
+            listener.onConnectionFailure(IOExceptionSupport.create(ex));
+        }
     }
 
     protected void checkClosed() throws IOException {

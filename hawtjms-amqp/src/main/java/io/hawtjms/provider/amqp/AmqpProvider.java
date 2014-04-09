@@ -34,19 +34,14 @@ import io.hawtjms.jms.meta.JmsTransactionInfo;
 import io.hawtjms.provider.AbstractAsyncProvider;
 import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
-import io.hawtjms.provider.ProviderListener;
 import io.hawtjms.provider.ProviderRequest;
 import io.hawtjms.transports.TcpTransport;
 import io.hawtjms.transports.TransportListener;
-import io.hawtjms.util.IOExceptionSupport;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.JMSException;
@@ -93,7 +88,6 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
 
     private final EngineFactory engineFactory = new EngineFactoryImpl();
     private final Transport protonTransport = engineFactory.createTransport();
-    private final ExecutorService serializer;
 
     /**
      * Create a new instance of an AmqpProvider bonded to the given remote URI.
@@ -114,16 +108,6 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
     public AmqpProvider(URI remoteURI, Map<String, String> extraOptions) {
         super(remoteURI, new JmsDefaultMessageFactory());
         updateTracer();
-        this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-
-            @Override
-            public Thread newThread(Runnable runner) {
-                Thread serial = new Thread(runner);
-                serial.setDaemon(true);
-                serial.setName("AmqpProvider: " + AmqpProvider.this.getRemoteURI().getHost());
-                return serial;
-            }
-        });
     }
 
     @Override
@@ -575,7 +559,7 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
     }
 
     /**
-     * Callback method for the AmqpTransport to report connection errors.  When called
+     * Callback method for the Transport to report connection errors.  When called
      * the method will queue a new task to fire the failure error back to the listener.
      *
      * @param error
@@ -597,7 +581,7 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
     }
 
     /**
-     * Callback method for the AmqpTransport to report that the underlying connection
+     * Callback method for the Transport to report that the underlying connection
      * has closed.  When called this method will queue a new task that will check for
      * the closed state on this transport and if not closed then an exception is raied
      * to the registered ProviderListener to indicate connection loss.
@@ -614,13 +598,6 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
                     }
                 }
             });
-        }
-    }
-
-    void fireProviderException(Throwable ex) {
-        ProviderListener listener = this.listener;
-        if (listener != null) {
-            listener.onConnectionFailure(IOExceptionSupport.create(ex));
         }
     }
 
@@ -692,5 +669,10 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
 
     public void setSendTimeout(long sendTimeout) {
         this.sendTimeout = sendTimeout;
+    }
+
+    @Override
+    public String toString() {
+        return "AmqpProvider: " + getRemoteURI().getHost() + ":" + getRemoteURI().getPort();
     }
 }
