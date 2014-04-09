@@ -647,6 +647,10 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
         return this.closeTimeout;
     }
 
+    public void setCloseTimeout(long closeTimeout) {
+        this.closeTimeout = closeTimeout;
+    }
+
     public long getConnectTimeout() {
         return connectTimeout;
     }
