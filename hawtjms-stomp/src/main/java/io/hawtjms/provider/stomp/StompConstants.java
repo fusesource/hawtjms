@@ -116,4 +116,12 @@ public interface StompConstants {
     final String CREDIT = "credit";
     final String JMSX_DELIVERY_COUNT = "JMSXDeliveryCount";
     final String HEARTBEAT = "heart-beat";
+
+    /**
+     * Well known JMSException types that we want to map when throwing from
+     * the provider on ERROR frames.
+     */
+    final String INVALID_CLIENTID_EXCEPTION = "InvalidClientIDException";
+    final String JMS_SECURITY_EXCEPTION = "JmsSecurityException";
+    final String SECURITY_EXCEPTION = "SecurityException";
 }

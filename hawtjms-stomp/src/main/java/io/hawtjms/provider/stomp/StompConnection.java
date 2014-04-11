@@ -22,8 +22,11 @@ import static io.hawtjms.provider.stomp.StompConstants.CONNECTED;
 import static io.hawtjms.provider.stomp.StompConstants.ERROR;
 import static io.hawtjms.provider.stomp.StompConstants.HEARTBEAT;
 import static io.hawtjms.provider.stomp.StompConstants.HOST;
+import static io.hawtjms.provider.stomp.StompConstants.INVALID_CLIENTID_EXCEPTION;
+import static io.hawtjms.provider.stomp.StompConstants.JMS_SECURITY_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.LOGIN;
 import static io.hawtjms.provider.stomp.StompConstants.PASSCODE;
+import static io.hawtjms.provider.stomp.StompConstants.SECURITY_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.STOMP;
 import io.hawtjms.jms.meta.JmsConnectionId;
 import io.hawtjms.jms.meta.JmsConnectionInfo;
@@ -35,7 +38,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.jms.InvalidClientIDException;
 import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,7 +150,7 @@ public class StompConnection {
 
         if (pendingConnect != null && frame.getCommand().equals(ERROR)) {
             LOG.info("Connection attempt failed: {}", frame.getErrorMessage());
-            pendingConnect.onFailure(new JMSException(frame.getErrorMessage()));
+            pendingConnect.onFailure(exceptionFromErrorFrame(frame));
         }
 
         if (frame.getCommand().equals(CONNECTED)) {
@@ -190,5 +195,30 @@ public class StompConnection {
         if (!connected) {
             throw new IOException("already connected");
         }
+    }
+
+    protected JMSException exceptionFromErrorFrame(StompFrame frame) {
+        JMSException exception = null;
+        String errorDetail = "";
+        try {
+            errorDetail = frame.getContentAsString();
+        } catch (Exception ex) {
+        }
+
+        // Lets not search overly large exception stacks, if the exception name
+        // isn't in the first bit of the string then it's probably not there at all.
+        errorDetail.substring(0, Math.min(100, errorDetail.length()));
+
+        if (errorDetail.contains(INVALID_CLIENTID_EXCEPTION)) {
+            exception = new InvalidClientIDException(frame.getErrorMessage());
+        } else if (errorDetail.contains(JMS_SECURITY_EXCEPTION)) {
+            exception = new JMSSecurityException(frame.getErrorMessage());
+        } else if (errorDetail.contains(SECURITY_EXCEPTION)) {
+            exception = new JMSSecurityException(frame.getErrorMessage());
+        } else {
+            exception = new JMSException(frame.getErrorMessage());
+        }
+
+        return exception;
     }
 }
