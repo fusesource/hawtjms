@@ -17,6 +17,7 @@
 package io.hawtjms.stomp;
 
 import static io.hawtjms.provider.stomp.StompConstants.CONNECTED;
+import static io.hawtjms.provider.stomp.StompConstants.MESSAGE;
 import static io.hawtjms.provider.stomp.StompConstants.V1_0;
 import static io.hawtjms.provider.stomp.StompConstants.V1_1;
 import static org.junit.Assert.assertEquals;
@@ -73,6 +74,25 @@ public class StompCodecTest {
         assertEquals(CONNECTED, frame.getCommand());
         assertEquals(V1_1, frame.getProperty("version"));
         assertEquals("activemq/5.9", frame.getProperty("server"));
+    }
+
+    @Test
+    public void testDecodeTextMessage() throws IOException {
+        final String body = "This is a test";
+
+        String input = "MESSAGE\n" +
+                       "version:1.1\n" +
+                       "server:activemq/5.9\n\n" +
+                       body + StompConstants.NULL;
+
+        ByteBuffer buffer = ByteBuffer.wrap(input.getBytes(StompConstants.UTF8));
+
+        StompFrame frame = codec.decode(buffer);
+        assertNotNull(frame);
+        assertEquals(MESSAGE, frame.getCommand());
+        assertEquals(V1_1, frame.getProperty("version"));
+        assertEquals("activemq/5.9", frame.getProperty("server"));
+        assertEquals(body, frame.getContentAsString());
     }
 
     @Test
