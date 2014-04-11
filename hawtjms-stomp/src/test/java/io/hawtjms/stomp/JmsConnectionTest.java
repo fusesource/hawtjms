@@ -56,7 +56,6 @@ public class JmsConnectionTest extends StompTestSupport {
         connection.close();
     }
 
-    @Ignore
     @Test(expected = JMSException.class)
     public void testCreateWithDuplicateClientIdFails() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerStompConnectionURI());
