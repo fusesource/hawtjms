@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.jms.JMSException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,6 +104,20 @@ public class StompConnection {
         StompSession session = new StompSession(sessionInfo);
         sessions.put(sessionInfo.getSessionId(), session);
         return session;
+    }
+
+    /**
+     * Handle all newly received StompFrames and update Connection resources with the
+     * new data.
+     *
+     * @param frame
+     *        a newly received StompFrame.
+     *
+     * @throws JMSException if a JMS related error occurs.
+     * @throws IOException if an error occurs while handling the new StompFrame.
+     */
+    public void processFrame(StompFrame frame) throws JMSException, IOException {
+
     }
 
     /**

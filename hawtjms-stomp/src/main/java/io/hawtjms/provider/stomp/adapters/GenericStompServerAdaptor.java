@@ -26,8 +26,6 @@ import javax.jms.JMSException;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
-
 /**
  * Base adapter class for supporting STOMP servers that offer extended features
  * beyond the defined STOMP specification.
@@ -74,8 +72,7 @@ public class GenericStompServerAdaptor implements StompServerAdapter {
     }
 
     @Override
-    public void addSubscribeHeaders(Map<AsciiBuffer, AsciiBuffer> headerMap, boolean persistent, boolean browser, boolean noLocal, int prefetch)
-        throws JMSException {
+    public void addSubscribeHeaders(Map<String, String> headerMap, boolean persistent, boolean browser, boolean noLocal, int prefetch) throws JMSException {
         if (browser) {
             throw new JMSException("Server does not support browsing over STOMP");
         }
@@ -88,13 +85,13 @@ public class GenericStompServerAdaptor implements StompServerAdapter {
     }
 
     @Override
-    public StompFrame createUnsubscribeFrame(AsciiBuffer consumerId, boolean persistent) throws JMSException {
+    public StompFrame createUnsubscribeFrame(String consumerId, boolean persistent) throws JMSException {
         if (persistent) {
             throw new JMSException("Server does not support un-subscribing durable subscriptions over STOMP");
         }
         StompFrame frame = new StompFrame();
-        frame.action(UNSUBSCRIBE);
-        frame.headerMap().put(ID, consumerId);
+        frame.setCommand(UNSUBSCRIBE);
+        frame.getProperties().put(ID, consumerId);
         return frame;
     }
 }

@@ -24,8 +24,6 @@ import javax.jms.JMSException;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
-
 /**
  * The StompServerAdapter defines an interface for an adapter class that can
  * augment the standard STOMP protocol with additional functionality offered by
@@ -54,9 +52,8 @@ public interface StompServerAdapter {
 
     public abstract TemporaryTopic createTemporaryTopic() throws JMSException;
 
-    public abstract void addSubscribeHeaders(Map<AsciiBuffer, AsciiBuffer> headerMap, boolean persistent, boolean browser, boolean noLocal, int prefetch)
-        throws JMSException;
+    public abstract void addSubscribeHeaders(Map<String, String> headerMap, boolean persistent, boolean browser, boolean noLocal, int prefetch) throws JMSException;
 
-    public abstract StompFrame createUnsubscribeFrame(AsciiBuffer consumerId, boolean persistent) throws JMSException;
+    public abstract StompFrame createUnsubscribeFrame(String consumerId, boolean persistent) throws JMSException;
 
 }

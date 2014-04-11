@@ -34,6 +34,7 @@ import io.hawtjms.transports.TransportListener;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.JMSException;
@@ -48,6 +49,8 @@ import org.vertx.java.core.buffer.Buffer;
 public class StompProvider extends AbstractAsyncProvider implements TransportListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(StompProvider.class);
+
+    private final StompCodec codec = new StompCodec();
 
     private Transport transport;
     private StompConnection connection;
@@ -200,7 +203,29 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
 
     @Override
     public void onData(Buffer incoming) {
-        // TODO Auto-generated method stub
+        // Create our own copy since we will process later.
+        final ByteBuffer source = ByteBuffer.wrap(incoming.getBytes());
+
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                LOG.trace("Received from Broker {} bytes:", source.remaining());
+
+                try {
+                    do {
+                        StompFrame frame = codec.decode(source);
+                        if (frame != null) {
+                            connection.processFrame(frame);
+                        }
+                    } while (source.hasRemaining());
+                } catch (Exception e) {
+                    LOG.warn("Caught exception while processing new data: {}", e.getMessage());
+                    LOG.trace("Exception detail: ", e);
+                    fireProviderException(e);
+                }
+            }
+        });
     }
 
     /**

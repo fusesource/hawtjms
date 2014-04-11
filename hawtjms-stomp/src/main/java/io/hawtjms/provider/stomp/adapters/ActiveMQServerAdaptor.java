@@ -23,15 +23,13 @@ import java.util.Map;
 
 import javax.jms.JMSException;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
-
 /**
  * Server Adapter instance used to interact with an ActiveMQ Broker.
  */
 public class ActiveMQServerAdaptor extends GenericStompServerAdaptor {
 
-    private static final AsciiBuffer SUBSCRIPTION_NAME = new AsciiBuffer("activemq.subscriptionName");
-    private static final AsciiBuffer NO_LOCAL = new AsciiBuffer("activemq.noLocal");
+    private static final String SUBSCRIPTION_NAME = "activemq.subscriptionName";
+    private static final String NO_LOCAL = "activemq.noLocal";
 
     @Override
     public boolean matchesServerAndVersion(String server) {
@@ -39,7 +37,7 @@ public class ActiveMQServerAdaptor extends GenericStompServerAdaptor {
     }
 
     @Override
-    public void addSubscribeHeaders(Map<AsciiBuffer, AsciiBuffer> headerMap, boolean persistent, boolean browser, boolean noLocal, int prefetch)
+    public void addSubscribeHeaders(Map<String, String> headerMap, boolean persistent, boolean browser, boolean noLocal, int prefetch)
         throws JMSException {
         if (browser) {
             throw new JMSException("ActiveMQ does not support browsing over STOMP");

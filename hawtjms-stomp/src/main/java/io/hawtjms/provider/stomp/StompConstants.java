@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
+ * (the "License"; you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
@@ -16,101 +16,97 @@
  */
 package io.hawtjms.provider.stomp;
 
-import static org.fusesource.hawtbuf.Buffer.ascii;
-
-import org.fusesource.hawtbuf.AsciiBuffer;
-
 /**
  * A series of constant values used by the STOMP protocol.
  */
 public interface StompConstants {
-    final AsciiBuffer NULL = ascii("\u0000");
+    final String NULL = "\u0000";
     final byte NULL_BYTE = 0;
 
-    final AsciiBuffer NEWLINE = ascii("\n");
+    final String NEWLINE = "\n";
     final byte NEWLINE_BYTE = '\n';
 
-    final AsciiBuffer COLON = ascii(":");
+    final String COLON = ":";
     final byte COLON_BYTE = ':';
 
     final byte ESCAPE_BYTE = '\\';
 
-    final AsciiBuffer ESCAPE_ESCAPE_SEQ = ascii("\\\\");
-    final AsciiBuffer COLON_ESCAPE_SEQ = ascii("\\c");
-    final AsciiBuffer NEWLINE_ESCAPE_SEQ = ascii("\\n");
+    final String ESCAPE_ESCAPE_SEQ = "\\\\";
+    final String COLON_ESCAPE_SEQ = "\\c";
+    final String NEWLINE_ESCAPE_SEQ = "\\n";
 
     // Commands
-    final AsciiBuffer CONNECT = ascii("CONNECT");
-    final AsciiBuffer SEND = ascii("SEND");
-    final AsciiBuffer DISCONNECT = ascii("DISCONNECT");
-    final AsciiBuffer SUBSCRIBE = ascii("SUBSCRIBE");
-    final AsciiBuffer UNSUBSCRIBE = ascii("UNSUBSCRIBE");
-    final AsciiBuffer MESSAGE = ascii("MESSAGE");
+    final String CONNECT = "CONNECT";
+    final String SEND = "SEND";
+    final String DISCONNECT = "DISCONNECT";
+    final String SUBSCRIBE = "SUBSCRIBE";
+    final String UNSUBSCRIBE = "UNSUBSCRIBE";
+    final String MESSAGE = "MESSAGE";
 
-    final AsciiBuffer BEGIN_TRANSACTION = ascii("BEGIN");
-    final AsciiBuffer COMMIT_TRANSACTION = ascii("COMMIT");
-    final AsciiBuffer ABORT_TRANSACTION = ascii("ABORT");
-    final AsciiBuffer BEGIN = ascii("BEGIN");
-    final AsciiBuffer COMMIT = ascii("COMMIT");
-    final AsciiBuffer ABORT = ascii("ABORT");
-    final AsciiBuffer ACK = ascii("ACK");
+    final String BEGIN_TRANSACTION = "BEGIN";
+    final String COMMIT_TRANSACTION = "COMMIT";
+    final String ABORT_TRANSACTION = "ABORT";
+    final String BEGIN = "BEGIN";
+    final String COMMIT = "COMMIT";
+    final String ABORT = "ABORT";
+    final String ACK = "ACK";
 
     // Responses
-    final AsciiBuffer CONNECTED = ascii("CONNECTED");
-    final AsciiBuffer ERROR = ascii("ERROR");
-    final AsciiBuffer RECEIPT = ascii("RECEIPT");
+    final String CONNECTED = "CONNECTED";
+    final String ERROR = "ERROR";
+    final String RECEIPT = "RECEIPT";
 
     // Headers
-    final AsciiBuffer RECEIPT_REQUESTED = ascii("receipt");
-    final AsciiBuffer TRANSACTION = ascii("transaction");
-    final AsciiBuffer CONTENT_LENGTH = ascii("content-length");
-    final AsciiBuffer CONTENT_TYPE = ascii("content-type");
-    final AsciiBuffer TRANSFORMATION = ascii("transformation");
-    final AsciiBuffer TRANSFORMATION_ERROR = ascii("transformation-error");
+    final String RECEIPT_REQUESTED = "receipt";
+    final String TRANSACTION = "transaction";
+    final String CONTENT_LENGTH = "content-length";
+    final String CONTENT_TYPE = "content-type";
+    final String TRANSFORMATION = "transformation";
+    final String TRANSFORMATION_ERROR = "transformation-error";
 
     /**
      * This header is used to instruct ActiveMQ to construct the message
      * based with a specific type.
      */
-    final AsciiBuffer AMQ_MESSAGE_TYPE = ascii("amq-msg-type");
-    final AsciiBuffer RECEIPT_ID = ascii("receipt-id");
-    final AsciiBuffer PERSISTENT = ascii("persistent");
-    final AsciiBuffer MESSAGE_HEADER = ascii("message");
-    final AsciiBuffer MESSAGE_ID = ascii("message-id");
-    final AsciiBuffer CORRELATION_ID = ascii("correlation-id");
-    final AsciiBuffer EXPIRATION_TIME = ascii("expires");
-    final AsciiBuffer REPLY_TO = ascii("reply-to");
-    final AsciiBuffer PRIORITY = ascii("priority");
-    final AsciiBuffer REDELIVERED = ascii("redelivered");
-    final AsciiBuffer TIMESTAMP = ascii("timestamp");
-    final AsciiBuffer TYPE = ascii("type");
-    final AsciiBuffer SUBSCRIPTION = ascii("subscription");
-    final AsciiBuffer USERID = ascii("JMSXUserID");
-    final AsciiBuffer PROPERTIES = ascii("JMSXProperties");
-    final AsciiBuffer ACK_MODE = ascii("ack");
-    final AsciiBuffer ID = ascii("id");
-    final AsciiBuffer SELECTOR = ascii("selector");
-    final AsciiBuffer BROWSER = ascii("browser");
-    final AsciiBuffer AUTO = ascii("auto");
-    final AsciiBuffer CLIENT = ascii("client");
-    final AsciiBuffer INDIVIDUAL = ascii("client-individual");
-    final AsciiBuffer DESTINATION = ascii("destination");
-    final AsciiBuffer LOGIN = ascii("login");
-    final AsciiBuffer PASSCODE = ascii("passcode");
-    final AsciiBuffer CLIENT_ID = ascii("client-id");
-    final AsciiBuffer REQUEST_ID = ascii("request-id");
-    final AsciiBuffer SESSION = ascii("session");
-    final AsciiBuffer RESPONSE_ID = ascii("response-id");
-    final AsciiBuffer ACCEPT_VERSION = ascii("accept-version");
-    final AsciiBuffer V1_2 = ascii("1.2");
-    final AsciiBuffer V1_1 = ascii("1.1");
-    final AsciiBuffer V1_0 = ascii("1.0");
-    final AsciiBuffer HOST = ascii("host");
-    final AsciiBuffer TRUE = ascii("true");
-    final AsciiBuffer FALSE = ascii("false");
-    final AsciiBuffer END = ascii("end");
-    final AsciiBuffer HOST_ID = ascii("host-id");
-    final AsciiBuffer SERVER = ascii("server");
-    final AsciiBuffer CREDIT = ascii("credit");
-    final AsciiBuffer JMSX_DELIVERY_COUNT = ascii("JMSXDeliveryCount");
+    final String AMQ_MESSAGE_TYPE = "amq-msg-type";
+    final String RECEIPT_ID = "receipt-id";
+    final String PERSISTENT = "persistent";
+    final String MESSAGE_HEADER = "message";
+    final String MESSAGE_ID = "message-id";
+    final String CORRELATION_ID = "correlation-id";
+    final String EXPIRATION_TIME = "expires";
+    final String REPLY_TO = "reply-to";
+    final String PRIORITY = "priority";
+    final String REDELIVERED = "redelivered";
+    final String TIMESTAMP = "timestamp";
+    final String TYPE = "type";
+    final String SUBSCRIPTION = "subscription";
+    final String USERID = "JMSXUserID";
+    final String PROPERTIES = "JMSXProperties";
+    final String ACK_MODE = "ack";
+    final String ID = "id";
+    final String SELECTOR = "selector";
+    final String BROWSER = "browser";
+    final String AUTO = "auto";
+    final String CLIENT = "client";
+    final String INDIVIDUAL = "client-individual";
+    final String DESTINATION = "destination";
+    final String LOGIN = "login";
+    final String PASSCODE = "passcode";
+    final String CLIENT_ID = "client-id";
+    final String REQUEST_ID = "request-id";
+    final String SESSION = "session";
+    final String RESPONSE_ID = "response-id";
+    final String ACCEPT_VERSION = "accept-version";
+    final String V1_2 = "1.2";
+    final String V1_1 = "1.1";
+    final String V1_0 = "1.0";
+    final String HOST = "host";
+    final String TRUE = "true";
+    final String FALSE = "false";
+    final String END = "end";
+    final String HOST_ID = "host-id";
+    final String SERVER = "server";
+    final String CREDIT = "credit";
+    final String JMSX_DELIVERY_COUNT = "JMSXDeliveryCount";
 }
