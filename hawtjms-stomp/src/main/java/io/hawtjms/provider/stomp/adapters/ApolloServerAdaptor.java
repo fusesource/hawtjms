@@ -25,12 +25,13 @@ import static io.hawtjms.provider.stomp.StompConstants.TRUE;
 import static io.hawtjms.provider.stomp.StompConstants.UNSUBSCRIBE;
 import io.hawtjms.provider.stomp.StompFrame;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 import javax.jms.JMSException;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
+
+import org.fusesource.hawtbuf.Buffer;
 
 /**
  * Apollo Broker server adapter for STOMP.
@@ -44,10 +45,10 @@ public class ApolloServerAdaptor extends GenericStompServerAdaptor {
 
     @Override
     public StompFrame createCreditFrame(StompFrame messageFrame) {
-        final ByteBuffer content = messageFrame.getContent();
+        final Buffer content = messageFrame.getContent();
         String credit = "1";
         if (content != null) {
-            credit += "," + content.limit();
+            credit += "," + content.length();
         }
 
         StompFrame frame = new StompFrame();

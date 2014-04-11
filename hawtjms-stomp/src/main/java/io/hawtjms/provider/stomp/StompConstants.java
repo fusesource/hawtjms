@@ -16,10 +16,15 @@
  */
 package io.hawtjms.provider.stomp;
 
+import java.nio.charset.Charset;
+
 /**
  * A series of constant values used by the STOMP protocol.
  */
 public interface StompConstants {
+
+    final Charset UTF8 = Charset.forName("UTF-8");
+
     final String NULL = "\u0000";
     final byte NULL_BYTE = 0;
 

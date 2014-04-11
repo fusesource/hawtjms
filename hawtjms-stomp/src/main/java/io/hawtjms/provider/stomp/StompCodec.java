@@ -17,17 +17,28 @@
 package io.hawtjms.provider.stomp;
 
 import static io.hawtjms.provider.stomp.StompConstants.COLON_BYTE;
+import static io.hawtjms.provider.stomp.StompConstants.COLON_ESCAPE_SEQ;
 import static io.hawtjms.provider.stomp.StompConstants.ESCAPE_BYTE;
+import static io.hawtjms.provider.stomp.StompConstants.ESCAPE_ESCAPE_SEQ;
 import static io.hawtjms.provider.stomp.StompConstants.NEWLINE_BYTE;
 import static io.hawtjms.provider.stomp.StompConstants.NULL_BYTE;
+import static io.hawtjms.provider.stomp.StompConstants.UTF8;
+import static io.hawtjms.provider.stomp.StompConstants.V1_0;
 
+import java.io.DataOutput;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.fusesource.hawtbuf.AsciiBuffer;
+import org.fusesource.hawtbuf.Buffer;
+import org.fusesource.hawtbuf.BufferOutputStream;
+import org.fusesource.hawtbuf.ByteArrayOutputStream;
+import org.fusesource.hawtbuf.DataByteArrayOutputStream;
 
 /**
  * Codec class used to handle incoming byte packets from the broker and
@@ -56,8 +67,6 @@ public class StompCodec {
         }
     }
 
-    private static final Charset UTF8 = Charset.forName("UTF-8");
-
     private final int maxCommandLength = 20;
     private int maxHeaderLength = 10 * 1024;
     private int maxHeaders = 10000;
@@ -65,6 +74,7 @@ public class StompCodec {
 
     private FrameParser currentParser;
     private long lastReadTime = System.currentTimeMillis();
+    private String version = V1_0;
 
     /*
      * Scratch buffer used for header and content decoding.  If the sent
@@ -117,7 +127,15 @@ public class StompCodec {
      * @throws IOException if an error occurs while encoding the StompFrame.
      */
     public ByteBuffer encode(StompFrame frame) throws IOException {
-        return null;
+        DataByteArrayOutputStream dataOut = new DataByteArrayOutputStream();
+
+        try {
+            write(dataOut, frame);
+        } finally {
+            dataOut.close();
+        }
+
+        return dataOut.toBuffer().toByteBuffer();
     }
 
     //--------- STOMP Frame decode methods -----------------------------------//
@@ -148,7 +166,9 @@ public class StompCodec {
                 // Once we hit the true end of line and have read Command data we can
                 // move onto the next stage, header parsing.
                 if (scratch.position() != 0) {
-                    StompFrame frame = new StompFrame(new String(scratch.array(), 0, scratch.position(), UTF8));
+                    scratch.flip();
+                    AsciiBuffer command = new Buffer(scratch).trim().ascii();
+                    StompFrame frame = new StompFrame(command.toString());
                     currentParser = initiateHeaderRead(frame);
                     return currentParser.parse(data);
                 }
@@ -181,6 +201,7 @@ public class StompCodec {
                     if (nextByte != '\n') {
                         try {
                             headerLine.put(nextByte);
+                            continue;
                         } catch (BufferOverflowException e) {
                             headerLine = tryIncrease(headerLine, headerLine.limit() * 2, getMaxHeaderLength(), "Max size of header exceeded");
                         }
@@ -189,10 +210,12 @@ public class StompCodec {
                     // Either we've hit the end of the line and have a header to parse
                     // or we've read our second newline and the body starts next.
                     if (headerLine.position() != 0) {
+                        headerLine.flip();
                         HeaderEntry entry = parseHeaderLine(headerLine);
                         if (entry.key.equals(StompConstants.CONTENT_LENGTH)) {
                             contentLengthValue[0] = entry.value;
                         }
+                        headerLine.clear();
                         headers.add(entry);
                         if (headers.size() > getMaxHeaders()) {
                             throw new IOException("Maximum number of headers exceeded.");
@@ -213,8 +236,10 @@ public class StompCodec {
                             }
 
                             currentParser = intitBytesMessageRead(frame,length);
+                            return currentParser.parse(data);
                         } else {
                             currentParser = initTextMessageRead(frame);
+                            return currentParser.parse(data);
                         }
                     }
                 }
@@ -302,15 +327,17 @@ public class StompCodec {
         return newBuffer;
     }
 
-    private void applyContent(StompFrame frame, ByteBuffer content) {
+    private void applyContent(StompFrame frame, ByteBuffer content) throws IOException {
         content.flip();
         if (content == scratch) {
-            ByteBuffer copy = ByteBuffer.allocate(content.limit());
-            copy.put(scratch);
-            copy.flip();
+            Buffer copy = new Buffer(content.limit());
+            BufferOutputStream loader = copy.out();
+            while (content.hasRemaining()) {
+                loader.write(content.get());
+            }
             frame.setContent(copy);
         } else {
-            frame.setContent(content);
+            frame.setContent(new Buffer(content));
         }
     }
 
@@ -326,7 +353,7 @@ public class StompCodec {
             name.put(nextByte);
         }
 
-        String key = new String(name.array(), 0, name.position());
+        String key = new String(name.array(), 0, name.position(), UTF8);
         String value = decodeHeader(headerLine);
 
         return new HeaderEntry(key, value);
@@ -378,8 +405,71 @@ public class StompCodec {
 
     //--------- STOMP Frame encode methods -----------------------------------//
 
+    public void write(DataOutput out, StompFrame frame) throws IOException {
+        write(out, new AsciiBuffer(frame.getCommand()));
+        out.writeByte(NEWLINE_BYTE);
+
+        for (Map.Entry<String, String> entry : frame.getProperties().entrySet()) {
+            write(out, encodeHeader(entry.getKey()));
+            out.writeByte(COLON_BYTE);
+            write(out, encodeHeader(entry.getValue()));
+            out.writeByte(NEWLINE_BYTE);
+        }
+
+        // denotes end of headers with a new line
+        out.writeByte(NEWLINE_BYTE);
+        write(out, frame.getContent());
+        out.writeByte(NULL_BYTE);
+        out.writeByte(NEWLINE_BYTE);
+    }
+
+    private void write(DataOutput out, Buffer buffer) throws IOException {
+        out.write(buffer.data, buffer.offset, buffer.length);
+    }
+
+    public static Buffer encodeHeader(String value) throws IOException {
+        if (value == null) {
+            return null;
+        }
+
+        ByteArrayOutputStream out = null;
+        try {
+            byte[] data = value.getBytes(UTF8);
+            out = new ByteArrayOutputStream(data.length);
+            for (byte d : data) {
+                switch (d) {
+                    case ESCAPE_BYTE:
+                        out.write(ESCAPE_ESCAPE_SEQ.getBytes(UTF8));
+                        break;
+                    case COLON_BYTE:
+                        out.write(COLON_ESCAPE_SEQ.getBytes(UTF8));
+                        break;
+                    case NEWLINE_BYTE:
+                        out.write(COLON_ESCAPE_SEQ.getBytes(UTF8));
+                        break;
+                    default:
+                        out.write(d);
+                }
+            }
+            return out.toBuffer().utf8();
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // not expected.
+        } finally {
+            if (out != null) {
+                out.close();
+            }
+        }
+    }
 
     //---------- Property Getters and Setters --------------------------------//
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
 
     public long getLastReadTime() {
         return lastReadTime;
