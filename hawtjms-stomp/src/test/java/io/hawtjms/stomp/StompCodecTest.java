@@ -17,6 +17,7 @@
 package io.hawtjms.stomp;
 
 import static io.hawtjms.provider.stomp.StompConstants.CONNECTED;
+import static io.hawtjms.provider.stomp.StompConstants.DISCONNECT;
 import static io.hawtjms.provider.stomp.StompConstants.MESSAGE;
 import static io.hawtjms.provider.stomp.StompConstants.V1_0;
 import static io.hawtjms.provider.stomp.StompConstants.V1_1;
@@ -105,6 +106,20 @@ public class StompCodecTest {
         assertNotNull(encoded);
         assertTrue(encoded.position() == 0);
         assertTrue(encoded.limit() > 0);
+    }
+
+    @Test
+    public void testCommandOnlyFrameEncodeAndDecode() throws IOException {
+        StompFrame frame = new StompFrame(DISCONNECT);
+
+        ByteBuffer encoded = codec.encode(frame);
+        assertNotNull(encoded);
+        assertTrue(encoded.position() == 0);
+        assertTrue(encoded.limit() > 0);
+
+        frame = codec.decode(encoded);
+        assertNotNull(frame);
+        assertEquals(DISCONNECT, frame.getCommand());
     }
 
     @Test

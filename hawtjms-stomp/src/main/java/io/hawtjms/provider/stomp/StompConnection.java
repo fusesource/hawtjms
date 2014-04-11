@@ -16,6 +16,15 @@
  */
 package io.hawtjms.provider.stomp;
 
+import static io.hawtjms.provider.stomp.StompConstants.ACCEPT_VERSION;
+import static io.hawtjms.provider.stomp.StompConstants.CLIENT_ID;
+import static io.hawtjms.provider.stomp.StompConstants.CONNECTED;
+import static io.hawtjms.provider.stomp.StompConstants.ERROR;
+import static io.hawtjms.provider.stomp.StompConstants.HEARTBEAT;
+import static io.hawtjms.provider.stomp.StompConstants.HOST;
+import static io.hawtjms.provider.stomp.StompConstants.LOGIN;
+import static io.hawtjms.provider.stomp.StompConstants.PASSCODE;
+import static io.hawtjms.provider.stomp.StompConstants.STOMP;
 import io.hawtjms.jms.meta.JmsConnectionId;
 import io.hawtjms.jms.meta.JmsConnectionInfo;
 import io.hawtjms.jms.meta.JmsSessionId;
@@ -50,6 +59,7 @@ public class StompConnection {
 
     private AsyncResult<Void> pendingConnect;
     private final boolean connected = false;
+    private final StompProvider provider;
 
     /**
      * Create a new instance of the StompConnection.
@@ -57,8 +67,9 @@ public class StompConnection {
      * @param connectionInfo
      *        The connection information used to create this StompConnection.
      */
-    public StompConnection(JmsConnectionInfo connectionInfo) {
+    public StompConnection(StompProvider provider, JmsConnectionInfo connectionInfo) {
         this.connectionInfo = connectionInfo;
+        this.provider = provider;
     }
 
     /**
@@ -81,7 +92,21 @@ public class StompConnection {
 
         this.pendingConnect = request;
 
-        return null;
+        StompFrame connect = new StompFrame(STOMP);
+        connect.setProperty(ACCEPT_VERSION, DEFAULT_ACCEPT_VERSIONS);
+        if (connectionInfo.getUsername() != null && connectionInfo.getUsername().isEmpty()) {
+            connect.setProperty(LOGIN, connectionInfo.getUsername());
+        }
+        if (connectionInfo.getPassword() != null && connectionInfo.getPassword().isEmpty()) {
+            connect.setProperty(PASSCODE, connectionInfo.getPassword());
+        }
+        if (!connectionInfo.isOmitHost()) {
+            connect.setProperty(HOST, provider.getRemoteURI().getHost());
+        }
+        connect.setProperty(CLIENT_ID, connectionInfo.getClientId());
+        connect.setProperty(HEARTBEAT, "0,0");  // TODO - Implement Heart Beat support.
+
+        return connect;
     }
 
     /**
@@ -118,6 +143,20 @@ public class StompConnection {
      */
     public void processFrame(StompFrame frame) throws JMSException, IOException {
 
+        if (pendingConnect != null && frame.getCommand().equals(ERROR)) {
+            LOG.info("Connection attempt failed: {}", frame.getErrorMessage());
+            pendingConnect.onFailure(new JMSException(frame.getErrorMessage()));
+        }
+
+        if (frame.getCommand().equals(CONNECTED)) {
+            if (this.pendingConnect == null) {
+                provider.fireProviderException(new IOException("Unexpected CONNECTED frame received."));
+            }
+
+            LOG.debug("Received new CONNCETED frame from Broker: {}", frame);
+            // TODO - Parse out connected data values.
+            this.pendingConnect.onSuccess();
+        }
     }
 
     /**

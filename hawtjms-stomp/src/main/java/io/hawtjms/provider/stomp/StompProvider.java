@@ -16,6 +16,7 @@
  */
 package io.hawtjms.provider.stomp;
 
+import static io.hawtjms.provider.stomp.StompConstants.DISCONNECT;
 import io.hawtjms.jms.message.JmsDefaultMessageFactory;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
@@ -77,7 +78,9 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                 @Override
                 public void run() {
                     try {
-                        // TODO
+                        // TODO - We should wait, but for now lets just do it async.
+                        StompFrame disconnect = new StompFrame(DISCONNECT);
+                        transport.send(codec.encode(disconnect));
                     } catch (Exception e) {
                         LOG.debug("Caught exception while closing proton connection");
                     } finally {
@@ -131,8 +134,10 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                         public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
                             closeTimeout = connectionInfo.getCloseTimeout();
 
-                            connection = new StompConnection(connectionInfo);
+                            connection = new StompConnection(StompProvider.this, connectionInfo);
                             StompFrame connectFrame = connection.connect(request);
+                            ByteBuffer connect = codec.encode(connectFrame);
+                            transport.send(connect);
                         }
                     });
 
@@ -149,8 +154,37 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
     }
 
     @Override
-    public void destroy(final JmsResource resourceId, final AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
-        // TODO Auto-generated method stub
+    public void destroy(final JmsResource resource, final AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    resource.visit(new JmsDefaultResourceVisitor() {
+
+                        @Override
+                        public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
+                            // TODO - Instruct connection to close out the session
+                            request.onSuccess();
+                        }
+
+                        @Override
+                        public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
+                            // TODO - Instruct Connection to close.
+                            // TODO - If we send the disconnect frame here we need to wait for a timeout
+                            //        period an cancel since broker might close socket early.
+                            //        probably better not to do that here.
+                            request.onSuccess();
+                        }
+                    });
+
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
     }
 
     @Override

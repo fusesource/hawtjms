@@ -41,6 +41,7 @@ public interface StompConstants {
     final String NEWLINE_ESCAPE_SEQ = "\\n";
 
     // Commands
+    final String STOMP = "STOMP";
     final String CONNECT = "CONNECT";
     final String SEND = "SEND";
     final String DISCONNECT = "DISCONNECT";
@@ -114,4 +115,5 @@ public interface StompConstants {
     final String SERVER = "server";
     final String CREDIT = "credit";
     final String JMSX_DELIVERY_COUNT = "JMSXDeliveryCount";
+    final String HEARTBEAT = "heart-beat";
 }
