@@ -295,7 +295,7 @@ public class StompCodec {
                     if (nextByte != NULL_BYTE) {
                         try {
                             content.put(nextByte);
-                            if (content.position() > getMaxCommandLength()) {
+                            if (content.position() > getMaxContentSize()) {
                                 throw new IOException("Content size exceeds maximum allowed size.");
                             }
                         } catch (BufferOverflowException e) {
