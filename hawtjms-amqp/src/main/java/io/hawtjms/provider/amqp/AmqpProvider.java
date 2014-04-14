@@ -356,7 +356,7 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
                     AmqpSession amqpSession = connection.getSession(sessionId);
                     amqpSession.acknowledge();
                     pumpToProtonTransport();
-                    request.onSuccess(null);
+                    request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -387,7 +387,7 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
                     consumer.acknowledge(envelope, ackType);
 
                     pumpToProtonTransport();
-                    request.onSuccess(null);
+                    request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
