@@ -444,8 +444,8 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
                     checkClosed();
                     AmqpSession session = connection.getSession(sessionId);
                     session.recover();
-                    request.onSuccess();
                     pumpToProtonTransport();
+                    request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
