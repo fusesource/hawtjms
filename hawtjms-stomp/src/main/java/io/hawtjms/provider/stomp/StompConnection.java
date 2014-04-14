@@ -99,10 +99,10 @@ public class StompConnection {
 
         StompFrame connect = new StompFrame(STOMP);
         connect.setProperty(ACCEPT_VERSION, DEFAULT_ACCEPT_VERSIONS);
-        if (connectionInfo.getUsername() != null && connectionInfo.getUsername().isEmpty()) {
+        if (connectionInfo.getUsername() != null && !connectionInfo.getUsername().isEmpty()) {
             connect.setProperty(LOGIN, connectionInfo.getUsername());
         }
-        if (connectionInfo.getPassword() != null && connectionInfo.getPassword().isEmpty()) {
+        if (connectionInfo.getPassword() != null && !connectionInfo.getPassword().isEmpty()) {
             connect.setProperty(PASSCODE, connectionInfo.getPassword());
         }
         if (!connectionInfo.isOmitHost()) {

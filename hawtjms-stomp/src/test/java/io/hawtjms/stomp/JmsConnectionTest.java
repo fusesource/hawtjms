@@ -31,7 +31,6 @@ import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.Session;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -101,7 +100,6 @@ public class JmsConnectionTest extends StompTestSupport {
         connection.close();
     }
 
-    @Ignore
     @Test(timeout=30000, expected = JMSSecurityException.class)
     public void testCreateConnectionAsUnknwonUser() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerStompConnectionURI());
@@ -113,7 +111,6 @@ public class JmsConnectionTest extends StompTestSupport {
         connection.close();
     }
 
-    @Ignore
     @Test(timeout=30000, expected = JMSSecurityException.class)
     public void testCreateConnectionCallUnknwonUser() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerStompConnectionURI());
