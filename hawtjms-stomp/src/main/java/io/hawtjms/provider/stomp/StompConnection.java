@@ -27,6 +27,7 @@ import static io.hawtjms.provider.stomp.StompConstants.JMS_SECURITY_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.LOGIN;
 import static io.hawtjms.provider.stomp.StompConstants.PASSCODE;
 import static io.hawtjms.provider.stomp.StompConstants.SECURITY_EXCEPTION;
+import static io.hawtjms.provider.stomp.StompConstants.SESSION;
 import static io.hawtjms.provider.stomp.StompConstants.STOMP;
 import io.hawtjms.jms.meta.JmsConnectionId;
 import io.hawtjms.jms.meta.JmsConnectionInfo;
@@ -65,6 +66,9 @@ public class StompConnection {
     private AsyncResult<Void> pendingConnect;
     private final boolean connected = false;
     private final StompProvider provider;
+    private String remoteSessionId;
+    private String version;
+    private String remoteServerId;
 
     /**
      * Create a new instance of the StompConnection.
@@ -147,7 +151,12 @@ public class StompConnection {
      * @throws IOException if an error occurs while handling the new StompFrame.
      */
     public void processFrame(StompFrame frame) throws JMSException, IOException {
+        if (pendingConnect != null) {
+            processConnect(frame);
+        }
+    }
 
+    private void processConnect(StompFrame frame) throws JMSException, IOException {
         if (pendingConnect != null && frame.getCommand().equals(ERROR)) {
             LOG.info("Connection attempt failed: {}", frame.getErrorMessage());
             pendingConnect.onFailure(exceptionFromErrorFrame(frame));
@@ -159,8 +168,16 @@ public class StompConnection {
             }
 
             LOG.debug("Received new CONNCETED frame from Broker: {}", frame);
-            // TODO - Parse out connected data values.
+
+            String sessionId = frame.getProperty(SESSION);
+            if (sessionId != null) {
+                LOG.debug("Broker assigned this connection an id: {}", sessionId);
+                remoteSessionId = sessionId;
+            }
+
             this.pendingConnect.onSuccess();
+        } else {
+            throw new IOException("Received Unexpected frame during connect: " + frame.getCommand());
         }
     }
 
@@ -189,6 +206,27 @@ public class StompConnection {
      */
     public boolean isConnected() {
         return connected;
+    }
+
+    /**
+     * @return the remote session Id that the remote peer assigned this connection.
+     */
+    public String getRemoteSessionId() {
+        return this.remoteSessionId;
+    }
+
+    /**
+     * @return the version string returned by the remote peer.
+     */
+    public String getVersion() {
+        return this.version;
+    }
+
+    /**
+     * @return the server string returned by the remote peer.
+     */
+    public String getRemoteServerId() {
+        return this.remoteServerId;
     }
 
     protected void checkConnected() throws IOException {
