@@ -19,27 +19,21 @@ package io.hawtjms.jms;
 import static org.junit.Assert.assertNotNull;
 import io.hawtjms.test.support.AmqpTestSupport;
 
-import javax.jms.Connection;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 
 /**
  * Test basic Session functionality.
  */
 public class JmsSessionTest extends AmqpTestSupport {
 
-    @Rule public TestName name = new TestName();
-
     @Test(timeout = 60000)
     public void testCreateSession() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
@@ -47,13 +41,11 @@ public class JmsSessionTest extends AmqpTestSupport {
         assertNotNull(session);
 
         session.close();
-        connection.close();
     }
 
     @Test(timeout=30000)
     public void testSessionCreateProducer() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
@@ -63,13 +55,11 @@ public class JmsSessionTest extends AmqpTestSupport {
 
         producer.close();
         session.close();
-        connection.close();
     }
 
     @Test(timeout=30000)
     public void testSessionCreateConsumer() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
@@ -79,16 +69,14 @@ public class JmsSessionTest extends AmqpTestSupport {
 
         consumer.close();
         session.close();
-        connection.close();
     }
 
     @Test(timeout=30000)
     public void testSessionDoubleCloseWithoutException() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         session.close();
         session.close();
-        connection.close();
     }
 }
