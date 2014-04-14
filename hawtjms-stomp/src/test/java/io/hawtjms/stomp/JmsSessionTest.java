@@ -43,7 +43,6 @@ public class JmsSessionTest extends StompTestSupport {
         session.close();
     }
 
-    @Ignore
     @Test(timeout=30000)
     public void testSessionCreateProducer() throws Exception {
         connection = createStompConnection();

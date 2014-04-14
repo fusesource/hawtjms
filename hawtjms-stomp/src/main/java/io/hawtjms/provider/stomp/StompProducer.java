@@ -29,9 +29,28 @@ public class StompProducer {
     private final JmsProducerInfo producerInfo;
     private final StompSession session;
 
+    /**
+     * Creates a new StompProducer instance with the given parent session and
+     * configures the producer using the provided JmsProducerInfo.
+     *
+     * @param session
+     *        this producers parent session instance.
+     * @param producerInfo
+     *        the producer information that defines this producer.
+     */
     public StompProducer(StompSession session, JmsProducerInfo producerInfo) {
         this.session = session;
         this.producerInfo = producerInfo;
+
+        this.producerInfo.getProducerId().setProviderHint(this);
+    }
+
+    /**
+     * Removes this producer from its parent session.  Since the producer objects are
+     * simply logical mappings there's nothing else that needs to be done here.
+     */
+    public void close() {
+        session.removeProducer(getProducerId());
     }
 
     public JmsProducerId getProducerId() {

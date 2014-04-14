@@ -29,9 +29,20 @@ public class StompConsumer {
     private final JmsConsumerInfo consumerInfo;
     private final StompSession session;
 
+    /**
+     * Create a new STOMP Consumer that maps a STOMP subscription to a JMS Framework
+     * MessageConsumer.
+     *
+     * @param session
+     *        the session that acts as this consumer's parent.
+     * @param consumerInfo
+     *        the information object that defines this consumer instance.
+     */
     public StompConsumer(StompSession session, JmsConsumerInfo consumerInfo) {
         this.consumerInfo = consumerInfo;
         this.session = session;
+
+        this.consumerInfo.getConsumerId().setProviderHint(this);
     }
 
     public JmsConsumerId getConsumerId() {

@@ -22,6 +22,7 @@ import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
 import io.hawtjms.jms.meta.JmsConnectionInfo;
 import io.hawtjms.jms.meta.JmsDefaultResourceVisitor;
+import io.hawtjms.jms.meta.JmsProducerInfo;
 import io.hawtjms.jms.meta.JmsResource;
 import io.hawtjms.jms.meta.JmsSessionId;
 import io.hawtjms.jms.meta.JmsSessionInfo;
@@ -125,6 +126,13 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                     resource.visit(new JmsDefaultResourceVisitor() {
 
                         @Override
+                        public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
+                            StompSession session = connection.getSession(producerInfo.getParentId());
+                            session.createProducer(producerInfo);
+                            request.onSuccess();
+                        }
+
+                        @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
                             connection.createSession(sessionInfo);
                             request.onSuccess();
@@ -165,8 +173,19 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                     resource.visit(new JmsDefaultResourceVisitor() {
 
                         @Override
+                        public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
+                            StompSession session = connection.getSession(producerInfo.getParentId());
+                            StompProducer producer = session.getProducer(producerInfo.getProducerId());
+                            producer.close();
+                            request.onSuccess();
+                        }
+
+                        @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
-                            // TODO - Instruct connection to close out the session
+                            StompSession session = connection.getSession(sessionInfo.getSessionId());
+                            session.close(request);
+
+                            // TODO - Remove once the close is fully implemented.
                             request.onSuccess();
                         }
 

@@ -62,13 +62,17 @@ public class StompConnection {
 
     private final Map<JmsSessionId, StompSession> sessions = new HashMap<JmsSessionId, StompSession>();
     private final JmsConnectionInfo connectionInfo;
+    private final StompProvider provider;
 
     private AsyncResult<Void> pendingConnect;
-    private final boolean connected = false;
-    private final StompProvider provider;
+    private boolean connected;
     private String remoteSessionId;
     private String version;
     private String remoteServerId;
+    private String queuePrefix;
+    private String topicPrefix;
+    private String tempQueuePrefix;
+    private String tempTopicPrefix;
 
     /**
      * Create a new instance of the StompConnection.
@@ -79,6 +83,8 @@ public class StompConnection {
     public StompConnection(StompProvider provider, JmsConnectionInfo connectionInfo) {
         this.connectionInfo = connectionInfo;
         this.provider = provider;
+
+        connectionInfo.getConnectionId().setProviderHint(this);
     }
 
     /**
@@ -175,6 +181,7 @@ public class StompConnection {
                 remoteSessionId = sessionId;
             }
 
+            this.connected = true;
             this.pendingConnect.onSuccess();
         } else {
             throw new IOException("Received Unexpected frame during connect: " + frame.getCommand());
@@ -227,6 +234,50 @@ public class StompConnection {
      */
     public String getRemoteServerId() {
         return this.remoteServerId;
+    }
+
+    public String getUsername() {
+        return connectionInfo.getUsername();
+    }
+
+    public String getPassword() {
+        return connectionInfo.getPassword();
+    }
+
+    public StompProvider getProvider() {
+        return this.provider;
+    }
+
+    public String getQueuePrefix() {
+        return queuePrefix;
+    }
+
+    public void setQueuePrefix(String queuePrefix) {
+        this.queuePrefix = queuePrefix;
+    }
+
+    public String getTopicPrefix() {
+        return topicPrefix;
+    }
+
+    public void setTopicPrefix(String topicPrefix) {
+        this.topicPrefix = topicPrefix;
+    }
+
+    public String getTempQueuePrefix() {
+        return tempQueuePrefix;
+    }
+
+    public void setTempQueuePrefix(String tempQueuePrefix) {
+        this.tempQueuePrefix = tempQueuePrefix;
+    }
+
+    public String getTempTopicPrefix() {
+        return tempTopicPrefix;
+    }
+
+    public void setTempTopicPrefix(String tempTopicPrefix) {
+        this.tempTopicPrefix = tempTopicPrefix;
     }
 
     protected void checkConnected() throws IOException {
