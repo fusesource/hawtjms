@@ -16,9 +16,13 @@
  */
 package io.hawtjms.provider.stomp;
 
+import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
 import io.hawtjms.jms.meta.JmsProducerId;
 import io.hawtjms.jms.meta.JmsProducerInfo;
 import io.hawtjms.jms.meta.JmsSessionId;
+import io.hawtjms.provider.AsyncResult;
+
+import java.io.IOException;
 
 /**
  * Producer class that wraps the details of message send operations over
@@ -48,9 +52,25 @@ public class StompProducer {
     /**
      * Removes this producer from its parent session.  Since the producer objects are
      * simply logical mappings there's nothing else that needs to be done here.
+     *
+     * @param request
+     *        the asynchronous request instance awaiting completion of this action.
      */
-    public void close() {
+    public void close(AsyncResult<Void> request) {
         session.removeProducer(getProducerId());
+        request.onSuccess();
+    }
+
+    /**
+     * Sends the given message to the indicated STOMP destination.
+     *
+     * @param envelope
+     *        the envelope that contains the delivery information.
+     * @param request
+     *        the asynchronous request that will await the completed send operation.
+     */
+    public void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException {
+
     }
 
     public JmsProducerId getProducerId() {

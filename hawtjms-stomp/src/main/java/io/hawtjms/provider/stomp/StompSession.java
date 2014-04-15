@@ -61,13 +61,13 @@ public class StompSession {
      *
      * @param producerInfo
      *        the information object describing the producer and its configuration.
-     *
-     * @return a newly created StompProducer instance.
+     * @param request
+     *        the asynchronous request that is waiting for this action to complete.
      */
-    public StompProducer createProducer(JmsProducerInfo producerInfo) {
+    public void createProducer(JmsProducerInfo producerInfo, AsyncResult<Void> request) {
         StompProducer producer = new StompProducer(this, producerInfo);
         producers.put(producerInfo.getProducerId(), producer);
-        return producer;
+        request.onSuccess();
     }
 
     /**
@@ -86,11 +86,16 @@ public class StompSession {
      *
      * @param consumerInfo
      *        the information object describing the consumer and its configuration.
+     * @param request
+     *        the asynchronous request that is waiting for this action to complete.
      *
      * @return a newly created StompConsumer instance.
      */
-    public StompConsumer createConsumer(JmsConsumerInfo consumerInfo) {
-        return null;
+    public void createConsumer(JmsConsumerInfo consumerInfo, AsyncResult<Void> request) {
+        StompConsumer consumer = new StompConsumer(this, consumerInfo);
+        consumers.put(consumerInfo.getConsumerId(), consumer);
+        request.onSuccess();
+        // TODO - Send subscribe frame.
     }
 
     /**
@@ -103,11 +108,53 @@ public class StompSession {
         consumers.remove(consumerId);
     }
 
+    /**
+     * For all consumers in this session force an acknowledge of all unacknowledged messages.
+     */
+    public void acknowledge() {
+        // TODO Auto-generated method stub
+    }
+
+    /**
+     *
+     */
+    public void recover() {
+        // TODO Auto-generated method stub
+    }
+
+    /**
+     * @param request
+     */
+    public void rollback(AsyncResult<Void> request) {
+        // TODO Auto-generated method stub
+    }
+
+    /**
+     * @param request
+     */
+    public void commit(AsyncResult<Void> request) {
+        // TODO Auto-generated method stub
+    }
+
+    public StompProducer getProducer(JmsProducerInfo producerInfo) {
+        return getProducer(producerInfo.getProducerId());
+    }
+
     public StompProducer getProducer(JmsProducerId producerId) {
+        if (producerId.getProviderHint() instanceof StompProducer) {
+            return (StompProducer) producerId.getProviderHint();
+        }
         return this.producers.get(producerId);
     }
 
+    public StompConsumer getConsumer(JmsConsumerInfo consumerInfo) {
+        return getConsumer(consumerInfo.getConsumerId());
+    }
+
     public StompConsumer getConsumer(JmsConsumerId consumerId) {
+        if (consumerId.getProviderHint() instanceof StompConsumer) {
+            return (StompConsumer) consumerId.getProviderHint();
+        }
         return this.consumers.get(consumerId);
     }
 }

@@ -16,9 +16,14 @@
  */
 package io.hawtjms.provider.stomp;
 
+import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.meta.JmsConsumerId;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
 import io.hawtjms.jms.meta.JmsSessionId;
+import io.hawtjms.provider.AsyncResult;
+import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
+
+import java.io.IOException;
 
 /**
  * STOMP Consumer class used to manage the subscription process for
@@ -28,6 +33,7 @@ public class StompConsumer {
 
     private final JmsConsumerInfo consumerInfo;
     private final StompSession session;
+    private boolean started;
 
     /**
      * Create a new STOMP Consumer that maps a STOMP subscription to a JMS Framework
@@ -45,6 +51,40 @@ public class StompConsumer {
         this.consumerInfo.getConsumerId().setProviderHint(this);
     }
 
+    /**
+     * Places the consumer in the started state.  Messages delivered prior to a consumer being
+     * started should be held and only dispatched after start.
+     */
+    public void start() {
+        this.started = true;
+    }
+
+    /**
+     * Close the consumer by sending an UNSUBSCRIBE command to the remote peer and then
+     * removing the consumer from the session's state information.
+     * @param request
+     */
+    public void close(AsyncResult<Void> request) throws IOException {
+        session.removeConsumer(getConsumerId());
+        // TODO - send STOMP UNSUBSCRIBE and register to receive the response.
+        request.onSuccess();
+    }
+
+    /**
+     * Acknowledge the message that was delivered in the given envelope based on the
+     * given acknowledgment type.
+     *
+     * @param envelope
+     *        the envelope that contains the delivery information for the message.
+     * @param ackType
+     *        the type of acknowledge operation that should be performed.
+     * @param request
+     *        the asynchronous request awaiting completion of this operation.
+     */
+    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult<Void> request) {
+        // TODO Auto-generated method stub
+    }
+
     public JmsConsumerId getConsumerId() {
         return this.consumerInfo.getConsumerId();
     }
@@ -55,5 +95,9 @@ public class StompConsumer {
 
     public StompSession getSession() {
         return this.session;
+    }
+
+    public boolean isStarted() {
+        return started;
     }
 }

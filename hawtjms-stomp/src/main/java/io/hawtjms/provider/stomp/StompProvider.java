@@ -17,15 +17,20 @@
 package io.hawtjms.provider.stomp;
 
 import static io.hawtjms.provider.stomp.StompConstants.DISCONNECT;
+import io.hawtjms.jms.JmsDestination;
 import io.hawtjms.jms.message.JmsDefaultMessageFactory;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
 import io.hawtjms.jms.meta.JmsConnectionInfo;
+import io.hawtjms.jms.meta.JmsConsumerId;
+import io.hawtjms.jms.meta.JmsConsumerInfo;
 import io.hawtjms.jms.meta.JmsDefaultResourceVisitor;
+import io.hawtjms.jms.meta.JmsProducerId;
 import io.hawtjms.jms.meta.JmsProducerInfo;
 import io.hawtjms.jms.meta.JmsResource;
 import io.hawtjms.jms.meta.JmsSessionId;
 import io.hawtjms.jms.meta.JmsSessionInfo;
+import io.hawtjms.jms.meta.JmsTransactionInfo;
 import io.hawtjms.provider.AbstractAsyncProvider;
 import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
@@ -126,16 +131,20 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                     resource.visit(new JmsDefaultResourceVisitor() {
 
                         @Override
+                        public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
+                            StompSession session = connection.getSession(consumerInfo.getParentId());
+                            session.createConsumer(consumerInfo, request);
+                        }
+
+                        @Override
                         public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
                             StompSession session = connection.getSession(producerInfo.getParentId());
-                            session.createProducer(producerInfo);
-                            request.onSuccess();
+                            session.createProducer(producerInfo, request);
                         }
 
                         @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
-                            connection.createSession(sessionInfo);
-                            request.onSuccess();
+                            connection.createSession(sessionInfo, request);
                         }
 
                         @Override
@@ -143,9 +152,17 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                             closeTimeout = connectionInfo.getCloseTimeout();
 
                             connection = new StompConnection(StompProvider.this, connectionInfo);
-                            StompFrame connectFrame = connection.connect(request);
-                            ByteBuffer connect = codec.encode(connectFrame);
-                            transport.send(connect);
+                            connection.connect(request);
+                        }
+
+                        @Override
+                        public void processDestination(JmsDestination destination) throws Exception {
+                            request.onFailure(new JMSException("Not implemented"));
+                        }
+
+                        @Override
+                        public void processTransactionInfo(JmsTransactionInfo transactionInfo) throws Exception {
+                            request.onFailure(new JMSException("Not implemented"));
                         }
                     });
 
@@ -158,7 +175,28 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
 
     @Override
     public void start(final JmsResource resource, final AsyncResult<Void> request) throws IOException {
-        // TODO Auto-generated method stub
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    resource.visit(new JmsDefaultResourceVisitor() {
+
+                        @Override
+                        public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
+                            StompSession session = connection.getSession(consumerInfo.getParentId());
+                            StompConsumer consumer = session.getConsumer(consumerInfo.getConsumerId());
+                            consumer.start();
+                            request.onSuccess();
+                        }
+                    });
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
     }
 
     @Override
@@ -173,11 +211,17 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                     resource.visit(new JmsDefaultResourceVisitor() {
 
                         @Override
+                        public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
+                            StompSession session = connection.getSession(consumerInfo.getParentId());
+                            StompConsumer consumer = session.getConsumer(consumerInfo.getConsumerId());
+                            consumer.close(request);
+                        }
+
+                        @Override
                         public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
                             StompSession session = connection.getSession(producerInfo.getParentId());
                             StompProducer producer = session.getProducer(producerInfo.getProducerId());
-                            producer.close();
-                            request.onSuccess();
+                            producer.close(request);
                         }
 
                         @Override
@@ -197,6 +241,16 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                             //        probably better not to do that here.
                             request.onSuccess();
                         }
+
+                        @Override
+                        public void processDestination(JmsDestination destination) throws Exception {
+                            request.onFailure(new JMSException("Not implemented"));
+                        }
+
+                        @Override
+                        public void processTransactionInfo(JmsTransactionInfo transactionInfo) throws Exception {
+                            request.onFailure(new JMSException("Not implemented"));
+                        }
                     });
 
                 } catch (Exception error) {
@@ -208,37 +262,132 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
 
     @Override
     public void send(final JmsOutboundMessageDispatch envelope, final AsyncResult<Void> request) throws IOException, JMSException {
-        // TODO Auto-generated method stub
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    JmsProducerId producerId = envelope.getProducerId();
+                    StompProducer producer = connection.getProducer(producerId);
+                    producer.send(envelope, request);
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
     }
 
     @Override
     public void acknowledge(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException {
-        // TODO Auto-generated method stub
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    StompSession amqpSession = connection.getSession(sessionId);
+                    amqpSession.acknowledge();
+                    request.onSuccess();
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
     }
 
     @Override
     public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, final AsyncResult<Void> request) throws IOException {
-        // TODO Auto-generated method stub
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    JmsConsumerId consumerId = envelope.getConsumerId();
+                    StompConsumer consumer = connection.getConsumer(consumerId);
+                    consumer.acknowledge(envelope, ackType, request);
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
     }
 
     @Override
     public void commit(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
-        // TODO Auto-generated method stub
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    StompSession session = connection.getSession(sessionId);
+                    session.commit(request);
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
     }
 
     @Override
     public void rollback(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
-        // TODO Auto-generated method stub
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    StompSession session = connection.getSession(sessionId);
+                    session.rollback(request);
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
     }
 
     @Override
     public void recover(final JmsSessionId sessionId, final AsyncResult<Void> request) throws IOException, UnsupportedOperationException {
-        // TODO Auto-generated method stub
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    StompSession session = connection.getSession(sessionId);
+                    session.recover();
+                    request.onSuccess();
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
     }
 
     @Override
     public void unsubscribe(final String subscription, final AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
-        // TODO Auto-generated method stub
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    // TODO - Can we do this with STOMP with just this info?
+                    request.onSuccess();
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
     }
 
     /**
@@ -252,6 +401,20 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
      */
     protected Transport createTransport(URI remoteLocation) {
         return new TcpTransport(this, remoteLocation);
+    }
+
+    /**
+     * Encodes and sends the given STOMP frame using the provider's Transport.
+     * This method must be called from an job running on the serializer thread.
+     *
+     * @param frame
+     *        the STOMP frame instance to send.
+     *
+     * @throws IOException if an error occurs while encoding or sending the frame.
+     */
+    protected void send(StompFrame frame) throws IOException {
+        ByteBuffer connect = codec.encode(frame);
+        transport.send(connect);
     }
 
     @Override

@@ -24,7 +24,6 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -56,7 +55,6 @@ public class JmsSessionTest extends StompTestSupport {
         session.close();
     }
 
-    @Ignore
     @Test(timeout=30000)
     public void testSessionCreateConsumer() throws Exception {
         connection = createStompConnection();

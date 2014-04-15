@@ -31,6 +31,8 @@ import static io.hawtjms.provider.stomp.StompConstants.SESSION;
 import static io.hawtjms.provider.stomp.StompConstants.STOMP;
 import io.hawtjms.jms.meta.JmsConnectionId;
 import io.hawtjms.jms.meta.JmsConnectionInfo;
+import io.hawtjms.jms.meta.JmsConsumerId;
+import io.hawtjms.jms.meta.JmsProducerId;
 import io.hawtjms.jms.meta.JmsSessionId;
 import io.hawtjms.jms.meta.JmsSessionInfo;
 import io.hawtjms.provider.AsyncResult;
@@ -96,11 +98,9 @@ public class StompConnection {
      * @param request
      *        the async request object that awaits the connection complete step.
      *
-     * @returns a new StompFrame containing the configured CONNECT command.
-     *
      * @throws IOException if a connection attempt is in-progress or already connected.
      */
-    public StompFrame connect(AsyncResult<Void> request) throws IOException {
+    public void connect(AsyncResult<Void> request) throws IOException {
         if (connected || pendingConnect != null) {
             throw new IOException("The connection is already established");
         }
@@ -121,7 +121,7 @@ public class StompConnection {
         connect.setProperty(CLIENT_ID, connectionInfo.getClientId());
         connect.setProperty(HEARTBEAT, "0,0");  // TODO - Implement Heart Beat support.
 
-        return connect;
+        provider.send(connect);
     }
 
     /**
@@ -131,19 +131,19 @@ public class StompConnection {
      *
      * @param sessionInfo
      *        the session information used to create the session instance.
-     *
-     * @return a new StompSession instance.
+     * @param request
+     *        the asynchronous request that is waiting for this action to complete.
      *
      * @throws IOException if a session with the same Id value already exists.
      */
-    public StompSession createSession(JmsSessionInfo sessionInfo) throws IOException {
+    public void createSession(JmsSessionInfo sessionInfo, AsyncResult<Void> request) throws IOException {
         if (this.sessions.containsKey(sessionInfo.getSessionId())) {
             throw new IOException("A Session with the given ID already exists.");
         }
 
         StompSession session = new StompSession(sessionInfo);
         sessions.put(sessionInfo.getSessionId(), session);
-        return session;
+        request.onSuccess();
     }
 
     /**
@@ -206,6 +206,48 @@ public class StompConnection {
      */
     public StompSession getSession(JmsSessionId sessionId) {
         return this.sessions.get(sessionId);
+    }
+
+    /**
+     * Search for the StompProducer with the given Id in this Connection's open
+     * resources.
+     *
+     * @param producerId
+     *        the Id of the StompProducer to lookup.
+     *
+     * @return the producer with the given Id or null if no such producer exists.
+     */
+    public StompProducer getProducer(JmsProducerId producerId) {
+        StompProducer producer = null;
+        if (producerId.getProviderHint() instanceof StompProducer) {
+            producer = (StompProducer) producerId.getProviderHint();
+        } else {
+            StompSession session = getSession(producerId.getParentId());
+            producer = session.getProducer(producerId);
+        }
+
+        return producer;
+    }
+
+    /**
+     * Search for the StompConsumer with the given Id in this Connection's open
+     * resources.
+     *
+     * @param consumerId
+     *        the Id of the StompConsumer to lookup.
+     *
+     * @return the consumer with the given Id or null if no such consumer exists.
+     */
+    public StompConsumer getConsumer(JmsConsumerId consumerId) {
+        StompConsumer consumer = null;
+        if (consumerId.getProviderHint() instanceof StompConsumer) {
+            consumer = (StompConsumer) consumerId.getProviderHint();
+        } else {
+            StompSession session = getSession(consumerId.getParentId());
+            consumer = session.getConsumer(consumerId);
+        }
+
+        return consumer;
     }
 
     /**
