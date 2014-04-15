@@ -116,6 +116,7 @@ public interface StompConstants {
     final String CREDIT = "credit";
     final String JMSX_DELIVERY_COUNT = "JMSXDeliveryCount";
     final String HEARTBEAT = "heart-beat";
+    final String VERSION = "version";
 
     /**
      * Well known JMSException types that we want to map when throwing from

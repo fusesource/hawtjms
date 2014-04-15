@@ -30,6 +30,7 @@ import static io.hawtjms.provider.stomp.StompConstants.SECURITY_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.SERVER;
 import static io.hawtjms.provider.stomp.StompConstants.SESSION;
 import static io.hawtjms.provider.stomp.StompConstants.STOMP;
+import static io.hawtjms.provider.stomp.StompConstants.VERSION;
 import io.hawtjms.jms.meta.JmsConnectionId;
 import io.hawtjms.jms.meta.JmsConnectionInfo;
 import io.hawtjms.jms.meta.JmsConsumerId;
@@ -193,6 +194,11 @@ public class StompConnection {
                 serverAdapter = new GenericStompServerAdaptor();
             }
 
+            version = frame.getProperty(VERSION);
+            if (version == null || !DEFAULT_ACCEPT_VERSIONS.contains(version)) {
+                throw new IOException("Cannot connect to remote peer, version not supported: " + version);
+            }
+
             LOG.info("Using STOMP server adapter: {}", serverAdapter.getServerName());
 
             this.connected = true;
@@ -335,6 +341,8 @@ public class StompConnection {
     public void setTempTopicPrefix(String tempTopicPrefix) {
         this.tempTopicPrefix = tempTopicPrefix;
     }
+
+    //---------- Internal utilities ------------------------------------------//
 
     protected void checkConnected() throws IOException {
         if (!connected) {
