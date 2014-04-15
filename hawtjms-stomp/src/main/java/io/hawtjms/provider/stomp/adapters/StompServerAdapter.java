@@ -31,17 +31,6 @@ import javax.jms.TemporaryTopic;
  */
 public interface StompServerAdapter {
 
-    /**
-     * Returns whether the server name given in the STOMP CONNECTED frame match this
-     * ServerAdapter instance.
-     *
-     * @param server
-     *        the name of the server that we have connected to.
-     *
-     * @return true if this server matches.
-     */
-    public abstract boolean matchesServerAndVersion(String server);
-
     public abstract boolean isTemporaryQueue(String value) throws JMSException;
 
     public abstract boolean isTemporaryTopic(String value) throws JMSException;

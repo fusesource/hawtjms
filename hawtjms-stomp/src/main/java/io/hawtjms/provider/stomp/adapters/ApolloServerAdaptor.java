@@ -38,9 +38,8 @@ import org.fusesource.hawtbuf.Buffer;
  */
 public class ApolloServerAdaptor extends GenericStompServerAdaptor {
 
-    @Override
-    public boolean matchesServerAndVersion(String server) {
-        return server != null && server.startsWith("apache-apollo/");
+    public ApolloServerAdaptor(String version) {
+        super(version);
     }
 
     @Override

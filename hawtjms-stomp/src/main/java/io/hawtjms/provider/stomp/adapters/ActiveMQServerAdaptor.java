@@ -31,9 +31,14 @@ public class ActiveMQServerAdaptor extends GenericStompServerAdaptor {
     private static final String SUBSCRIPTION_NAME = "activemq.subscriptionName";
     private static final String NO_LOCAL = "activemq.noLocal";
 
-    @Override
-    public boolean matchesServerAndVersion(String server) {
-        return server != null && server.startsWith("ActiveMQ/");
+    /**
+     * Creates a new ActiveMQ Server Adapter instance.
+     *
+     * @param version
+     *        the version of ActiveMQ that we've connected to.
+     */
+    public ActiveMQServerAdaptor(String version) {
+        super(version);
     }
 
     @Override

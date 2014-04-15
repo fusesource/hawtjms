@@ -32,18 +32,14 @@ import javax.jms.TemporaryTopic;
  */
 public class GenericStompServerAdaptor implements StompServerAdapter {
 
-    /**
-     * Returns whether the server name given in the STOMP CONNECTED frame match this
-     * ServerAdapter instance.
-     *
-     * @param server
-     *        the name of the server that we have connected to.
-     *
-     * @return true if this server matches.
-     */
-    @Override
-    public boolean matchesServerAndVersion(String server) {
-        return true;
+    private final String version;
+
+    public GenericStompServerAdaptor() {
+        this.version = "Unknown";
+    }
+
+    public GenericStompServerAdaptor(String version) {
+        this.version = version;
     }
 
     @Override
@@ -93,5 +89,9 @@ public class GenericStompServerAdaptor implements StompServerAdapter {
         frame.setCommand(UNSUBSCRIBE);
         frame.getProperties().put(ID, consumerId);
         return frame;
+    }
+
+    public String getVersion() {
+        return this.version;
     }
 }
