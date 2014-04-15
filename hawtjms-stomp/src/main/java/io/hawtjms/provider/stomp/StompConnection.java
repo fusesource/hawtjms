@@ -26,6 +26,9 @@ import static io.hawtjms.provider.stomp.StompConstants.INVALID_CLIENTID_EXCEPTIO
 import static io.hawtjms.provider.stomp.StompConstants.JMS_SECURITY_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.LOGIN;
 import static io.hawtjms.provider.stomp.StompConstants.PASSCODE;
+import static io.hawtjms.provider.stomp.StompConstants.RECEIPT;
+import static io.hawtjms.provider.stomp.StompConstants.RECEIPT_ID;
+import static io.hawtjms.provider.stomp.StompConstants.RECEIPT_REQUESTED;
 import static io.hawtjms.provider.stomp.StompConstants.SECURITY_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.SERVER;
 import static io.hawtjms.provider.stomp.StompConstants.SESSION;
@@ -68,12 +71,14 @@ public class StompConnection {
     private static final String DEFAULT_ACCEPT_VERSIONS = "1.1,1.2";
 
     private final Map<JmsSessionId, StompSession> sessions = new HashMap<JmsSessionId, StompSession>();
+    private final Map<String, AsyncResult<Void>> requests = new HashMap<String, AsyncResult<Void>>();
     private final JmsConnectionInfo connectionInfo;
     private final StompProvider provider;
 
     private StompServerAdapter serverAdapter;
     private AsyncResult<Void> pendingConnect;
     private boolean connected;
+    private long requestCounter;
     private String remoteSessionId;
     private String version;
     private String remoteServerId;
@@ -165,6 +170,13 @@ public class StompConnection {
     public void processFrame(StompFrame frame) throws JMSException, IOException {
         if (pendingConnect != null) {
             processConnect(frame);
+            return;
+        }
+
+        if (frame.getCommand().equals(RECEIPT)) {
+            processReceipt(frame);
+        } else if (frame.getCommand().equals(ERROR)) {
+            processError(frame);
         }
     }
 
@@ -206,6 +218,52 @@ public class StompConnection {
         } else {
             throw new IOException("Received Unexpected frame during connect: " + frame.getCommand());
         }
+    }
+
+    /**
+     * Handle incoming RECEIPT frames from the broker by triggering the onSuccess callback
+     * for the associated AsyncResult instance awaiting an answer.
+     *
+     * @param receiptFrame
+     *        the receipt frame to process.
+     */
+    public void processReceipt(StompFrame receiptFrame) {
+
+        String receipt = receiptFrame.getProperty(RECEIPT_ID);
+        if (receipt == null || receipt.isEmpty()) {
+            provider.fireProviderException(new IOException("Invalid Receipt frame received."));
+        }
+
+        AsyncResult<Void> request = requests.remove(receipt);
+        if (request == null) {
+            LOG.warn("received receipt for unknown request: " + receipt);
+        }
+
+        request.onSuccess();
+    }
+
+    /**
+     * Handle STOMP ERROR frames by first checking for a pending request that
+     * matches the optional receipt Id in the ERROR frame and if that doesn't
+     * happen then fire an exception to the provider listener.
+     *
+     * @param errorFrame
+     *        the ERROR frame to process.
+     */
+    public void processError(StompFrame errorFrame) {
+
+        JMSException error = exceptionFromErrorFrame(errorFrame);
+        String receipt = errorFrame.getProperty(RECEIPT_ID);
+
+        if (receipt != null && !receipt.isEmpty()) {
+            AsyncResult<Void> request = requests.remove(receipt);
+            if (request != null) {
+                request.onFailure(error);
+                return;
+            }
+        }
+
+        provider.fireProviderException(error);
     }
 
     /**
@@ -269,6 +327,77 @@ public class StompConnection {
 
         return consumer;
     }
+
+    /**
+     * Sends the given STOMP frame without adding any additional properties or requesting
+     * a RECEIPT message for the frame.
+     *
+     * @param frame
+     *        the frame to send.
+     *
+     * @throws IOException if an error occurs while sending the frame.
+     */
+    public void send(StompFrame frame) throws IOException {
+        provider.send(frame);
+    }
+
+    /**
+     * Sends a StompFrame with supplied receipt Id which will result in the server
+     * sending a RECEIPT frame back once the request has been successfully processed,
+     * or an ERROR frame with the receipt Id set as a header if the request fails.
+     *
+     * @param frame
+     *        the frame to send as a request.
+     * @param request
+     *        the AsyncResult to signal once the request operation is completed.
+     *
+     * @throws IOException if an error occurs while sending the request frame.
+     */
+    public void request(StompFrame frame, AsyncResult<Void> request) throws IOException {
+        String receiptId = String.valueOf(getNextRequestId());
+        frame.setProperty(RECEIPT_REQUESTED, receiptId);
+        requests.put(receiptId, request);
+
+        provider.send(frame);
+    }
+
+    /**
+     * AsnycResult class used to handle STOMP RECEIPT frames which complete
+     * some STOMP operation.  Other STOMP classes can extend this to implement
+     * custom logic on completion of the asynchronous operation they initiated.
+     *
+     * @param <T>
+     */
+    protected class ReceiptHandler implements AsyncResult<Void> {
+
+        private final AsyncResult<Void> pending;
+
+        public ReceiptHandler(AsyncResult<Void> pending) {
+            this.pending = pending;
+        }
+
+        @Override
+        public boolean isComplete() {
+            return pending.isComplete();
+        }
+
+        @Override
+        public void onFailure(Throwable result) {
+            pending.onFailure(result);
+        }
+
+        @Override
+        public void onSuccess(Void result) {
+            pending.onSuccess(result);
+        }
+
+        @Override
+        public void onSuccess() {
+            onSuccess(null);
+        }
+    }
+
+    //----------- Property Getters and Setters -------------------------------//
 
     /**
      * @return true if this StompConnection is fully connected.
@@ -343,6 +472,10 @@ public class StompConnection {
     }
 
     //---------- Internal utilities ------------------------------------------//
+
+    protected long getNextRequestId() {
+        return requestCounter++;
+    }
 
     protected void checkConnected() throws IOException {
         if (!connected) {
