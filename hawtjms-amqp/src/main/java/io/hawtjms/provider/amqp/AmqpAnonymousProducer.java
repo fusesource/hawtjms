@@ -136,6 +136,11 @@ public class AmqpAnonymousProducer extends AmqpProducer {
         }
 
         @Override
+        public boolean isComplete() {
+            return sendResult.isComplete();
+        }
+
+        @Override
         public void onSuccess() {
             onSuccess(null);
         }

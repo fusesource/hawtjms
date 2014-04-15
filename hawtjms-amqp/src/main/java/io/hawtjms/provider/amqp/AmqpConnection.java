@@ -120,6 +120,11 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
             connectionSession.open(new AsyncResult<Void>() {
 
                 @Override
+                public boolean isComplete() {
+                    return connected;
+                }
+
+                @Override
                 public void onSuccess(Void result) {
                     LOG.debug("AMQP Connection Session opened: {}", result);
                     opened();

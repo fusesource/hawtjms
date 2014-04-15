@@ -45,4 +45,12 @@ public interface AsyncResult<T> {
      */
     void onSuccess();
 
+    /**
+     * Returns true if the AsyncResult has completed.  The task is considered complete
+     * regardless if it succeeded or failed.
+     *
+     * @return returns true if the asynchronous operation has completed.
+     */
+    boolean isComplete();
+
 }

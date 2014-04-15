@@ -41,6 +41,11 @@ public class ProviderRequest<T> implements AsyncResult<T> {
     }
 
     @Override
+    public boolean isComplete() {
+        return latch.getCount() == 0;
+    }
+
+    @Override
     public void onFailure(Throwable result) {
         error = result;
         latch.countDown();
