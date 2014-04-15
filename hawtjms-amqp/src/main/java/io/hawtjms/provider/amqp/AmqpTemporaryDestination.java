@@ -17,8 +17,6 @@
 package io.hawtjms.provider.amqp;
 
 import io.hawtjms.jms.JmsDestination;
-import io.hawtjms.jms.JmsTemporaryQueue;
-import io.hawtjms.jms.JmsTemporaryTopic;
 
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
@@ -88,19 +86,12 @@ public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestinatio
     public void opened() {
 
         // Once our producer is opened we can read the updated name from the target address.
-        // We must replace our info object with a correctly named JmsDestination and provide
-        // that back to the caller.
-        JmsDestination oldInfo = info;
-
+        String oldDestinationName = info.getName();
         String destinationName = this.endpoint.getRemoteTarget().getAddress();
 
-        if (info.isQueue()) {
-            this.info = new JmsTemporaryQueue(destinationName);
-        } else {
-            this.info = new JmsTemporaryTopic(destinationName);
-        }
+        this.info.setName(destinationName);
 
-        LOG.trace("Updated temp destination to: {} from: {}", info, oldInfo);
+        LOG.trace("Updated temp destination to: {} from: {}", info, oldDestinationName);
 
         super.opened();
     }
@@ -129,5 +120,10 @@ public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestinatio
 
     public JmsDestination getJmsDestination() {
         return this.info;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + " { " + info + "}";
     }
 }
