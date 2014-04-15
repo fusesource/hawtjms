@@ -16,10 +16,9 @@
  */
 package io.hawtjms.provider.stomp.adapters;
 
-import static io.hawtjms.provider.stomp.StompConstants.ID;
 import static io.hawtjms.provider.stomp.StompConstants.TRUE;
-
-import java.util.Map;
+import io.hawtjms.jms.meta.JmsConsumerInfo;
+import io.hawtjms.provider.stomp.StompFrame;
 
 import javax.jms.JMSException;
 
@@ -47,16 +46,17 @@ public class ActiveMQServerAdaptor extends GenericStompServerAdaptor {
     }
 
     @Override
-    public void addSubscribeHeaders(Map<String, String> headerMap, boolean persistent, boolean browser, boolean noLocal, int prefetch)
-        throws JMSException {
-        if (browser) {
+    public void addSubscribeHeaders(StompFrame frame, JmsConsumerInfo consumerInfo) throws JMSException {
+        if (consumerInfo.isBrowser()) {
+            // TODO - We can do this, just need to check versions.
             throw new JMSException("ActiveMQ does not support browsing over STOMP");
         }
-        if (noLocal) {
-            headerMap.put(NO_LOCAL, TRUE);
+        if (consumerInfo.isNoLocal()) {
+            frame.setProperty(NO_LOCAL, TRUE);
         }
-        if (persistent) {
-            headerMap.put(SUBSCRIPTION_NAME, headerMap.get(ID));
+        if (consumerInfo.isDurable()) {
+            // TODO - In newer broker versions we don't need to have matching sub name and id
+            frame.setProperty(SUBSCRIPTION_NAME, consumerInfo.getConsumerId().toString());
         }
     }
 }

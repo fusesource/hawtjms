@@ -16,22 +16,15 @@
  */
 package io.hawtjms.provider.stomp.adapters;
 
-import static io.hawtjms.provider.stomp.StompConstants.ACK;
 import static io.hawtjms.provider.stomp.StompConstants.BROWSER;
-import static io.hawtjms.provider.stomp.StompConstants.CREDIT;
 import static io.hawtjms.provider.stomp.StompConstants.ID;
 import static io.hawtjms.provider.stomp.StompConstants.PERSISTENT;
 import static io.hawtjms.provider.stomp.StompConstants.TRUE;
 import static io.hawtjms.provider.stomp.StompConstants.UNSUBSCRIBE;
+import io.hawtjms.jms.meta.JmsConsumerInfo;
 import io.hawtjms.provider.stomp.StompFrame;
 
-import java.util.Map;
-
 import javax.jms.JMSException;
-import javax.jms.TemporaryQueue;
-import javax.jms.TemporaryTopic;
-
-import org.fusesource.hawtbuf.Buffer;
 
 /**
  * Apollo Broker server adapter for STOMP.
@@ -49,50 +42,40 @@ public class ApolloServerAdaptor extends GenericStompServerAdaptor {
 
     @Override
     public StompFrame createCreditFrame(StompFrame messageFrame) {
-        final Buffer content = messageFrame.getContent();
-        String credit = "1";
-        if (content != null) {
-            credit += "," + content.length();
-        }
-
-        StompFrame frame = new StompFrame();
-        frame.setCommand(ACK);
-        // frame.headerMap().put(SUBSCRIPTION, consumer.id); TODO
-        frame.getProperties().put(CREDIT, credit);
-        return frame;
-    }
-
-    @Override
-    public TemporaryQueue createTemporaryQueue() throws JMSException {
+//        final Buffer content = messageFrame.getContent();
+//        String credit = "1";
+//        if (content != null) {
+//            credit += "," + content.length();
+//        }
+//
+//        StompFrame frame = new StompFrame();
+//        frame.setCommand(ACK);
+//        frame.headerMap().put(SUBSCRIPTION, consumer.id); TODO
+//        frame.getProperties().put(CREDIT, credit);
         return null;
     }
 
     @Override
-    public TemporaryTopic createTemporaryTopic() throws JMSException {
-        return null;
-    }
-
-    @Override
-    public void addSubscribeHeaders(Map<String, String> headerMap, boolean persistent, boolean browser, boolean noLocal, int prefetch) throws JMSException {
-        if (noLocal) {
+    public void addSubscribeHeaders(StompFrame frame, JmsConsumerInfo consumerInfo) throws JMSException {
+        if (consumerInfo.isNoLocal()) {
             throw new JMSException("Server does not support 'no local' semantics over STOMP");
         }
 
-        if (persistent) {
-            headerMap.put(PERSISTENT, TRUE);
+        if (consumerInfo.isDurable()) {
+            frame.setProperty(PERSISTENT, TRUE);
         }
 
-        if (browser) {
-            headerMap.put(BROWSER, TRUE);
+        if (consumerInfo.isBrowser()) {
+            frame.setProperty(BROWSER, TRUE);
         }
     }
 
     @Override
-    public StompFrame createUnsubscribeFrame(String consumerId, boolean persistent) throws JMSException {
+    public StompFrame createUnsubscribeFrame(JmsConsumerInfo consumerInfo) throws JMSException {
         StompFrame frame = new StompFrame();
         frame.setCommand(UNSUBSCRIBE);
-        frame.getProperties().put(ID, consumerId);
-        if (persistent) {
+        frame.getProperties().put(ID, consumerInfo.getConsumerId().toString());
+        if (consumerInfo.isDurable()) {
             frame.getProperties().put(PERSISTENT, TRUE);
         }
         return frame;

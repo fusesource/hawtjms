@@ -16,13 +16,10 @@
  */
 package io.hawtjms.provider.stomp.adapters;
 
+import io.hawtjms.jms.meta.JmsConsumerInfo;
 import io.hawtjms.provider.stomp.StompFrame;
 
-import java.util.Map;
-
 import javax.jms.JMSException;
-import javax.jms.TemporaryQueue;
-import javax.jms.TemporaryTopic;
 
 /**
  * The StompServerAdapter defines an interface for an adapter class that can
@@ -32,43 +29,49 @@ import javax.jms.TemporaryTopic;
 public interface StompServerAdapter {
 
     /**
-     * Given a STOMP destination name return true if the value represents a
-     * temporary Queue instance on this STOMP server.
+     * Creates a Credit frame which can be used to release additional messages from a Broker
+     * prior to a full message acknowledgment.  Not all STOMP servers support this feature
+     * so this method can return null in that case.
      *
-     * @param value
-     *        the destination name to examine.
+     * @param messageFrame
      *
-     * @return true if the destination is a temporary queue type.
-     *
-     * @throws JMSException if an error occurs while examining the destination name.
+     * @return a new credit frame if the server supports them.
      */
-    boolean isTemporaryQueue(String value) throws JMSException;
-
-    /**
-     * Given a STOMP destination name return true if the value represents a
-     * temporary Topic instance on this STOMP server.
-     *
-     * @param value
-     *        the destination name to examine.
-     *
-     * @return true if the destination is a temporary topic type.
-     *
-     * @throws JMSException if an error occurs while examining the destination name.
-     */
-    boolean isTemporaryTopic(String value) throws JMSException;
-
     StompFrame createCreditFrame(StompFrame messageFrame);
 
-    TemporaryQueue createTemporaryQueue() throws JMSException;
+    /**
+     * Before a STOMP SUBSCRIBE frame is sent to the server, this method is called to allow
+     * for server specific properties to be added to the subscription frame.
+     *
+     * @param frame
+     *        the frame containing the SUBSCRIBE command.
+     * @param consumerInfo
+     *        the consumer information for this subscription.
+     *
+     * @throws JMSException if an error occurs while configuring the subscription frame.
+     */
+    void addSubscribeHeaders(StompFrame frame, JmsConsumerInfo consumerInfo) throws JMSException;
 
-    TemporaryTopic createTemporaryTopic() throws JMSException;
+    /**
+     * Creates a proper UNSUBSCRIBE frame for the given consumer.
+     *
+     * @param consumer
+     *        the consumer that is un-subscribing.
+     *
+     * @return a new STOMP UNSUBSCRIBE frame.
+     *
+     * @throws JMSException
+     */
+    StompFrame createUnsubscribeFrame(JmsConsumerInfo consumer) throws JMSException;
 
-    void addSubscribeHeaders(Map<String, String> headerMap, boolean persistent, boolean browser, boolean noLocal, int prefetch) throws JMSException;
-
-    StompFrame createUnsubscribeFrame(String consumerId, boolean persistent) throws JMSException;
-
+    /**
+     * @return the name of the remote server this adapter supports.
+     */
     String getServerName();
 
+    /**
+     * @return the version of the server connected to, if it reported it.
+     */
     String getServerVersion();
 
 }
