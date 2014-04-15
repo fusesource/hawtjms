@@ -91,7 +91,13 @@ public class GenericStompServerAdaptor implements StompServerAdapter {
         return frame;
     }
 
-    public String getVersion() {
+    @Override
+    public String getServerVersion() {
         return this.version;
+    }
+
+    @Override
+    public String getServerName() {
+        return "Generic";
     }
 }

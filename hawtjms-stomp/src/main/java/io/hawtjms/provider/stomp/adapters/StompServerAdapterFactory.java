@@ -32,7 +32,7 @@ public abstract class StompServerAdapterFactory {
 
     private static final FactoryFinder<StompServerAdapterFactory> ADAPTER_FACTORY_FINDER =
         new FactoryFinder<StompServerAdapterFactory>(StompServerAdapterFactory.class,
-            "META-INF/services/io/hawtjms/providers/stomp-server-adapters");
+            "META-INF/services/io/hawtjms/providers/stomp-server-adapters/");
 
     /**
      * Creates a new instance of a STOMP server adapter based on the server String that
@@ -54,19 +54,18 @@ public abstract class StompServerAdapterFactory {
 
     /**
      * Static create method that performs the StompServerAdapterFactory search and handles the
-     * configuration and setup.
+     * configuration and setup.  If a specific server adapter cannot be found this method will
+     * return a generic server adapter instead of throwing an exception.
      *
      * @param server
      *        the server String returned from the CONNECTED frame.
      *
-     * @return a new BlockingProvider instance that is ready for use.
-     *
-     * @throws Exception if an error occurs while creating the BlockingProvider instance.
+     * @return a new StompServerAdapter instance that is ready for use.
      */
-    public static StompServerAdapter createBlocking(String server) throws Exception {
+    public static StompServerAdapter create(String server) {
         StompServerAdapter result = null;
 
-        String[] parts = server.split("/ ");
+        String[] parts = server.split("/");
         if (parts.length == 0) {
             result = new GenericStompServerAdaptor();
         } else {
@@ -106,6 +105,7 @@ public abstract class StompServerAdapterFactory {
             throw new IOException("No Server name specified: [" + server + "]");
         }
 
+        server = server.toLowerCase();
         StompServerAdapterFactory factory = null;
         try {
             factory = ADAPTER_FACTORY_FINDER.newInstance(server);

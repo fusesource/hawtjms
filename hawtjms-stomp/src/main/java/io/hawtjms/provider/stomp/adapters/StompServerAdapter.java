@@ -31,18 +31,22 @@ import javax.jms.TemporaryTopic;
  */
 public interface StompServerAdapter {
 
-    public abstract boolean isTemporaryQueue(String value) throws JMSException;
+    boolean isTemporaryQueue(String value) throws JMSException;
 
-    public abstract boolean isTemporaryTopic(String value) throws JMSException;
+    boolean isTemporaryTopic(String value) throws JMSException;
 
-    public abstract StompFrame createCreditFrame(StompFrame messageFrame);
+    StompFrame createCreditFrame(StompFrame messageFrame);
 
-    public abstract TemporaryQueue createTemporaryQueue() throws JMSException;
+    TemporaryQueue createTemporaryQueue() throws JMSException;
 
-    public abstract TemporaryTopic createTemporaryTopic() throws JMSException;
+    TemporaryTopic createTemporaryTopic() throws JMSException;
 
-    public abstract void addSubscribeHeaders(Map<String, String> headerMap, boolean persistent, boolean browser, boolean noLocal, int prefetch) throws JMSException;
+    void addSubscribeHeaders(Map<String, String> headerMap, boolean persistent, boolean browser, boolean noLocal, int prefetch) throws JMSException;
 
-    public abstract StompFrame createUnsubscribeFrame(String consumerId, boolean persistent) throws JMSException;
+    StompFrame createUnsubscribeFrame(String consumerId, boolean persistent) throws JMSException;
+
+    String getServerName();
+
+    String getServerVersion();
 
 }

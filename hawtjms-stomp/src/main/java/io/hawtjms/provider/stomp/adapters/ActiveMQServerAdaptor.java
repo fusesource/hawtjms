@@ -42,6 +42,11 @@ public class ActiveMQServerAdaptor extends GenericStompServerAdaptor {
     }
 
     @Override
+    public String getServerName() {
+        return "ActiveMQ";
+    }
+
+    @Override
     public void addSubscribeHeaders(Map<String, String> headerMap, boolean persistent, boolean browser, boolean noLocal, int prefetch)
         throws JMSException {
         if (browser) {

@@ -43,6 +43,11 @@ public class ApolloServerAdaptor extends GenericStompServerAdaptor {
     }
 
     @Override
+    public String getServerName() {
+        return "Apache-Apollo";
+    }
+
+    @Override
     public StompFrame createCreditFrame(StompFrame messageFrame) {
         final Buffer content = messageFrame.getContent();
         String credit = "1";

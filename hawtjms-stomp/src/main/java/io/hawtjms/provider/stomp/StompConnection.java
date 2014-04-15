@@ -27,6 +27,7 @@ import static io.hawtjms.provider.stomp.StompConstants.JMS_SECURITY_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.LOGIN;
 import static io.hawtjms.provider.stomp.StompConstants.PASSCODE;
 import static io.hawtjms.provider.stomp.StompConstants.SECURITY_EXCEPTION;
+import static io.hawtjms.provider.stomp.StompConstants.SERVER;
 import static io.hawtjms.provider.stomp.StompConstants.SESSION;
 import static io.hawtjms.provider.stomp.StompConstants.STOMP;
 import io.hawtjms.jms.meta.JmsConnectionId;
@@ -36,6 +37,9 @@ import io.hawtjms.jms.meta.JmsProducerId;
 import io.hawtjms.jms.meta.JmsSessionId;
 import io.hawtjms.jms.meta.JmsSessionInfo;
 import io.hawtjms.provider.AsyncResult;
+import io.hawtjms.provider.stomp.adapters.GenericStompServerAdaptor;
+import io.hawtjms.provider.stomp.adapters.StompServerAdapter;
+import io.hawtjms.provider.stomp.adapters.StompServerAdapterFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -66,6 +70,7 @@ public class StompConnection {
     private final JmsConnectionInfo connectionInfo;
     private final StompProvider provider;
 
+    private StompServerAdapter serverAdapter;
     private AsyncResult<Void> pendingConnect;
     private boolean connected;
     private String remoteSessionId;
@@ -180,6 +185,15 @@ public class StompConnection {
                 LOG.debug("Broker assigned this connection an id: {}", sessionId);
                 remoteSessionId = sessionId;
             }
+
+            String server = frame.getProperty(SERVER);
+            if (server != null) {
+                serverAdapter = StompServerAdapterFactory.create(server);
+            } else {
+                serverAdapter = new GenericStompServerAdaptor();
+            }
+
+            LOG.info("Using STOMP server adapter: {}", serverAdapter.getServerName());
 
             this.connected = true;
             this.pendingConnect.onSuccess();
