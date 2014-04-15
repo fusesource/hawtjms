@@ -157,7 +157,9 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
 
                         @Override
                         public void processDestination(JmsDestination destination) throws Exception {
-                            request.onFailure(new JMSException("Not implemented"));
+                            // The generated names from the JMS framework are valid so we
+                            // just use those and apply the correct prefix on send etc.
+                            request.onSuccess();
                         }
 
                         @Override
@@ -244,7 +246,7 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
 
                         @Override
                         public void processDestination(JmsDestination destination) throws Exception {
-                            request.onFailure(new JMSException("Not implemented"));
+                            request.onFailure(new JMSException("STOMP does not support destination remove."));
                         }
 
                         @Override
