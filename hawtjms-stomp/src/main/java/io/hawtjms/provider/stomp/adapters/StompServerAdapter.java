@@ -31,8 +31,30 @@ import javax.jms.TemporaryTopic;
  */
 public interface StompServerAdapter {
 
+    /**
+     * Given a STOMP destination name return true if the value represents a
+     * temporary Queue instance on this STOMP server.
+     *
+     * @param value
+     *        the destination name to examine.
+     *
+     * @return true if the destination is a temporary queue type.
+     *
+     * @throws JMSException if an error occurs while examining the destination name.
+     */
     boolean isTemporaryQueue(String value) throws JMSException;
 
+    /**
+     * Given a STOMP destination name return true if the value represents a
+     * temporary Topic instance on this STOMP server.
+     *
+     * @param value
+     *        the destination name to examine.
+     *
+     * @return true if the destination is a temporary topic type.
+     *
+     * @throws JMSException if an error occurs while examining the destination name.
+     */
     boolean isTemporaryTopic(String value) throws JMSException;
 
     StompFrame createCreditFrame(StompFrame messageFrame);

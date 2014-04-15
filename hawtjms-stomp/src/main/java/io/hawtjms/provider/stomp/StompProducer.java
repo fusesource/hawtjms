@@ -70,7 +70,7 @@ public class StompProducer {
      *        the asynchronous request that will await the completed send operation.
      */
     public void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException {
-
+        // TODO
     }
 
     public JmsProducerId getProducerId() {
