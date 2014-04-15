@@ -86,11 +86,6 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
     protected transient Map<String, Object> map = new HashMap<String, Object>();
 
     @Override
-    public JmsMsgType getMsgType() {
-        return JmsMsgType.MAP;
-    }
-
-    @Override
     public JmsMessage copy() throws JMSException {
         JmsMapMessage other = new JmsMapMessage();
         other.copy(this);

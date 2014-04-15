@@ -25,15 +25,6 @@ public class JmsTextMessage extends JmsMessage implements TextMessage {
     protected String text;
 
     @Override
-    public JmsMsgType getMsgType() {
-        if (text == null) {
-            return JmsMsgType.TEXT_NULL;
-        } else {
-            return JmsMsgType.TEXT;
-        }
-    }
-
-    @Override
     public JmsMessage copy() throws JMSException {
         JmsTextMessage other = new JmsTextMessage();
         other.copy(this);

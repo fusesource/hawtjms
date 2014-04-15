@@ -16,7 +16,6 @@
  */
 package io.hawtjms.jms.message;
 
-import static org.fusesource.hawtbuf.Buffer.ascii;
 import io.hawtjms.jms.JmsConnection;
 import io.hawtjms.jms.JmsDestination;
 import io.hawtjms.jms.exceptions.JmsExceptionSupport;
@@ -40,29 +39,10 @@ import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
-
 public class JmsMessage implements javax.jms.Message {
 
     private static final Map<String, PropertySetter> JMS_PROPERTY_SETERS =
         new HashMap<String, PropertySetter>();
-
-    public static enum JmsMsgType {
-        MESSAGE("jms/message"),
-        BYTES("jms/bytes-message"),
-        MAP("jms/map-message"),
-        OBJECT("jms/object-message"),
-        STREAM("jms/stream-message"),
-        TEXT("jms/text-message"),
-        TEXT_NULL("jms/text-message-null");
-
-        public final AsciiBuffer buffer = new AsciiBuffer(this.name());
-        public final AsciiBuffer mime;
-
-        JmsMsgType(String mime) {
-            this.mime = (ascii(mime));
-        }
-    }
 
     protected transient Callable<Void> acknowledgeCallback;
     protected transient JmsConnection connection;
@@ -78,10 +58,6 @@ public class JmsMessage implements javax.jms.Message {
         JmsMessage other = new JmsMessage();
         other.copy(this);
         return other;
-    }
-
-    public JmsMsgType getMsgType() {
-        return JmsMsgType.MESSAGE;
     }
 
     protected void copy(JmsMessage other) {

@@ -91,11 +91,6 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     protected Buffer content;
 
     @Override
-    public JmsMsgType getMsgType() {
-        return JmsMsgType.BYTES;
-    }
-
-    @Override
     public JmsMessage copy() throws JMSException {
         JmsBytesMessage other = new JmsBytesMessage();
         other.copy(this);

@@ -127,11 +127,6 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     }
 
     @Override
-    public JmsMsgType getMsgType() {
-        return JmsMsgType.STREAM;
-    }
-
-    @Override
     public JmsMessage copy() throws JMSException {
         JmsStreamMessage other = new JmsStreamMessage();
         other.copy(this);

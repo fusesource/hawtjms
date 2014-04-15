@@ -16,6 +16,7 @@
  */
 package io.hawtjms.jms.message;
 
+import static org.fusesource.hawtbuf.Buffer.ascii;
 import io.hawtjms.jms.JmsDestination;
 import io.hawtjms.jms.meta.JmsMessageId;
 import io.hawtjms.jms.meta.JmsTransactionId;
@@ -26,12 +27,31 @@ import java.util.Map;
 
 import javax.jms.JMSException;
 
+import org.fusesource.hawtbuf.AsciiBuffer;
+
 /**
  * A default implementation of the JmsMessageFaceade that provides a generic
  * message instance which can be used instead of implemented in Provider specific
  * version that maps to a Provider message object.
  */
 public class JmsDefaultMessageFacade implements JmsMessageFacade {
+
+    public static enum JmsMsgType {
+        MESSAGE("jms/message"),
+        BYTES("jms/bytes-message"),
+        MAP("jms/map-message"),
+        OBJECT("jms/object-message"),
+        STREAM("jms/stream-message"),
+        TEXT("jms/text-message"),
+        TEXT_NULL("jms/text-message-null");
+
+        public final AsciiBuffer buffer = new AsciiBuffer(this.name());
+        public final AsciiBuffer mime;
+
+        JmsMsgType(String mime) {
+            this.mime = (ascii(mime));
+        }
+    }
 
     protected Map<String, Object> properties;
 
@@ -49,6 +69,10 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     protected JmsDestination replyTo;
     protected String userId;
     protected JmsTransactionId transactionId;
+
+    public JmsMsgType getMsgType() {
+        return JmsMsgType.MESSAGE;
+    }
 
     @Override
     public JmsDefaultMessageFacade copy() {

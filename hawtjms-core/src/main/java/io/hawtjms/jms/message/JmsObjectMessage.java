@@ -64,11 +64,6 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
     protected Buffer content;
 
     @Override
-    public JmsMsgType getMsgType() {
-        return JmsMsgType.OBJECT;
-    }
-
-    @Override
     public JmsMessage copy() throws JMSException {
         JmsObjectMessage other = new JmsObjectMessage();
         other.copy(this);
