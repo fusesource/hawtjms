@@ -20,7 +20,6 @@ import io.hawtjms.jms.JmsDestination;
 import io.hawtjms.jms.exceptions.JmsExceptionSupport;
 import io.hawtjms.jms.message.JmsMessage;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -156,8 +155,8 @@ public class PropertyExpression {
                 Object userId = message.getFacade().getUserId();
                 if (userId == null) {
                     try {
-                        userId = message.getProperties().get("JMSXUserID");
-                    } catch (IOException e) {
+                        userId = message.getFacade().getProperty("JMSXUserID");
+                    } catch (Exception e) {
                     }
                 }
 
@@ -179,8 +178,8 @@ public class PropertyExpression {
             return jmsPropertyExpression.evaluate(message);
         }
         try {
-            return message.getProperties().get(name);
-        } catch (IOException ioe) {
+            return message.getFacade().getProperty(name);
+        } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
     }

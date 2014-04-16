@@ -18,7 +18,6 @@ package io.hawtjms.jms.message;
 
 import io.hawtjms.jms.JmsDestination;
 import io.hawtjms.jms.meta.JmsMessageId;
-import io.hawtjms.jms.meta.JmsTransactionId;
 
 import java.io.IOException;
 import java.util.Map;
@@ -43,10 +42,40 @@ public interface JmsMessageFacade {
     public Map<String, Object> getProperties() throws IOException;
 
     /**
+     * @returns true if the given property exists within the message.
+     *
+     * @throws IOException if an error occurs while accessing the Message properties.
+     */
+    boolean propertyExists(String key) throws IOException;
+
+    /**
+     * Returns the property stored in the message accessed via the given key/
+     *
+     * @param key
+     *        the key used to access the given property.
+     *
+     * @throws IOException if an error occurs while accessing the Message properties.
+     */
+    Object getProperty(String key) throws IOException;
+
+    /**
+     * Sets the message property value using the supplied key to identify the value
+     * that should be set or updated.
+     *
+     * @param key
+     *        the key that identifies the message property.
+     * @param value
+     *        the value that is to be stored in the message.
+     *
+     * @throws IOException if an error occurs while accessing the Message properties.
+     */
+    void setProperty(String key, Object value) throws IOException;
+
+    /**
      * Called when a message is sent to allow a Message instance to move the
      * contents from a logical data structure to a binary form for transmission.
      */
-    void storeContent() throws JMSException;
+    void onSend() throws JMSException;
 
     /**
      * Clears the contents of this Message.
@@ -63,17 +92,6 @@ public interface JmsMessageFacade {
      * contents.
      */
     JmsMessageFacade copy();
-
-    /**
-     * @return the transactionId
-     */
-    JmsTransactionId getTransactionId();
-
-    /**
-     * @param transactionId
-     *        the transactionId to set
-     */
-    void setTransactionId(JmsTransactionId transactionId);
 
     JmsMessageId getMessageId();
 

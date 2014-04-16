@@ -258,32 +258,62 @@ public class JmsMessage implements javax.jms.Message {
         facade.clearProperties();
     }
 
+    @Override
+    public boolean propertyExists(String name) throws JMSException {
+        try {
+            return (facade.propertyExists(name) || getObjectProperty(name) != null);
+        } catch (Exception e) {
+            throw JmsExceptionSupport.create(e);
+        }
+    }
+
+    /**
+     * Returns an unmodifiable Map containing the properties contained within the message.
+     *
+     * @return unmodifiable Map of the current properties in the message.
+     *
+     * @throws Exception if there is an error accessing the message properties.
+     */
     public Map<String, Object> getProperties() throws IOException {
         return Collections.unmodifiableMap(facade.getProperties());
     }
 
-    public void setProperty(String name, Object value) throws IOException {
-        facade.getProperties().put(name, value);
+    /**
+     * Allows for a direct put of an Object value into the message properties.
+     *
+     * This method bypasses the normal JMS type checking for properties being set on
+     * the message and should be used with great care.
+     *
+     * @param key
+     *        the property name to use when setting the value.
+     * @param value
+     *        the value to insert into the message properties.
+     *
+     * @throws IOException if an error occurs while accessing the Message properties.
+     */
+    public void setProperty(String key, Object value) throws IOException {
+        this.facade.setProperty(key, value);
     }
 
-    public void removeProperty(String name) throws IOException {
-        facade.getProperties().remove(name);
-    }
-
-    @Override
-    public boolean propertyExists(String name) throws JMSException {
-        try {
-            return (this.getProperties().containsKey(name) || getObjectProperty(name) != null);
-        } catch (IOException e) {
-            throw JmsExceptionSupport.create(e);
-        }
+    /**
+     * Returns the Object value referenced by the given key.
+     *
+     * @param key
+     *        the name of the property being accessed.
+     *
+     * @return the value stored at the given location or null if non set.
+     *
+     * @throws IOException if an error occurs while accessing the Message properties.
+     */
+    public Object getProperty(String key) throws IOException {
+        return this.facade.getProperty(key);
     }
 
     @SuppressWarnings("rawtypes")
     @Override
     public Enumeration getPropertyNames() throws JMSException {
         try {
-            Vector<String> result = new Vector<String>(this.getProperties().keySet());
+            Vector<String> result = new Vector<String>(facade.getProperties().keySet());
             if (getFacade().getRedeliveryCounter() != 0) {
                 result.add("JMSXDeliveryCount");
             }
@@ -463,8 +493,8 @@ public class JmsMessage implements javax.jms.Message {
             setter.set(connection, this, value);
         } else {
             try {
-                this.setProperty(name, value);
-            } catch (IOException e) {
+                facade.setProperty(name, value);
+            } catch (Exception e) {
                 throw JmsExceptionSupport.create(e);
             }
         }
@@ -661,7 +691,7 @@ public class JmsMessage implements javax.jms.Message {
     public void onSend() throws JMSException {
         setReadOnlyBody(true);
         setReadOnlyProperties(true);
-        facade.storeContent();
+        facade.onSend();
 
         // TODO - Remove once facade is complete.
         this.storeContent();

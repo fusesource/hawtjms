@@ -24,9 +24,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import io.hawtjms.jms.JmsDestination;
 import io.hawtjms.jms.JmsTopic;
-import io.hawtjms.jms.message.JmsMessage;
 
-import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Map;
 
@@ -438,15 +436,15 @@ public class JmsMessageTest {
 
         JmsMessage msg = new JmsMessage();
 
-        msg.setProperty("stringProperty", "string");
-        msg.setProperty("byteProperty", Byte.valueOf("1"));
-        msg.setProperty("shortProperty", Short.valueOf("1"));
-        msg.setProperty("intProperty", Integer.valueOf("1"));
-        msg.setProperty("longProperty", Long.valueOf("1"));
-        msg.setProperty("floatProperty", Float.valueOf("1.1f"));
-        msg.setProperty("doubleProperty", Double.valueOf("1.1"));
-        msg.setProperty("booleanProperty", Boolean.TRUE);
-        msg.setProperty("nullProperty", null);
+        msg.setStringProperty("stringProperty", "string");
+        msg.setByteProperty("byteProperty", Byte.valueOf("1"));
+        msg.setShortProperty("shortProperty", Short.valueOf("1"));
+        msg.setIntProperty("intProperty", Integer.valueOf("1"));
+        msg.setLongProperty("longProperty", Long.valueOf("1"));
+        msg.setFloatProperty("floatProperty", Float.valueOf("1.1f"));
+        msg.setDoubleProperty("doubleProperty", Double.valueOf("1.1"));
+        msg.setBooleanProperty("booleanProperty", Boolean.TRUE);
+        msg.setObjectProperty("nullProperty", null);
 
         Map<String, Object> properties = msg.getProperties();
         assertEquals(properties.get("stringProperty"), "string");
@@ -832,7 +830,7 @@ public class JmsMessageTest {
         Object obj = new Object();
         try {
             msg.setProperty(propertyName, obj);
-        } catch (IOException e) {
+        } catch (Exception e) {
         }
         try {
             msg.getStringProperty(propertyName);

@@ -19,7 +19,6 @@ package io.hawtjms.jms.message;
 import static org.fusesource.hawtbuf.Buffer.ascii;
 import io.hawtjms.jms.JmsDestination;
 import io.hawtjms.jms.meta.JmsMessageId;
-import io.hawtjms.jms.meta.JmsTransactionId;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -53,7 +52,7 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
         }
     }
 
-    protected Map<String, Object> properties;
+    protected Map<String, Object> properties = new HashMap<String, Object>();
 
     protected byte priority = javax.jms.Message.DEFAULT_PRIORITY;
     protected String groupId;
@@ -68,7 +67,6 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     protected JmsDestination destination;
     protected JmsDestination replyTo;
     protected String userId;
-    protected JmsTransactionId transactionId;
 
     public JmsMsgType getMsgType() {
         return JmsMsgType.MESSAGE;
@@ -89,7 +87,6 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
         copy.destination = this.destination;
         copy.replyTo = this.replyTo;
         copy.userId = this.userId;
-        copy.transactionId = this.transactionId;
 
         if (this.messageId != null) {
             copy.messageId = this.messageId.copy();
@@ -111,8 +108,22 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void storeContent() throws JMSException {
-        // TODO
+    public boolean propertyExists(String key) throws IOException {
+        return this.properties.containsKey(key);
+    }
+
+    @Override
+    public Object getProperty(String key) throws IOException {
+        return this.properties.get(key);
+    }
+
+    @Override
+    public void setProperty(String key, Object value) throws IOException {
+        this.properties.put(key, value);
+    }
+
+    @Override
+    public void onSend() throws JMSException {
     }
 
     @Override
@@ -122,17 +133,7 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
 
     @Override
     public void clearProperties() {
-        properties = null;
-    }
-
-    @Override
-    public JmsTransactionId getTransactionId() {
-        return this.transactionId;
-    }
-
-    @Override
-    public void setTransactionId(JmsTransactionId transactionId) {
-        this.transactionId = transactionId;
+        properties.clear();
     }
 
     @Override
