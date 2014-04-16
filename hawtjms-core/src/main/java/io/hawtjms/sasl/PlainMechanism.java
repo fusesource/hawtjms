@@ -19,7 +19,7 @@ package io.hawtjms.sasl;
 /**
  * Implements the SASL PLAIN authentication Mechanism.
  *
- * Username and Password values are sent unencrypted.
+ * User name and Password values are sent without being encrypted.
  */
 public class PlainMechanism extends AbstractMechanism {
 
