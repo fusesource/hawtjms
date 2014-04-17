@@ -16,23 +16,10 @@
  */
 package io.hawtjms.jms.message;
 
-import io.hawtjms.jms.exceptions.JmsExceptionSupport;
-import io.hawtjms.util.ClassLoadingAwareObjectInputStream;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 
 import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
-
-import org.fusesource.hawtbuf.Buffer;
 
 /**
  * An <CODE>ObjectMessage</CODE> object is used to send a message that contains a serializable
@@ -60,8 +47,7 @@ import org.fusesource.hawtbuf.Buffer;
  */
 public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
 
-    protected transient Serializable object;
-    protected Buffer content;
+    protected Serializable object;
 
     @Override
     public JmsMessage copy() throws JMSException {
@@ -71,42 +57,8 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
     }
 
     private void copy(JmsObjectMessage other) throws JMSException {
-        other.storeContent();
         super.copy(other);
-        this.object = null;
-        if (other.content != null) {
-            this.content = other.content.deepCopy();
-        } else {
-            this.content = null;
-        }
-    }
-
-    public Buffer getContent() {
-        return content;
-    }
-
-    public void setContent(Buffer content) {
-        this.content = content;
-    }
-
-    @Override
-    public void storeContent() throws JMSException {
-        Buffer buffer = getContent();
-        if (buffer == null && object != null) {
-            try {
-                ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
-                OutputStream os = bytesOut;
-                DataOutputStream dataOut = new DataOutputStream(os);
-                ObjectOutputStream objOut = new ObjectOutputStream(dataOut);
-                objOut.writeObject(object);
-                objOut.flush();
-                objOut.reset();
-                objOut.close();
-                setContent(new Buffer(bytesOut.toByteArray()));
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe.getMessage(), ioe);
-            }
-        }
+        this.object = other.object;
     }
 
     /**
@@ -124,7 +76,6 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
     public void clearBody() throws JMSException {
         super.clearBody();
         this.object = null;
-        this.content = null;
     }
 
     /**
@@ -146,8 +97,6 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
     public void setObject(Serializable newObject) throws JMSException {
         checkReadOnlyBody();
         this.object = newObject;
-        setContent(null);
-        storeContent();
     }
 
     /**
@@ -158,34 +107,11 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
      */
     @Override
     public Serializable getObject() throws JMSException {
-        Buffer buffer = getContent();
-        if (this.object == null && buffer != null) {
-            try {
-                Buffer content = getContent();
-                InputStream is = new ByteArrayInputStream(content.toByteArray());
-                DataInputStream dataIn = new DataInputStream(is);
-                ClassLoadingAwareObjectInputStream objIn = new ClassLoadingAwareObjectInputStream(dataIn);
-                try {
-                    object = (Serializable)objIn.readObject();
-                } catch (ClassNotFoundException ce) {
-                    throw JmsExceptionSupport.create("Failed to build body from content. Serializable class not available to broker. Reason: " + ce, ce);
-                } finally {
-                    objIn.close();
-                    dataIn.close();
-                }
-            } catch (IOException e) {
-                throw JmsExceptionSupport.create("Failed to build body from bytes. Reason: " + e, e);
-            }
-        }
         return this.object;
     }
 
     @Override
     public String toString() {
-        try {
-            getObject();
-        } catch (JMSException e) {
-        }
         return super.toString();
     }
 }
