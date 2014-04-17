@@ -692,18 +692,6 @@ public class JmsMessage implements javax.jms.Message {
         setReadOnlyBody(true);
         setReadOnlyProperties(true);
         facade.onSend();
-
-        // TODO - Remove once facade is complete.
-        this.storeContent();
-    }
-
-    /**
-     * serialize the payload
-     *
-     * @throws JMSException
-     */
-    public void storeContent() throws JMSException {
-        // TODO - Remove once facade is complete.
     }
 
     public JmsConnection getConnection() {

@@ -100,35 +100,38 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     private void copy(JmsBytesMessage other) throws JMSException {
         other.storeContent();
         super.copy(other);
-        if (other.content != null) {
-            this.content = other.content.deepCopy();
+        if (other.getContent() != null) {
+            this.setContent(other.getContent().deepCopy());
         } else {
-            this.content = null;
+            this.setContent(null);
         }
         this.bytesOut = null;
         this.dataIn = null;
     }
 
-    public Buffer getContent() {
+    @Override
+    public void onSend() throws JMSException {
+        super.onSend();
+        this.storeContent();
+    }
+
+    /**
+     * Returns the message's byte buffer content.
+     *
+     * @return a Buffer object containing the content of the message.
+     */
+    protected Buffer getContent() {
         return content;
     }
 
-    public void setContent(Buffer content) {
+    /**
+     * Sets the message content to the pay-load contained in the given Buffer instance.
+     *
+     * @param content
+     *        the new message content.
+     */
+    protected void setContent(Buffer content) {
         this.content = content;
-    }
-
-    @Override
-    public void storeContent() throws JMSException {
-        try {
-            if (bytesOut != null) {
-                bytesOut.close();
-                Buffer bs = bytesOut.toBuffer();
-                setContent(bs);
-                bytesOut = null;
-            }
-        } catch (IOException ioe) {
-            throw JmsExceptionSupport.create(ioe);
-        }
     }
 
     /**
@@ -798,6 +801,19 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
             }
             dataIn = new DataInputStream(new ByteArrayInputStream(buffer));
             this.length = buffer.getLength();
+        }
+    }
+
+    private void storeContent() throws JMSException {
+        try {
+            if (bytesOut != null) {
+                bytesOut.close();
+                Buffer bs = bytesOut.toBuffer();
+                setContent(bs);
+                bytesOut = null;
+            }
+        } catch (IOException ioe) {
+            throw JmsExceptionSupport.create(ioe);
         }
     }
 

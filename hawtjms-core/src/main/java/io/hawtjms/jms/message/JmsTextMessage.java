@@ -31,9 +31,9 @@ public class JmsTextMessage extends JmsMessage implements TextMessage {
         return other;
     }
 
-    private void copy(JmsTextMessage other) {
+    private void copy(JmsTextMessage other) throws JMSException {
         super.copy(other);
-        this.text = other.text;
+        this.internalSetText(other.internalGetText());
     }
 
     @Override
@@ -63,11 +63,33 @@ public class JmsTextMessage extends JmsMessage implements TextMessage {
     @Override
     public void clearBody() throws JMSException {
         super.clearBody();
-        this.text = null;
+        this.internalSetText(null);
     }
 
     @Override
     public String toString() {
-        return super.toString() + ":text=" + text;
+        return super.toString() + ":text=" + internalGetText();
+    }
+
+    /**
+     * Internal version of the setText method that will not throw even if the message
+     * is in read-only mode.  The method allows a sub-class to provide it's own set
+     * method for the text payload of the message.
+     *
+     * @param text
+     *        the new value to store in this text message.
+     */
+    protected void internalSetText(String text) {
+        this.text = text;
+    }
+
+    /**
+     * Internal version of the getText method that can be overridden by a subclass to
+     * allow for accessing the text directly from a protocols own Message type.
+     *
+     * @return the text content of the message.
+     */
+    protected String internalGetText() {
+        return this.text;
     }
 }

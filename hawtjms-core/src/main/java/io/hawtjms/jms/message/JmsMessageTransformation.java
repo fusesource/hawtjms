@@ -135,7 +135,6 @@ public final class JmsMessageTransformation {
                 ObjectMessage objMsg = (ObjectMessage) message;
                 JmsObjectMessage msg = new JmsObjectMessage();
                 msg.setObject(objMsg.getObject());
-                msg.storeContent();
                 activeMessage = msg;
             } else if (message instanceof StreamMessage) {
                 StreamMessage streamMessage = (StreamMessage) message;
