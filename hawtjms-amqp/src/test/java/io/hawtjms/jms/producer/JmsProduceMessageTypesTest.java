@@ -51,11 +51,11 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue("test.queue");
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         Message message = session.createMessage();
         producer.send(message);
-        QueueViewMBean proxy = getProxyToQueue("test.queue");
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
         connection.close();
@@ -68,15 +68,24 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
         assertNotNull(connection);
         connection.start();
 
+        String payload = "TEST";
+
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue("test.queue");
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         BytesMessage message = session.createBytesMessage();
-        message.writeUTF("TEST");
+        message.writeUTF(payload);
         producer.send(message);
-        QueueViewMBean proxy = getProxyToQueue("test.queue");
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
+
+        MessageConsumer consumer = session.createConsumer(queue);
+        Message received = consumer.receive(5000);
+        assertNotNull(received);
+        assertTrue(received instanceof BytesMessage);
+        BytesMessage bytes = (BytesMessage) received;
+        assertEquals(payload, bytes.readUTF());
 
         connection.close();
     }
@@ -90,14 +99,22 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue("test.queue");
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         MapMessage message = session.createMapMessage();
         message.setBoolean("Boolean", false);
         message.setString("STRING", "TEST");
         producer.send(message);
-        QueueViewMBean proxy = getProxyToQueue("test.queue");
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
+
+        MessageConsumer consumer = session.createConsumer(queue);
+        Message received = consumer.receive(5000);
+        assertNotNull(received);
+        assertTrue(received instanceof MapMessage);
+        MapMessage map = (MapMessage) received;
+        assertEquals("TEST", map.getString("STRING"));
+        assertEquals(false, map.getBooleanProperty("Boolean"));
 
         connection.close();
     }
@@ -138,14 +155,23 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
         assertNotNull(connection);
         connection.start();
 
+        String payload = "TEST";
+
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue("test.queue");
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         TextMessage message = session.createTextMessage("TEST");
         producer.send(message);
-        QueueViewMBean proxy = getProxyToQueue("test.queue");
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
+
+        MessageConsumer consumer = session.createConsumer(queue);
+        Message received = consumer.receive(5000);
+        assertNotNull(received);
+        assertTrue(received instanceof TextMessage);
+        TextMessage text = (TextMessage) received;
+        assertEquals(payload, text.getText());
 
         connection.close();
     }
@@ -159,11 +185,11 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue("test.queue");
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         ObjectMessage message = session.createObjectMessage("TEST");
         producer.send(message);
-        QueueViewMBean proxy = getProxyToQueue("test.queue");
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
         connection.close();
