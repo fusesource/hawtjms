@@ -33,9 +33,10 @@ import javax.jms.JMSException;
 public interface JmsMessageFacade {
 
     /**
-     * Returns the Message properties contained within this Message instance.
+     * Returns the Message properties contained within this Message instance in
+     * a new Unmodifiable Map instance.
      *
-     * @return a Map containing the properties of this Message.
+     * @return a Map containing the properties of this Message that cannot be modified.
      *
      * @throws IOException if an error occurs while accessing the Message properties.
      */
