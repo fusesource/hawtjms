@@ -116,9 +116,13 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     private int index;
     private List<Object> stream;
 
+    public JmsStreamMessage(JmsMessageFacade facade) {
+        super(facade);
+    }
+
     @Override
     public JmsMessage copy() throws JMSException {
-        JmsStreamMessage other = new JmsStreamMessage();
+        JmsStreamMessage other = new JmsStreamMessage(facade.copy());
         other.copy(this);
         return other;
     }

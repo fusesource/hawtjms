@@ -33,7 +33,6 @@ import javax.jms.Message;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
 
-import org.apache.activemq.command.ActiveMQBytesMessage;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -42,6 +41,8 @@ import org.slf4j.LoggerFactory;
 public class JmsMessageTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsMessageTest.class);
+
+    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
 
     protected boolean readOnlyMessage;
 
@@ -78,14 +79,14 @@ public class JmsMessageTest {
 
     @Test
     public void testHashCode() throws Exception {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSMessageID(this.jmsMessageID);
         assertTrue(msg.getJMSMessageID().hashCode() == jmsMessageID.hashCode());
     }
 
     @Test
     public void testSetReadOnly() {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setReadOnlyProperties(true);
         boolean test = false;
         try {
@@ -101,14 +102,14 @@ public class JmsMessageTest {
 
     @Test
     public void testSetToForeignJMSID() throws Exception {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSMessageID("ID:EMS-SERVER.8B443C380083:429");
     }
 
     @Test
     public void testEqualsObject() throws Exception {
-        JmsMessage msg1 = new JmsMessage();
-        JmsMessage msg2 = new JmsMessage();
+        JmsMessage msg1 = factory.createMessage();
+        JmsMessage msg2 = factory.createMessage();
         msg1.setJMSMessageID(this.jmsMessageID);
         assertTrue(!msg1.equals(msg2));
         msg2.setJMSMessageID(this.jmsMessageID);
@@ -117,7 +118,7 @@ public class JmsMessageTest {
 
     @Test
     public void testShallowCopy() throws Exception {
-        JmsMessage msg1 = new JmsMessage();
+        JmsMessage msg1 = factory.createMessage();
         msg1.setJMSMessageID(jmsMessageID);
         JmsMessage msg2 = msg1.copy();
         assertTrue(msg1 != msg2 && msg1.equals(msg2));
@@ -137,7 +138,7 @@ public class JmsMessageTest {
         this.jmsTimestamp = System.currentTimeMillis();
         this.readOnlyMessage = false;
 
-        JmsMessage msg1 = new JmsMessage();
+        JmsMessage msg1 = factory.createMessage();
         msg1.setJMSMessageID(this.jmsMessageID);
         msg1.setJMSCorrelationID(this.jmsCorrelationID);
         msg1.setJMSDestination(this.jmsDestination);
@@ -166,21 +167,21 @@ public class JmsMessageTest {
 
     @Test
     public void testGetAndSetJMSMessageID() throws Exception {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSMessageID(this.jmsMessageID);
         assertEquals(msg.getJMSMessageID(), this.jmsMessageID);
     }
 
     @Test
     public void testGetAndSetJMSTimestamp() {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSTimestamp(this.jmsTimestamp);
         assertTrue(msg.getJMSTimestamp() == this.jmsTimestamp);
     }
 
     @Test
     public void testGetJMSCorrelationIDAsBytes() throws Exception {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSCorrelationID(this.jmsCorrelationID);
         byte[] testbytes = msg.getJMSCorrelationIDAsBytes();
         String str2 = new String(testbytes);
@@ -189,7 +190,7 @@ public class JmsMessageTest {
 
     @Test
     public void testSetJMSCorrelationIDAsBytes() throws Exception {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         byte[] testbytes = this.jmsCorrelationID.getBytes();
         msg.setJMSCorrelationIDAsBytes(testbytes);
         testbytes = msg.getJMSCorrelationIDAsBytes();
@@ -199,56 +200,56 @@ public class JmsMessageTest {
 
     @Test
     public void testGetAndSetJMSCorrelationID() {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSCorrelationID(this.jmsCorrelationID);
         assertTrue(msg.getJMSCorrelationID().equals(this.jmsCorrelationID));
     }
 
     @Test
     public void testGetAndSetJMSReplyTo() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSReplyTo(this.jmsReplyTo);
         assertTrue(msg.getJMSReplyTo().equals(this.jmsReplyTo));
     }
 
     @Test
     public void testGetAndSetJMSDestination() throws Exception {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSDestination(this.jmsDestination);
         assertTrue(msg.getJMSDestination().equals(this.jmsDestination));
     }
 
     @Test
     public void testGetAndSetJMSDeliveryMode() {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSDeliveryMode(this.jmsDeliveryMode);
         assertTrue(msg.getJMSDeliveryMode() == this.jmsDeliveryMode);
     }
 
     @Test
     public void testGetAndSetMSRedelivered() {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSRedelivered(this.jmsRedelivered);
         assertTrue(msg.getJMSRedelivered() == this.jmsRedelivered);
     }
 
     @Test
     public void testGetAndSetJMSType() {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSType(this.jmsType);
         assertTrue(msg.getJMSType().equals(this.jmsType));
     }
 
     @Test
     public void testGetAndSetJMSExpiration() {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSExpiration(this.jmsExpiration);
         assertTrue(msg.getJMSExpiration() == this.jmsExpiration);
     }
 
     @Test
     public void testGetAndSetJMSPriority() {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSPriority(this.jmsPriority);
         assertTrue(msg.getJMSPriority() == this.jmsPriority);
 
@@ -261,7 +262,7 @@ public class JmsMessageTest {
 
     @Test
     public void testClearProperties() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setStringProperty("test", "test");
         msg.setJMSMessageID(this.jmsMessageID);
         msg.clearProperties();
@@ -271,7 +272,7 @@ public class JmsMessageTest {
 
     @Test
     public void testPropertyExists() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setStringProperty("test", "test");
         assertTrue(msg.propertyExists("test"));
 
@@ -281,7 +282,7 @@ public class JmsMessageTest {
 
     @Test
     public void testGetBooleanProperty() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String name = "booleanProperty";
         msg.setBooleanProperty(name, true);
         assertTrue(msg.getBooleanProperty(name));
@@ -289,7 +290,7 @@ public class JmsMessageTest {
 
     @Test
     public void testGetByteProperty() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String name = "byteProperty";
         msg.setByteProperty(name, (byte) 1);
         assertTrue(msg.getByteProperty(name) == 1);
@@ -297,7 +298,7 @@ public class JmsMessageTest {
 
     @Test
     public void testGetShortProperty() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String name = "shortProperty";
         msg.setShortProperty(name, (short) 1);
         assertTrue(msg.getShortProperty(name) == 1);
@@ -305,7 +306,7 @@ public class JmsMessageTest {
 
     @Test
     public void testGetIntProperty() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String name = "intProperty";
         msg.setIntProperty(name, 1);
         assertTrue(msg.getIntProperty(name) == 1);
@@ -313,7 +314,7 @@ public class JmsMessageTest {
 
     @Test
     public void testGetLongProperty() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String name = "longProperty";
         msg.setLongProperty(name, 1);
         assertTrue(msg.getLongProperty(name) == 1);
@@ -321,7 +322,7 @@ public class JmsMessageTest {
 
     @Test
     public void testGetFloatProperty() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String name = "floatProperty";
         msg.setFloatProperty(name, 1.3f);
         assertTrue(msg.getFloatProperty(name) == 1.3f);
@@ -329,7 +330,7 @@ public class JmsMessageTest {
 
     @Test
     public void testGetDoubleProperty() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String name = "doubleProperty";
         msg.setDoubleProperty(name, 1.3d);
         assertTrue(msg.getDoubleProperty(name) == 1.3);
@@ -337,7 +338,7 @@ public class JmsMessageTest {
 
     @Test
     public void testGetStringProperty() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String name = "stringProperty";
         msg.setStringProperty(name, name);
         assertTrue(msg.getStringProperty(name).equals(name));
@@ -345,7 +346,7 @@ public class JmsMessageTest {
 
     @Test
     public void testGetObjectProperty() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String name = "floatProperty";
         msg.setFloatProperty(name, 1.3f);
         assertTrue(msg.getObjectProperty(name) instanceof Float);
@@ -355,7 +356,7 @@ public class JmsMessageTest {
     @Test
     @SuppressWarnings("rawtypes")
     public void testGetPropertyNames() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String name1 = "floatProperty";
         msg.setFloatProperty(name1, 1.3f);
         String name2 = "JMSXDeliveryCount";
@@ -380,7 +381,7 @@ public class JmsMessageTest {
     @Test
     @SuppressWarnings("rawtypes")
     public void testGetAllPropertyNames() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String name1 = "floatProperty";
         msg.setFloatProperty(name1, 1.3f);
         String name2 = "JMSXDeliveryCount";
@@ -403,7 +404,7 @@ public class JmsMessageTest {
 
     @Test
     public void testSetObjectProperty() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String name = "property";
 
         try {
@@ -434,7 +435,7 @@ public class JmsMessageTest {
     @Test
     public void testConvertProperties() throws Exception {
 
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
 
         msg.setStringProperty("stringProperty", "string");
         msg.setByteProperty("byteProperty", Byte.valueOf("1"));
@@ -460,7 +461,7 @@ public class JmsMessageTest {
 
     @Test
     public void testSetNullProperty() throws JMSException {
-        Message msg = new JmsMessage();
+        Message msg = factory.createMessage();
         String name = "cheese";
         msg.setStringProperty(name, "Cheddar");
         assertEquals("Cheddar", msg.getStringProperty(name));
@@ -471,7 +472,7 @@ public class JmsMessageTest {
 
     @Test
     public void testSetNullPropertyName() throws JMSException {
-        Message msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
 
         try {
             msg.setStringProperty(null, "Cheese");
@@ -483,7 +484,7 @@ public class JmsMessageTest {
 
     @Test
     public void testSetEmptyPropertyName() throws JMSException {
-        Message msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
 
         try {
             msg.setStringProperty("", "Cheese");
@@ -495,7 +496,7 @@ public class JmsMessageTest {
 
     @Test
     public void testGetAndSetJMSXDeliveryCount() throws JMSException {
-        Message msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setIntProperty("JMSXDeliveryCount", 1);
         int count = msg.getIntProperty("JMSXDeliveryCount");
         assertTrue("expected delivery count = 1 - got: " + count, count == 1);
@@ -503,7 +504,7 @@ public class JmsMessageTest {
 
     @Test
     public void testClearBody() throws JMSException {
-        ActiveMQBytesMessage message = new ActiveMQBytesMessage();
+        JmsBytesMessage message = factory.createBytesMessage();
         message.clearBody();
         assertFalse(message.isReadOnlyBody());
         assertNull(message.getContent());
@@ -511,7 +512,7 @@ public class JmsMessageTest {
 
     @Test
     public void testBooleanPropertyConversion() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String propertyName = "property";
         msg.setBooleanProperty(propertyName, true);
 
@@ -552,7 +553,7 @@ public class JmsMessageTest {
 
     @Test
     public void testBytePropertyConversion() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String propertyName = "property";
         msg.setByteProperty(propertyName, (byte) 1);
 
@@ -581,7 +582,7 @@ public class JmsMessageTest {
 
     @Test
     public void testShortPropertyConversion() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String propertyName = "property";
         msg.setShortProperty(propertyName, (short) 1);
 
@@ -614,7 +615,7 @@ public class JmsMessageTest {
 
     @Test
     public void testIntPropertyConversion() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String propertyName = "property";
         msg.setIntProperty(propertyName, 1);
 
@@ -651,7 +652,7 @@ public class JmsMessageTest {
 
     @Test
     public void testLongPropertyConversion() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String propertyName = "property";
         msg.setLongProperty(propertyName, 1);
 
@@ -692,7 +693,7 @@ public class JmsMessageTest {
 
     @Test
     public void testFloatPropertyConversion() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String propertyName = "property";
         msg.setFloatProperty(propertyName, (float) 1.5);
         assertEquals(((Float) msg.getObjectProperty(propertyName)).floatValue(), 1.5, 0);
@@ -728,7 +729,7 @@ public class JmsMessageTest {
 
     @Test
     public void testDoublePropertyConversion() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String propertyName = "property";
         msg.setDoubleProperty(propertyName, 1.5);
         assertEquals(((Double) msg.getObjectProperty(propertyName)).doubleValue(), 1.5, 0);
@@ -768,7 +769,7 @@ public class JmsMessageTest {
 
     @Test
     public void testStringPropertyConversion() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String propertyName = "property";
         String stringValue = "true";
         msg.setStringProperty(propertyName, stringValue);
@@ -825,7 +826,7 @@ public class JmsMessageTest {
 
     @Test
     public void testObjectPropertyConversion() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String propertyName = "property";
         Object obj = new Object();
         try {
@@ -877,7 +878,7 @@ public class JmsMessageTest {
 
     @Test
     public void testReadOnlyProperties() throws JMSException {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         String propertyName = "property";
         msg.setReadOnlyProperties(true);
 
@@ -930,7 +931,7 @@ public class JmsMessageTest {
 
     @Test
     public void testIsExpired() {
-        JmsMessage msg = new JmsMessage();
+        JmsMessage msg = factory.createMessage();
         msg.setJMSExpiration(System.currentTimeMillis() - 1);
         assertTrue(msg.isExpired());
         msg.setJMSExpiration(System.currentTimeMillis() + 10000);

@@ -21,12 +21,9 @@ import io.hawtjms.jms.JmsQueue;
 import io.hawtjms.jms.JmsTemporaryQueue;
 import io.hawtjms.jms.JmsTemporaryTopic;
 import io.hawtjms.jms.JmsTopic;
-import io.hawtjms.jms.message.JmsBytesMessage;
-import io.hawtjms.jms.message.JmsMapMessage;
+import io.hawtjms.jms.message.JmsDefaultMessageFactory;
 import io.hawtjms.jms.message.JmsMessage;
-import io.hawtjms.jms.message.JmsObjectMessage;
-import io.hawtjms.jms.message.JmsStreamMessage;
-import io.hawtjms.jms.message.JmsTextMessage;
+import io.hawtjms.jms.message.JmsMessageFactory;
 
 import javax.jms.BytesMessage;
 import javax.jms.Destination;
@@ -44,39 +41,41 @@ import org.apache.qpid.proton.jms.JMSVendor;
 
 public class AmqpJMSVendor extends JMSVendor {
 
-    final public static AmqpJMSVendor INSTANCE = new AmqpJMSVendor();
+    public static final AmqpJMSVendor INSTANCE = new AmqpJMSVendor();
+
+    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
 
     private AmqpJMSVendor() {
     }
 
     @Override
     public BytesMessage createBytesMessage() {
-        return new JmsBytesMessage();
+        return factory.createBytesMessage();
     }
 
     @Override
     public StreamMessage createStreamMessage() {
-        return new JmsStreamMessage();
+        return factory.createStreamMessage();
     }
 
     @Override
     public Message createMessage() {
-        return new JmsMessage();
+        return factory.createMessage();
     }
 
     @Override
     public TextMessage createTextMessage() {
-        return new JmsTextMessage();
+        return factory.createTextMessage();
     }
 
     @Override
     public ObjectMessage createObjectMessage() {
-        return new JmsObjectMessage();
+        return factory.createObjectMessage();
     }
 
     @Override
     public MapMessage createMapMessage() {
-        return new JmsMapMessage();
+        return factory.createMapMessage();
     }
 
     @Override

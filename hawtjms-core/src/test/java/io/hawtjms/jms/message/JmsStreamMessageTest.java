@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import io.hawtjms.jms.message.JmsStreamMessage;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
@@ -35,9 +34,11 @@ import org.junit.Test;
  */
 public class JmsStreamMessageTest {
 
+    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
+
     @Test
     public void testReadBoolean() {
-        JmsStreamMessage msg = new JmsStreamMessage();
+        JmsStreamMessage msg = factory.createStreamMessage();
         try {
             msg.writeBoolean(true);
             msg.reset();
@@ -100,7 +101,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testreadByte() {
-        JmsStreamMessage msg = new JmsStreamMessage();
+        JmsStreamMessage msg = factory.createStreamMessage();
         try {
             byte test = (byte) 4;
             msg.writeByte(test);
@@ -152,7 +153,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testReadShort() {
-        JmsStreamMessage msg = new JmsStreamMessage();
+        JmsStreamMessage msg = factory.createStreamMessage();
         try {
             short test = (short) 4;
             msg.writeShort(test);
@@ -208,7 +209,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testReadChar() {
-        JmsStreamMessage msg = new JmsStreamMessage();
+        JmsStreamMessage msg = factory.createStreamMessage();
         try {
             char test = 'z';
             msg.writeChar(test);
@@ -272,7 +273,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testReadInt() {
-        JmsStreamMessage msg = new JmsStreamMessage();
+        JmsStreamMessage msg = factory.createStreamMessage();
         try {
             int test = 4;
             msg.writeInt(test);
@@ -332,7 +333,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testReadLong() {
-        JmsStreamMessage msg = new JmsStreamMessage();
+        JmsStreamMessage msg = factory.createStreamMessage();
         try {
             long test = 4L;
             msg.writeLong(test);
@@ -388,7 +389,7 @@ public class JmsStreamMessageTest {
                 fail("Should have thrown exception");
             } catch (MessageFormatException mfe) {
             }
-            msg = new JmsStreamMessage();
+            msg = factory.createStreamMessage();
             msg.writeObject(new Long("1"));
             // reset so it's readable now
             msg.reset();
@@ -401,7 +402,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testReadFloat() {
-        JmsStreamMessage msg = new JmsStreamMessage();
+        JmsStreamMessage msg = factory.createStreamMessage();
         try {
             float test = 4.4f;
             msg.writeFloat(test);
@@ -461,7 +462,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testReadDouble() {
-        JmsStreamMessage msg = new JmsStreamMessage();
+        JmsStreamMessage msg = factory.createStreamMessage();
         try {
             double test = 4.4d;
             msg.writeDouble(test);
@@ -525,7 +526,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testReadString() {
-        JmsStreamMessage msg = new JmsStreamMessage();
+        JmsStreamMessage msg = factory.createStreamMessage();
         try {
             byte testByte = (byte) 2;
             msg.writeString(new Byte(testByte).toString());
@@ -587,7 +588,7 @@ public class JmsStreamMessageTest {
     @Ignore
     @Test
     public void testReadBigString() {
-        JmsStreamMessage msg = new JmsStreamMessage();
+        JmsStreamMessage msg = factory.createStreamMessage();
         try {
             // Test with a 1Meg String
             StringBuffer bigSB = new StringBuffer(1024 * 1024);
@@ -608,7 +609,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testReadBytes() {
-        JmsStreamMessage msg = new JmsStreamMessage();
+        JmsStreamMessage msg = factory.createStreamMessage();
         try {
             byte[] test = new byte[50];
             for (int i = 0; i < test.length; i++) {
@@ -671,7 +672,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testReadObject() {
-        JmsStreamMessage msg = new JmsStreamMessage();
+        JmsStreamMessage msg = factory.createStreamMessage();
         try {
             byte testByte = (byte) 2;
             msg.writeByte(testByte);
@@ -739,7 +740,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testClearBody() throws JMSException {
-        JmsStreamMessage streamMessage = new JmsStreamMessage();
+        JmsStreamMessage streamMessage = factory.createStreamMessage();
         try {
             streamMessage.writeObject(new Long(2));
             streamMessage.clearBody();
@@ -755,7 +756,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testReset() throws JMSException {
-        JmsStreamMessage streamMessage = new JmsStreamMessage();
+        JmsStreamMessage streamMessage = factory.createStreamMessage();
         try {
             streamMessage.writeDouble(24.5);
             streamMessage.writeLong(311);
@@ -779,7 +780,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testReadOnlyBody() throws JMSException {
-        JmsStreamMessage message = new JmsStreamMessage();
+        JmsStreamMessage message = factory.createStreamMessage();
         try {
             message.writeBoolean(true);
             message.writeByte((byte) 1);
@@ -879,7 +880,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testWriteOnlyBody() throws JMSException {
-        JmsStreamMessage message = new JmsStreamMessage();
+        JmsStreamMessage message = factory.createStreamMessage();
         message.clearBody();
         try {
             message.writeBoolean(true);
@@ -962,7 +963,7 @@ public class JmsStreamMessageTest {
     @Test
     public void testWriteObject() {
         try {
-            JmsStreamMessage message = new JmsStreamMessage();
+            JmsStreamMessage message = factory.createStreamMessage();
             message.clearBody();
             message.writeObject("test");
             message.writeObject(new Character('a'));
@@ -977,7 +978,7 @@ public class JmsStreamMessageTest {
             fail(e.getMessage());
         }
         try {
-            JmsStreamMessage message = new JmsStreamMessage();
+            JmsStreamMessage message = factory.createStreamMessage();
             message.clearBody();
             message.writeObject(new Object());
             fail("should throw an exception");

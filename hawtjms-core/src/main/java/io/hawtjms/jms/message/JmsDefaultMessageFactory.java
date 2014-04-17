@@ -28,12 +28,17 @@ public class JmsDefaultMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsMessage createMessage() throws UnsupportedOperationException {
-        return new JmsMessage();
+        return new JmsMessage(new JmsDefaultMessageFacade());
+    }
+
+    @Override
+    public JmsTextMessage createTextMessage() throws UnsupportedOperationException {
+        return createTextMessage(null);
     }
 
     @Override
     public JmsTextMessage createTextMessage(String payload) throws UnsupportedOperationException {
-        JmsTextMessage result = new JmsTextMessage();
+        JmsTextMessage result = new JmsTextMessage(new JmsDefaultMessageFacade());
         if (payload != null) {
             try {
                 result.setText(payload);
@@ -46,22 +51,27 @@ public class JmsDefaultMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsBytesMessage createBytesMessage() throws UnsupportedOperationException {
-        return new JmsBytesMessage();
+        return new JmsBytesMessage(new JmsDefaultMessageFacade());
     }
 
     @Override
     public JmsMapMessage createMapMessage() throws UnsupportedOperationException {
-        return new JmsMapMessage();
+        return new JmsMapMessage(new JmsDefaultMessageFacade());
     }
 
     @Override
     public JmsStreamMessage createStreamMessage() throws UnsupportedOperationException {
-        return new JmsStreamMessage();
+        return new JmsStreamMessage(new JmsDefaultMessageFacade());
+    }
+
+    @Override
+    public JmsObjectMessage createObjectMessage() throws UnsupportedOperationException {
+        return createObjectMessage(null);
     }
 
     @Override
     public JmsObjectMessage createObjectMessage(Serializable payload) throws UnsupportedOperationException {
-        JmsObjectMessage result = new JmsObjectMessage();
+        JmsObjectMessage result = new JmsObjectMessage(new JmsDefaultMessageFacade());
         if (payload != null) {
             try {
                 result.setObject(payload);

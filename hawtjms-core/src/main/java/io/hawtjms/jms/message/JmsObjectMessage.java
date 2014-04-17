@@ -49,9 +49,13 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
 
     protected Serializable object;
 
+    public JmsObjectMessage(JmsMessageFacade facade) {
+        super(facade);
+    }
+
     @Override
     public JmsMessage copy() throws JMSException {
-        JmsObjectMessage other = new JmsObjectMessage();
+        JmsObjectMessage other = new JmsObjectMessage(facade.copy());
         other.copy(this);
         return other;
     }

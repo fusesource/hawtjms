@@ -24,9 +24,13 @@ public class JmsTextMessage extends JmsMessage implements TextMessage {
 
     protected String text;
 
+    public JmsTextMessage(JmsMessageFacade facade) {
+        super(facade);
+    }
+
     @Override
     public JmsMessage copy() throws JMSException {
-        JmsTextMessage other = new JmsTextMessage();
+        JmsTextMessage other = new JmsTextMessage(facade.copy());
         other.copy(this);
         return other;
     }

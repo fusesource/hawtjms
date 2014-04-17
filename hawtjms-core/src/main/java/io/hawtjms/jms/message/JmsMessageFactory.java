@@ -54,6 +54,18 @@ public interface JmsMessageFactory {
     JmsTextMessage createTextMessage(String payload) throws UnsupportedOperationException;
 
     /**
+     * Creates an instance of a basic JmsTextMessage object.  The provider may
+     * either create the Message with the default generic internal message
+     * implementation or create a Provider specific instance that optimizes
+     * the access and marshaling of the message.
+     *
+     * @returns a newly created and initialized JmsTextMessage instance.
+     *
+     * @throws UnsupportedOperationException if the provider can't send TextMessage types.
+     */
+    JmsTextMessage createTextMessage() throws UnsupportedOperationException;
+
+    /**
      * Creates an instance of a basic JmsBytesMessage object.  The provider may
      * either create the Message with the default generic internal message
      * implementation or create a Provider specific instance that optimizes
@@ -73,7 +85,7 @@ public interface JmsMessageFactory {
      *
      * @returns a newly created and initialized JmsTextMessage instance.
      *
-     * @throws UnsupportedOperationException if the provider can't send BytesMessage types.
+     * @throws UnsupportedOperationException if the provider can't send MapMessage types.
      */
     JmsMapMessage createMapMessage() throws UnsupportedOperationException;
 
@@ -85,7 +97,7 @@ public interface JmsMessageFactory {
      *
      * @returns a newly created and initialized JmsTextMessage instance.
      *
-     * @throws UnsupportedOperationException if the provider can't send BytesMessage types.
+     * @throws UnsupportedOperationException if the provider can't send StreamMessage types.
      */
     JmsStreamMessage createStreamMessage() throws UnsupportedOperationException;
 
@@ -100,8 +112,20 @@ public interface JmsMessageFactory {
      *
      * @returns a newly created and initialized JmsTextMessage instance.
      *
-     * @throws UnsupportedOperationException if the provider can't send BytesMessage types.
+     * @throws UnsupportedOperationException if the provider can't send ObjectMessage types.
      */
     JmsObjectMessage createObjectMessage(Serializable payload) throws UnsupportedOperationException;
+
+    /**
+     * Creates an instance of a basic JmsObjectMessage object.  The provider may
+     * either create the Message with the default generic internal message
+     * implementation or create a Provider specific instance that optimizes
+     * the access and marshaling of the message.
+     *
+     * @returns a newly created and initialized JmsTextMessage instance.
+     *
+     * @throws UnsupportedOperationException if the provider can't send ObjectMessage types.
+     */
+    JmsObjectMessage createObjectMessage() throws UnsupportedOperationException;
 
 }

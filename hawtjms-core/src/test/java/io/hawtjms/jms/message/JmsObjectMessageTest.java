@@ -21,7 +21,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import io.hawtjms.jms.message.JmsObjectMessage;
 
 import java.io.IOException;
 
@@ -36,9 +35,11 @@ import org.junit.Test;
  */
 public class JmsObjectMessageTest {
 
+    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
+
     @Test
     public void testBytes() throws JMSException, IOException {
-        JmsObjectMessage msg = new JmsObjectMessage();
+        JmsObjectMessage msg = factory.createObjectMessage();
         String str = "testText";
         msg.setObject(str);
 
@@ -48,7 +49,7 @@ public class JmsObjectMessageTest {
 
     @Test
     public void testSetObject() throws JMSException {
-        JmsObjectMessage msg = new JmsObjectMessage();
+        JmsObjectMessage msg = factory.createObjectMessage();
         String str = "testText";
         msg.setObject(str);
         assertTrue(msg.getObject() == str);
@@ -56,7 +57,7 @@ public class JmsObjectMessageTest {
 
     @Test
     public void testClearBody() throws JMSException {
-        JmsObjectMessage objectMessage = new JmsObjectMessage();
+        JmsObjectMessage objectMessage = factory.createObjectMessage();
         try {
             objectMessage.setObject("String");
             objectMessage.clearBody();
@@ -71,7 +72,7 @@ public class JmsObjectMessageTest {
 
     @Test
     public void testReadOnlyBody() throws JMSException {
-        JmsObjectMessage msg = new JmsObjectMessage();
+        JmsObjectMessage msg = factory.createObjectMessage();
         msg.setObject("test");
         msg.setReadOnlyBody(true);
         try {
@@ -88,7 +89,7 @@ public class JmsObjectMessageTest {
 
     @Test
     public void testWriteOnlyBody() throws JMSException { // should always be readable
-        JmsObjectMessage msg = new JmsObjectMessage();
+        JmsObjectMessage msg = factory.createObjectMessage();
         msg.setReadOnlyBody(false);
         try {
             msg.setObject("test");

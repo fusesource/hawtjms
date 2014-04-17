@@ -21,7 +21,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import io.hawtjms.jms.message.JmsTextMessage;
 
 import java.io.IOException;
 
@@ -36,9 +35,11 @@ import org.junit.Test;
  */
 public class JmsTextMessageTest {
 
+    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
+
     @Test
     public void testShallowCopy() throws JMSException {
-        JmsTextMessage msg = new JmsTextMessage();
+        JmsTextMessage msg = factory.createTextMessage();
         String string = "str";
         msg.setText(string);
         JmsTextMessage copy = (JmsTextMessage) msg.copy();
@@ -47,7 +48,7 @@ public class JmsTextMessageTest {
 
     @Test
     public void testSetText() {
-        JmsTextMessage msg = new JmsTextMessage();
+        JmsTextMessage msg = factory.createTextMessage();
         String str = "testText";
         try {
             msg.setText(str);
@@ -59,7 +60,7 @@ public class JmsTextMessageTest {
 
     @Test
     public void testClearBody() throws JMSException, IOException {
-        JmsTextMessage textMessage = new JmsTextMessage();
+        JmsTextMessage textMessage = factory.createTextMessage();
         textMessage.setText("string");
         textMessage.clearBody();
         assertFalse(textMessage.isReadOnlyBody());
@@ -76,7 +77,7 @@ public class JmsTextMessageTest {
 
     @Test
     public void testReadOnlyBody() throws JMSException {
-        JmsTextMessage textMessage = new JmsTextMessage();
+        JmsTextMessage textMessage = factory.createTextMessage();
         textMessage.setText("test");
         textMessage.setReadOnlyBody(true);
         try {
@@ -93,7 +94,7 @@ public class JmsTextMessageTest {
 
     @Test
     public void testWriteOnlyBody() throws JMSException { // should always be readable
-        JmsTextMessage textMessage = new JmsTextMessage();
+        JmsTextMessage textMessage = factory.createTextMessage();
         textMessage.setReadOnlyBody(false);
         try {
             textMessage.setText("test");
@@ -116,25 +117,23 @@ public class JmsTextMessageTest {
     @Test
     public void testShortText() throws Exception {
         String shortText = "Content";
-        JmsTextMessage shortMessage = new JmsTextMessage();
+        JmsTextMessage shortMessage = factory.createTextMessage();
         shortMessage.setText(shortText);
         //assertTrue(shortMessage.toString().contains("text = " + shortText));
         assertTrue(shortMessage.getText().equals(shortText));
 
         String longText = "Very very very very veeeeeeery loooooooooooooooooooooooooooooooooong text";
         String longExpectedText = "Very very very very veeeeeeery looooooooooooo...ooooong text";
-        JmsTextMessage longMessage = new JmsTextMessage();
+        JmsTextMessage longMessage = factory.createTextMessage();
         longMessage.setText(longText);
         //assertTrue(longMessage.toString().contains("text = " + longExpectedText));
         assertTrue(longMessage.getText().equals(longText));
     }
 
-    // TODO - Fix toString and null body.
     @Test
     public void testNullText() throws Exception {
-        JmsTextMessage nullMessage = new JmsTextMessage();
+        JmsTextMessage nullMessage = factory.createTextMessage();
         nullMessage.setText(null);
-        //assertTrue(nullMessage.toString().contains("text = null"));
         assertNull(nullMessage.getText());
     }
 }

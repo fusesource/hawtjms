@@ -90,9 +90,13 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
 
     protected Buffer content;
 
+    public JmsBytesMessage(JmsMessageFacade facade) {
+        super(facade);
+    }
+
     @Override
     public JmsMessage copy() throws JMSException {
-        JmsBytesMessage other = new JmsBytesMessage();
+        JmsBytesMessage other = new JmsBytesMessage(facade.copy());
         other.copy(this);
         return other;
     }

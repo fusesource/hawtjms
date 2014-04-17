@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import io.hawtjms.jms.message.JmsBytesMessage;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
@@ -34,9 +33,11 @@ import org.junit.Test;
  */
 public class JmsBytesMessageTest {
 
+    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
+
     @Test
     public void testGetBodyLength() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         int len = 10;
         try {
             for (int i = 0; i < len; i++) {
@@ -56,7 +57,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadBoolean() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             msg.writeBoolean(true);
             msg.reset();
@@ -69,7 +70,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadByte() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             msg.writeByte((byte) 2);
             msg.reset();
@@ -82,7 +83,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadUnsignedByte() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             msg.writeByte((byte) 2);
             msg.reset();
@@ -95,7 +96,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadShort() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             msg.writeShort((short) 3000);
             msg.reset();
@@ -108,7 +109,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadUnsignedShort() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             msg.writeShort((short) 3000);
             msg.reset();
@@ -121,7 +122,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadChar() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             msg.writeChar('a');
             msg.reset();
@@ -134,7 +135,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadInt() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             msg.writeInt(3000);
             msg.reset();
@@ -147,7 +148,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadLong() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             msg.writeLong(3000);
             msg.reset();
@@ -160,7 +161,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadFloat() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             msg.writeFloat(3.3f);
             msg.reset();
@@ -173,7 +174,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadDouble() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             msg.writeDouble(3.3d);
             msg.reset();
@@ -186,7 +187,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadUTF() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             String str = "this is a test";
             msg.writeUTF(str);
@@ -200,7 +201,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadBytesbyteArray() {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             byte[] data = new byte[50];
             for (int i = 0; i < data.length; i++) {
@@ -221,7 +222,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testWriteObject() throws JMSException {
-        JmsBytesMessage msg = new JmsBytesMessage();
+        JmsBytesMessage msg = factory.createBytesMessage();
         try {
             msg.writeObject("fred");
             msg.writeObject(Boolean.TRUE);
@@ -245,7 +246,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testClearBody() throws JMSException {
-        JmsBytesMessage bytesMessage = new JmsBytesMessage();
+        JmsBytesMessage bytesMessage = factory.createBytesMessage();
         try {
             bytesMessage.writeInt(1);
             bytesMessage.clearBody();
@@ -260,7 +261,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReset() throws JMSException {
-        JmsBytesMessage message = new JmsBytesMessage();
+        JmsBytesMessage message = factory.createBytesMessage();
         try {
             message.writeDouble(24.5);
             message.writeLong(311);
@@ -284,7 +285,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadOnlyBody() throws JMSException {
-        JmsBytesMessage message = new JmsBytesMessage();
+        JmsBytesMessage message = factory.createBytesMessage();
         try {
             message.writeBoolean(true);
             message.writeByte((byte) 1);
@@ -386,7 +387,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testWriteOnlyBody() throws JMSException {
-        JmsBytesMessage message = new JmsBytesMessage();
+        JmsBytesMessage message = factory.createBytesMessage();
         message.clearBody();
         try {
             message.writeBoolean(true);

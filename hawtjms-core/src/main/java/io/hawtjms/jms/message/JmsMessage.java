@@ -47,21 +47,21 @@ public class JmsMessage implements javax.jms.Message {
     protected transient Callable<Void> acknowledgeCallback;
     protected transient JmsConnection connection;
 
-    protected JmsMessageFacade facade = new JmsDefaultMessageFacade();
+    protected final JmsMessageFacade facade;
     protected boolean readOnlyBody;
     protected boolean readOnlyProperties;
 
-    public JmsMessage() {
+    public JmsMessage(JmsMessageFacade facade) {
+        this.facade = facade;
     }
 
     public JmsMessage copy() throws JMSException {
-        JmsMessage other = new JmsMessage();
+        JmsMessage other = new JmsMessage(facade.copy());
         other.copy(this);
         return other;
     }
 
     protected void copy(JmsMessage other) {
-        this.facade = other.facade.copy();
         this.readOnlyBody = other.readOnlyBody;
         this.readOnlyProperties = other.readOnlyBody;
         this.acknowledgeCallback = other.acknowledgeCallback;

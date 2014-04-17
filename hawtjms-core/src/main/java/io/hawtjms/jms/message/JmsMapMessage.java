@@ -85,9 +85,13 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
 
     protected transient Map<String, Object> map = new HashMap<String, Object>();
 
+    public JmsMapMessage(JmsMessageFacade facade) {
+        super(facade);
+    }
+
     @Override
     public JmsMessage copy() throws JMSException {
-        JmsMapMessage other = new JmsMapMessage();
+        JmsMapMessage other = new JmsMapMessage(facade.copy());
         other.copy(this);
         return other;
     }

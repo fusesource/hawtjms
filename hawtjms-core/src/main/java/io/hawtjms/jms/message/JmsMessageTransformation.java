@@ -40,10 +40,8 @@ import javax.jms.TextMessage;
 import javax.jms.Topic;
 
 /**
- * A helper class for converting normal JMS interfaces into Jms specific
- * ones.
- *
- * @version $Revision: 1.1 $
+ * A helper class for converting normal JMS interfaces into the hawtJMS specific
+ * versions.
  */
 public final class JmsMessageTransformation {
 
@@ -100,14 +98,14 @@ public final class JmsMessageTransformation {
     public static JmsMessage transformMessage(JmsConnection connection, Message message) throws JMSException {
         if (message instanceof JmsMessage) {
             return ((JmsMessage) message).copy();
-
         } else {
             JmsMessage activeMessage = null;
+            JmsMessageFactory factory = connection.getMessageFactory();
 
             if (message instanceof BytesMessage) {
                 BytesMessage bytesMsg = (BytesMessage) message;
                 bytesMsg.reset();
-                JmsBytesMessage msg = new JmsBytesMessage();
+                JmsBytesMessage msg = factory.createBytesMessage();
                 try {
                     for (;;) {
                         // Reads a byte from the message stream until the stream
@@ -122,7 +120,7 @@ public final class JmsMessageTransformation {
                 activeMessage = msg;
             } else if (message instanceof MapMessage) {
                 MapMessage mapMsg = (MapMessage) message;
-                JmsMapMessage msg = new JmsMapMessage();
+                JmsMapMessage msg = factory.createMapMessage();
                 Enumeration iter = mapMsg.getMapNames();
 
                 while (iter.hasMoreElements()) {
@@ -133,13 +131,13 @@ public final class JmsMessageTransformation {
                 activeMessage = msg;
             } else if (message instanceof ObjectMessage) {
                 ObjectMessage objMsg = (ObjectMessage) message;
-                JmsObjectMessage msg = new JmsObjectMessage();
+                JmsObjectMessage msg = factory.createObjectMessage();
                 msg.setObject(objMsg.getObject());
                 activeMessage = msg;
             } else if (message instanceof StreamMessage) {
                 StreamMessage streamMessage = (StreamMessage) message;
                 streamMessage.reset();
-                JmsStreamMessage msg = new JmsStreamMessage();
+                JmsStreamMessage msg = factory.createStreamMessage();
                 Object obj = null;
 
                 try {
@@ -154,11 +152,11 @@ public final class JmsMessageTransformation {
                 activeMessage = msg;
             } else if (message instanceof TextMessage) {
                 TextMessage textMsg = (TextMessage) message;
-                JmsTextMessage msg = new JmsTextMessage();
+                JmsTextMessage msg = factory.createTextMessage();
                 msg.setText(textMsg.getText());
                 activeMessage = msg;
             } else {
-                activeMessage = new JmsMessage();
+                activeMessage = factory.createTextMessage();
             }
 
             copyProperties(connection, message, activeMessage);

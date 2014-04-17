@@ -21,7 +21,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import io.hawtjms.jms.message.JmsMapMessage;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -47,12 +46,14 @@ public class JmsMapMessageTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsMapMessageTest.class);
 
+    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
+
     @Rule public TestName name = new TestName();
 
     // TODO - Big String support.
     @Test
     public void testBytesConversion() throws JMSException, IOException {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         msg.setBoolean("boolean", true);
         msg.setByte("byte", (byte) 1);
         msg.setBytes("bytes", new byte[1]);
@@ -92,7 +93,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testGetBoolean() throws JMSException {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         msg.setBoolean(name.getMethodName(), true);
         msg.setReadOnlyBody(true);
         assertTrue(msg.getBoolean(name.getMethodName()));
@@ -106,7 +107,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testGetByte() throws JMSException {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         msg.setByte(name.getMethodName(), (byte) 1);
         msg = (JmsMapMessage) msg.copy();
         assertTrue(msg.getByte(name.getMethodName()) == (byte) 1);
@@ -114,7 +115,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testGetShort() {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         try {
             msg.setShort(name.getMethodName(), (short) 1);
             msg = (JmsMapMessage) msg.copy();
@@ -127,7 +128,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testGetChar() {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         try {
             msg.setChar(name.getMethodName(), 'a');
             msg = (JmsMapMessage) msg.copy();
@@ -140,7 +141,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testGetInt() {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         try {
             msg.setInt(name.getMethodName(), 1);
             msg = (JmsMapMessage) msg.copy();
@@ -153,7 +154,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testGetLong() {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         try {
             msg.setLong(name.getMethodName(), 1);
             msg = (JmsMapMessage) msg.copy();
@@ -166,7 +167,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testGetFloat() {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         try {
             msg.setFloat(name.getMethodName(), 1.5f);
             msg = (JmsMapMessage) msg.copy();
@@ -179,7 +180,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testGetDouble() {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         try {
             msg.setDouble(name.getMethodName(), 1.5);
             msg = (JmsMapMessage) msg.copy();
@@ -192,7 +193,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testGetString() {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         try {
             String str = "test";
             msg.setString(name.getMethodName(), str);
@@ -206,7 +207,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testGetBytes() {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         try {
             byte[] bytes1 = new byte[3];
             byte[] bytes2 = new byte[2];
@@ -224,7 +225,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testGetObject() throws JMSException {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         Boolean booleanValue = Boolean.TRUE;
         Byte byteValue = Byte.valueOf("1");
         byte[] bytesValue = new byte[3];
@@ -297,7 +298,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testGetMapNames() throws JMSException {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         msg.setBoolean("boolean", true);
         msg.setByte("byte", (byte) 1);
         msg.setBytes("bytes1", new byte[1]);
@@ -333,7 +334,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testItemExists() throws JMSException {
-        JmsMapMessage mapMessage = new JmsMapMessage();
+        JmsMapMessage mapMessage = factory.createMapMessage();
 
         mapMessage.setString("exists", "test");
 
@@ -345,7 +346,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testClearBody() throws JMSException {
-        JmsMapMessage mapMessage = new JmsMapMessage();
+        JmsMapMessage mapMessage = factory.createMapMessage();
         mapMessage.setString("String", "String");
         mapMessage.clearBody();
         assertFalse(mapMessage.isReadOnlyBody());
@@ -359,7 +360,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testReadOnlyBody() throws JMSException {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         msg.setBoolean("boolean", true);
         msg.setByte("byte", (byte) 1);
         msg.setBytes("bytes", new byte[1]);
@@ -454,7 +455,7 @@ public class JmsMapMessageTest {
 
     @Test
     public void testWriteOnlyBody() throws JMSException {
-        JmsMapMessage msg = new JmsMapMessage();
+        JmsMapMessage msg = factory.createMapMessage();
         msg.setReadOnlyBody(false);
 
         msg.setBoolean("boolean", true);
