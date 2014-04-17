@@ -16,7 +16,6 @@
  */
 package io.hawtjms.provider;
 
-import io.hawtjms.jms.message.JmsMessageFactory;
 import io.hawtjms.jms.meta.JmsConsumerId;
 import io.hawtjms.jms.meta.JmsSessionId;
 import io.hawtjms.util.IOExceptionSupport;
@@ -39,15 +38,13 @@ import javax.jms.JMSException;
 public abstract class AbstractAsyncProvider implements AsyncProvider {
 
     protected final URI remoteURI;
-    protected final JmsMessageFactory messageFactory;
     protected final AtomicBoolean closed = new AtomicBoolean();
     protected final ScheduledExecutorService serializer;
 
     protected ProviderListener listener;
 
-    public AbstractAsyncProvider(URI remoteURI, JmsMessageFactory messageFactory) {
+    public AbstractAsyncProvider(URI remoteURI) {
         this.remoteURI = remoteURI;
-        this.messageFactory = messageFactory;
 
         this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 
@@ -88,11 +85,6 @@ public abstract class AbstractAsyncProvider implements AsyncProvider {
     @Override
     public void pull(JmsConsumerId consumerId, long timeout, AsyncResult<Void> request) throws IOException, UnsupportedOperationException {
         throw new UnsupportedOperationException("Provider does not support message pull");
-    }
-
-    @Override
-    public JmsMessageFactory getMessageFactory() {
-        return messageFactory;
     }
 
     @Override

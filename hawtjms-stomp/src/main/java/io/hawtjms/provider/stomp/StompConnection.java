@@ -44,6 +44,7 @@ import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.stomp.adapters.GenericStompServerAdaptor;
 import io.hawtjms.provider.stomp.adapters.StompServerAdapter;
 import io.hawtjms.provider.stomp.adapters.StompServerAdapterFactory;
+import io.hawtjms.provider.stomp.message.StompJmsMessageFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -70,6 +71,7 @@ public class StompConnection {
      */
     private static final String DEFAULT_ACCEPT_VERSIONS = "1.1,1.2";
 
+    private final StompJmsMessageFactory messageFactory;
     private final Map<JmsSessionId, StompSession> sessions = new HashMap<JmsSessionId, StompSession>();
     private final Map<String, AsyncResult<Void>> requests = new HashMap<String, AsyncResult<Void>>();
     private final JmsConnectionInfo connectionInfo;
@@ -96,6 +98,7 @@ public class StompConnection {
     public StompConnection(StompProvider provider, JmsConnectionInfo connectionInfo) {
         this.connectionInfo = connectionInfo;
         this.provider = provider;
+        this.messageFactory = new StompJmsMessageFactory(this);
 
         connectionInfo.getConnectionId().setProviderHint(this);
     }
@@ -506,5 +509,12 @@ public class StompConnection {
         }
 
         return exception;
+    }
+
+    /**
+     * @return the STOMP based JmsMessageFactory for this Connection.
+     */
+    public StompJmsMessageFactory getMessageFactory() {
+        return this.messageFactory;
     }
 }

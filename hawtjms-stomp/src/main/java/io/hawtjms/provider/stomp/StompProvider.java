@@ -18,8 +18,8 @@ package io.hawtjms.provider.stomp;
 
 import static io.hawtjms.provider.stomp.StompConstants.DISCONNECT;
 import io.hawtjms.jms.JmsDestination;
-import io.hawtjms.jms.message.JmsDefaultMessageFactory;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
+import io.hawtjms.jms.message.JmsMessageFactory;
 import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
 import io.hawtjms.jms.meta.JmsConnectionInfo;
 import io.hawtjms.jms.meta.JmsConsumerId;
@@ -64,7 +64,7 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
 
     public StompProvider(URI remoteURI) {
-        super(remoteURI, new JmsDefaultMessageFactory());
+        super(remoteURI);
     }
 
     @Override
@@ -490,6 +490,14 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
     }
 
     //------------- Property Getters / Setters -------------------------------//
+
+    @Override
+    public JmsMessageFactory getMessageFactory() {
+        if (connection == null) {
+            throw new RuntimeException("Message Factory is not accessible when not connected.");
+        }
+        return connection.getMessageFactory();
+    }
 
     public long getCloseTimeout() {
         return this.closeTimeout;

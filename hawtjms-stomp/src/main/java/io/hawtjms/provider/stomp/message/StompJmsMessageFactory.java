@@ -36,9 +36,20 @@ import javax.jms.MessageNotWriteableException;
  */
 public class StompJmsMessageFactory implements JmsMessageFactory {
 
-    private final StompConnection connection;
+    private StompConnection connection;
+
+    public StompJmsMessageFactory() {
+    }
 
     public StompJmsMessageFactory(StompConnection connection) {
+        this.connection = connection;
+    }
+
+    public StompConnection getStompConnection() {
+        return this.connection;
+    }
+
+    public void setStompConnection(StompConnection connection) {
         this.connection = connection;
     }
 

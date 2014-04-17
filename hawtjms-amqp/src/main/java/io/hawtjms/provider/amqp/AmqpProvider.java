@@ -19,6 +19,7 @@ package io.hawtjms.provider.amqp;
 import io.hawtjms.jms.JmsDestination;
 import io.hawtjms.jms.message.JmsDefaultMessageFactory;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
+import io.hawtjms.jms.message.JmsMessageFactory;
 import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
 import io.hawtjms.jms.meta.JmsConnectionInfo;
 import io.hawtjms.jms.meta.JmsConsumerId;
@@ -86,6 +87,7 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
     private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
 
+    private final JmsDefaultMessageFactory messageFactory = new JmsDefaultMessageFactory();
     private final EngineFactory engineFactory = new EngineFactoryImpl();
     private final Transport protonTransport = engineFactory.createTransport();
 
@@ -106,7 +108,7 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
      *        The URI of the AMQP broker this Provider instance will connect to.
      */
     public AmqpProvider(URI remoteURI, Map<String, String> extraOptions) {
-        super(remoteURI, new JmsDefaultMessageFactory());
+        super(remoteURI);
         updateTracer();
     }
 
@@ -625,6 +627,13 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
         } catch (IOException e) {
             fireProviderException(e);
         }
+    }
+
+    //---------- Property Setters and Getters --------------------------------//
+
+    @Override
+    public JmsMessageFactory getMessageFactory() {
+        return this.messageFactory;
     }
 
     public void setTraceFrames(boolean trace) {
