@@ -93,30 +93,9 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
     }
 
     public void copy(JmsMapMessage other) throws JMSException {
-        other.storeContent();
         super.copy(other);
         this.map = other.map;
     }
-
-//    /**
-//     * Builds the message body from data
-//     *
-//     * @throws JMSException
-//     * @throws IOException
-//     */
-//    private void loadContent() throws JMSException {
-//        Buffer buffer = getContent();
-//        if (buffer != null && this.map.isEmpty()) {
-//            InputStream is = new ByteArrayInputStream(content.toByteArray());
-//            DataInputStream dataIn = new DataInputStream(is);
-//            try {
-//                map = MarshallingSupport.unmarshalPrimitiveMap(dataIn);
-//                dataIn.close();
-//            } catch (IOException e) {
-//                throw JmsExceptionSupport.create(e);
-//            }
-//        }
-//    }
 
     /**
      * Clears out the message body. Clearing a message's body does not clear its
@@ -778,13 +757,22 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
         return map.containsKey(name);
     }
 
-    private void initializeReading() throws JMSException {
-        //loadContent();
+    /**
+     * Prepares the Message contents for reading.
+     *
+     * @throws JMSException if an error occurs while initializing.
+     */
+    protected void initializeReading() throws JMSException {
     }
 
-    private void initializeWriting() throws MessageNotWriteableException {
+    /**
+     * Prepares the Message for writing.  This method will first check if the
+     * message is in read-only mode and throw an error if so.
+     *
+     * @throws MessageNotWriteableException if the MapMessage is in read-only mode.
+     */
+    protected void initializeWriting() throws MessageNotWriteableException {
         checkReadOnlyBody();
-        //setContent(null);
     }
 
     @Override
