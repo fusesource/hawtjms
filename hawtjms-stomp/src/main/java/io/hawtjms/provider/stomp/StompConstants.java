@@ -115,6 +115,8 @@ public interface StompConstants {
     final String SERVER = "server";
     final String CREDIT = "credit";
     final String JMSX_DELIVERY_COUNT = "JMSXDeliveryCount";
+    final String JMSX_GROUP_ID = "JMSXGroupID";
+    final String JMSX_GROUP_SEQUENCE = "JMSXGroupSequence";
     final String HEARTBEAT = "heart-beat";
     final String VERSION = "version";
 
