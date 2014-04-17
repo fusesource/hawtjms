@@ -93,12 +93,34 @@ public interface JmsMessageFacade {
      */
     JmsMessageFacade copy();
 
+    /**
+     * Return the internal message Id as a JmsMessageId wrapped value.
+     *
+     * @return a JmsMessageId that wraps the internal message Id.
+     */
     JmsMessageId getMessageId();
 
+    /**
+     * Updates the message Id using the value of the given JmsMessageId.
+     *
+     * @param messageId
+     *        the new JmsMessageId value to assign as the message Id.
+     */
     void setMessageId(JmsMessageId messageId);
 
+    /**
+     * Gets the timestamp assigned to the message when it was sent.
+     *
+     * @return the message timestamp value.
+     */
     long getTimestamp();
 
+    /**
+     * Sets the timestamp value of this message.
+     *
+     * @param timestamp
+     *        the time that the message was sent by the provider.
+     */
     void setTimestamp(long timestamp);
 
     String getCorrelationId();
