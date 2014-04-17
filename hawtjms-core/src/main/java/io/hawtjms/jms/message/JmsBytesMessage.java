@@ -793,7 +793,7 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
         checkWriteOnlyBody();
         if (dataIn == null) {
             Buffer buffer = getContent();
-            if (buffer==null) {
+            if (buffer == null) {
                 buffer = new Buffer(0);
             }
             dataIn = new DataInputStream(new ByteArrayInputStream(buffer));

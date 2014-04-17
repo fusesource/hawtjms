@@ -713,6 +713,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
             boolean sync = !forceAsyncSend && deliveryMode == DeliveryMode.PERSISTENT && !getTransacted();
 
+            copy.onSend();
             JmsOutboundMessageDispatch envelope = new JmsOutboundMessageDispatch();
             envelope.setMessage(copy);
             envelope.setProducerId(producer.getProducerId());

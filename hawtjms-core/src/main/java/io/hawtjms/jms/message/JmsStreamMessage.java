@@ -17,11 +17,9 @@
 package io.hawtjms.jms.message;
 
 import io.hawtjms.jms.exceptions.JmsExceptionSupport;
-import io.hawtjms.util.MarshallingSupport;
 
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
@@ -31,8 +29,6 @@ import javax.jms.MessageNotWriteableException;
 import javax.jms.StreamMessage;
 
 import org.fusesource.hawtbuf.Buffer;
-import org.fusesource.hawtbuf.ByteArrayInputStream;
-import org.fusesource.hawtbuf.DataByteArrayOutputStream;
 
 /**
  * A <CODE>StreamMessage</CODE> object is used to send a stream of primitive
@@ -112,19 +108,13 @@ import org.fusesource.hawtbuf.DataByteArrayOutputStream;
  */
 public class JmsStreamMessage extends JmsMessage implements StreamMessage {
 
-    protected transient DataByteArrayOutputStream dataOut;
-    protected transient DataInputStream dataIn;
-    protected transient int remainingBytes = -1;
+    private final List<Object> content = new ArrayList<Object>(20);
 
-    protected Buffer content;
+    private Buffer bytes;
+    private int remainingBytes;
 
-    public Buffer getContent() {
-        return content;
-    }
-
-    public void setContent(Buffer content) {
-        this.content = content;
-    }
+    private int index;
+    private List<Object> stream;
 
     @Override
     public JmsMessage copy() throws JMSException {
@@ -133,36 +123,16 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
         return other;
     }
 
-    public void copy(JmsStreamMessage other) throws JMSException {
-        other.storeContent();
+    private void copy(JmsStreamMessage other) throws JMSException {
         super.copy(other);
-        this.dataOut = null;
-        this.dataIn = null;
-        if (other.content != null) {
-            this.content = other.content.deepCopy();
-        } else {
-            this.content = null;
-        }
+        this.content.clear();
+        this.content.addAll(other.content);
     }
 
     @Override
     public void onSend() throws JMSException {
         super.onSend();
-        storeContent();
-    }
-
-    @Override
-    public void storeContent() throws JMSException {
-        if (dataOut != null) {
-            try {
-                dataOut.close();
-                Buffer bs = dataOut.toBuffer();
-                setContent(bs);
-                dataOut = null;
-            } catch (IOException ioe) {
-                throw JmsExceptionSupport.create(ioe.getMessage(), ioe);
-            }
-        }
+        reset();
     }
 
     /**
@@ -181,9 +151,10 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public void clearBody() throws JMSException {
         super.clearBody();
-        this.dataOut = null;
-        this.dataIn = null;
-        this.remainingBytes = -1;
+        content.clear();
+        index = 0;
+        bytes = null;
+        remainingBytes = -1;
     }
 
     /**
@@ -203,29 +174,21 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public boolean readBoolean() throws JMSException {
         initializeReading();
-        try {
-            this.dataIn.mark(10);
-            int dataType = this.dataIn.read();
-            if (dataType == -1) {
-                throw new MessageEOFException("reached end of data");
-            }
-            if (dataType == MarshallingSupport.BOOLEAN_TYPE) {
-                return this.dataIn.readBoolean();
-            }
-            if (dataType == MarshallingSupport.STRING_TYPE) {
-                return Boolean.valueOf(this.dataIn.readUTF()).booleanValue();
-            }
-            if (dataType == MarshallingSupport.NULL) {
-                this.dataIn.reset();
-                throw new NullPointerException("Cannot convert NULL value to boolean.");
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a boolean type");
-            }
-        } catch (EOFException e) {
-            throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (IOException e) {
-            throw JmsExceptionSupport.createMessageFormatException(e);
+        checkEndOfStream();
+
+        Object value = stream.get(index++);
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        if (value instanceof String) {
+            return Boolean.valueOf((String) value);
+        }
+
+        index--;
+        if (value == null) {
+            throw new NullPointerException("Cannot convert NULL value to boolean.");
+        } else {
+            throw new MessageFormatException("stream value is not a boolean type");
         }
     }
 
@@ -248,35 +211,25 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     public byte readByte() throws JMSException {
         initializeReading();
         try {
-            this.dataIn.mark(10);
-            int dataType = this.dataIn.read();
-            if (dataType == -1) {
-                throw new MessageEOFException("reached end of data");
+            checkEndOfStream();
+
+            Object value = stream.get(index++);
+            if (value instanceof Byte) {
+                return (Byte) value;
             }
-            if (dataType == MarshallingSupport.BYTE_TYPE) {
-                return this.dataIn.readByte();
+            if (value instanceof String) {
+                return Byte.valueOf((String) value);
             }
-            if (dataType == MarshallingSupport.STRING_TYPE) {
-                return Byte.valueOf(this.dataIn.readUTF()).byteValue();
-            }
-            if (dataType == MarshallingSupport.NULL) {
-                this.dataIn.reset();
+
+            index--;
+            if (value == null) {
                 throw new NullPointerException("Cannot convert NULL value to byte.");
             } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a byte type");
+                throw new MessageFormatException("stream value is not a boolean type");
             }
-        } catch (NumberFormatException mfe) {
-            try {
-                this.dataIn.reset();
-            } catch (IOException e) {
-                throw JmsExceptionSupport.createMessageFormatException(e);
-            }
-            throw mfe;
-        } catch (EOFException e) {
-            throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (IOException e) {
-            throw JmsExceptionSupport.createMessageFormatException(e);
+        } catch (NumberFormatException nfe) {
+            index--;
+            throw nfe;
         }
     }
 
@@ -298,38 +251,28 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     public short readShort() throws JMSException {
         initializeReading();
         try {
-            this.dataIn.mark(17);
-            int dataType = this.dataIn.read();
-            if (dataType == -1) {
-                throw new MessageEOFException("reached end of data");
+            checkEndOfStream();
+
+            Object value = stream.get(index++);
+            if (value instanceof Short) {
+                return (Short) value;
             }
-            if (dataType == MarshallingSupport.SHORT_TYPE) {
-                return this.dataIn.readShort();
+            if (value instanceof Byte) {
+                return ((Byte) value).shortValue();
             }
-            if (dataType == MarshallingSupport.BYTE_TYPE) {
-                return this.dataIn.readByte();
+            if (value instanceof String) {
+                return Short.valueOf((String) value);
             }
-            if (dataType == MarshallingSupport.STRING_TYPE) {
-                return Short.valueOf(this.dataIn.readUTF()).shortValue();
-            }
-            if (dataType == MarshallingSupport.NULL) {
-                this.dataIn.reset();
+
+            index--;
+            if (value == null) {
                 throw new NullPointerException("Cannot convert NULL value to short.");
             } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a short type");
+                throw new MessageFormatException("stream value is not a boolean type");
             }
-        } catch (NumberFormatException mfe) {
-            try {
-                this.dataIn.reset();
-            } catch (IOException e) {
-                throw JmsExceptionSupport.createMessageFormatException(e);
-            }
-            throw mfe;
-        } catch (EOFException e) {
-            throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (IOException e) {
-            throw JmsExceptionSupport.createMessageFormatException(e);
+        } catch (NumberFormatException nfe) {
+            index--;
+            throw nfe;
         }
     }
 
@@ -350,33 +293,18 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public char readChar() throws JMSException {
         initializeReading();
-        try {
-            this.dataIn.mark(17);
-            int dataType = this.dataIn.read();
-            if (dataType == -1) {
-                throw new MessageEOFException("reached end of data");
-            }
-            if (dataType == MarshallingSupport.CHAR_TYPE) {
-                return this.dataIn.readChar();
-            }
-            if (dataType == MarshallingSupport.NULL) {
-                this.dataIn.reset();
-                throw new NullPointerException("Cannot convert NULL value to char.");
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a char type");
-            }
-        } catch (NumberFormatException mfe) {
-            try {
-                this.dataIn.reset();
-            } catch (IOException e) {
-                throw JmsExceptionSupport.createMessageFormatException(e);
-            }
-            throw mfe;
-        } catch (EOFException e) {
-            throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (IOException e) {
-            throw JmsExceptionSupport.createMessageFormatException(e);
+        checkEndOfStream();
+
+        Object value = stream.get(index++);
+        if (value instanceof Character) {
+            return (Character) value;
+        }
+
+        index--;
+        if (value == null) {
+            throw new NullPointerException("Cannot convert NULL value to char.");
+        } else {
+            throw new MessageFormatException("stream value is not a boolean type");
         }
     }
 
@@ -399,41 +327,31 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     public int readInt() throws JMSException {
         initializeReading();
         try {
-            this.dataIn.mark(33);
-            int dataType = this.dataIn.read();
-            if (dataType == -1) {
-                throw new MessageEOFException("reached end of data");
+            checkEndOfStream();
+
+            Object value = stream.get(index++);
+            if (value instanceof Integer) {
+                return (Integer) value;
             }
-            if (dataType == MarshallingSupport.INTEGER_TYPE) {
-                return this.dataIn.readInt();
+            if (value instanceof Short) {
+                return ((Short) value).intValue();
             }
-            if (dataType == MarshallingSupport.SHORT_TYPE) {
-                return this.dataIn.readShort();
+            if (value instanceof Byte) {
+                return ((Byte) value).intValue();
             }
-            if (dataType == MarshallingSupport.BYTE_TYPE) {
-                return this.dataIn.readByte();
+            if (value instanceof String) {
+                return Integer.valueOf((String) value).shortValue();
             }
-            if (dataType == MarshallingSupport.STRING_TYPE) {
-                return Integer.valueOf(this.dataIn.readUTF()).intValue();
-            }
-            if (dataType == MarshallingSupport.NULL) {
-                this.dataIn.reset();
+
+            index--;
+            if (value == null) {
                 throw new NullPointerException("Cannot convert NULL value to int.");
             } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not an int type");
+                throw new MessageFormatException("stream value is not a boolean type");
             }
-        } catch (NumberFormatException mfe) {
-            try {
-                this.dataIn.reset();
-            } catch (IOException e) {
-                throw JmsExceptionSupport.createMessageFormatException(e);
-            }
-            throw mfe;
-        } catch (EOFException e) {
-            throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (IOException e) {
-            throw JmsExceptionSupport.createMessageFormatException(e);
+        } catch (NumberFormatException nfe) {
+            index--;
+            throw nfe;
         }
     }
 
@@ -456,45 +374,34 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     public long readLong() throws JMSException {
         initializeReading();
         try {
+            checkEndOfStream();
 
-            this.dataIn.mark(65);
-            int dataType = this.dataIn.read();
-            if (dataType == -1) {
-                throw new MessageEOFException("reached end of data");
+            Object value = stream.get(index++);
+            if (value instanceof Long) {
+                return (Long) value;
             }
-            if (dataType == MarshallingSupport.LONG_TYPE) {
-                return this.dataIn.readLong();
+            if (value instanceof Integer) {
+                return ((Integer) value).longValue();
             }
-            if (dataType == MarshallingSupport.INTEGER_TYPE) {
-                return this.dataIn.readInt();
+            if (value instanceof Short) {
+                return ((Short) value).longValue();
             }
-            if (dataType == MarshallingSupport.SHORT_TYPE) {
-                return this.dataIn.readShort();
+            if (value instanceof Byte) {
+                return ((Byte) value).longValue();
             }
-            if (dataType == MarshallingSupport.BYTE_TYPE) {
-                return this.dataIn.readByte();
+            if (value instanceof String) {
+                return Long.valueOf((String) value).shortValue();
             }
-            if (dataType == MarshallingSupport.STRING_TYPE) {
-                return Long.valueOf(this.dataIn.readUTF()).longValue();
-            }
-            if (dataType == MarshallingSupport.NULL) {
-                this.dataIn.reset();
+
+            index--;
+            if (value == null) {
                 throw new NullPointerException("Cannot convert NULL value to long.");
             } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a long type");
+                throw new MessageFormatException("stream value is not a boolean type");
             }
-        } catch (NumberFormatException mfe) {
-            try {
-                this.dataIn.reset();
-            } catch (IOException e) {
-                throw JmsExceptionSupport.createMessageFormatException(e);
-            }
-            throw mfe;
-        } catch (EOFException e) {
-            throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (IOException e) {
-            throw JmsExceptionSupport.createMessageFormatException(e);
+        } catch (NumberFormatException nfe) {
+            index--;
+            throw nfe;
         }
     }
 
@@ -516,35 +423,25 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     public float readFloat() throws JMSException {
         initializeReading();
         try {
-            this.dataIn.mark(33);
-            int dataType = this.dataIn.read();
-            if (dataType == -1) {
-                throw new MessageEOFException("reached end of data");
+            checkEndOfStream();
+
+            Object value = stream.get(index++);
+            if (value instanceof Float) {
+                return (Float) value;
             }
-            if (dataType == MarshallingSupport.FLOAT_TYPE) {
-                return this.dataIn.readFloat();
+            if (value instanceof String) {
+                return Float.valueOf((String) value);
             }
-            if (dataType == MarshallingSupport.STRING_TYPE) {
-                return Float.valueOf(this.dataIn.readUTF()).floatValue();
-            }
-            if (dataType == MarshallingSupport.NULL) {
-                this.dataIn.reset();
+
+            index--;
+            if (value == null) {
                 throw new NullPointerException("Cannot convert NULL value to float.");
             } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a float type");
+                throw new MessageFormatException("stream value is not a boolean type");
             }
-        } catch (NumberFormatException mfe) {
-            try {
-                this.dataIn.reset();
-            } catch (IOException e) {
-                throw JmsExceptionSupport.createMessageFormatException(e);
-            }
-            throw mfe;
-        } catch (EOFException e) {
-            throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (IOException e) {
-            throw JmsExceptionSupport.createMessageFormatException(e);
+        } catch (NumberFormatException nfe) {
+            index--;
+            throw nfe;
         }
     }
 
@@ -566,40 +463,28 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     public double readDouble() throws JMSException {
         initializeReading();
         try {
+            checkEndOfStream();
 
-            this.dataIn.mark(65);
-            int dataType = this.dataIn.read();
-            if (dataType == -1) {
-                throw new MessageEOFException("reached end of data");
+            Object value = stream.get(index++);
+            if (value instanceof Double) {
+                return (Double) value;
             }
-            if (dataType == MarshallingSupport.DOUBLE_TYPE) {
-                return this.dataIn.readDouble();
+            if (value instanceof Float) {
+                return (Float) value;
             }
-            if (dataType == MarshallingSupport.FLOAT_TYPE) {
-                return this.dataIn.readFloat();
+            if (value instanceof String) {
+                return Double.valueOf((String) value);
             }
-            if (dataType == MarshallingSupport.STRING_TYPE) {
-                return Double.valueOf(this.dataIn.readUTF()).doubleValue();
-            }
-            if (dataType == MarshallingSupport.NULL) {
-                this.dataIn.reset();
+
+            index--;
+            if (value == null) {
                 throw new NullPointerException("Cannot convert NULL value to double.");
             } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a double type");
+                throw new MessageFormatException("stream value is not a boolean type");
             }
-        } catch (NumberFormatException mfe) {
-            try {
-                this.dataIn.reset();
-            } catch (IOException e) {
-                throw JmsExceptionSupport.createMessageFormatException(e);
-            }
-            throw mfe;
-
-        } catch (EOFException e) {
-            throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (IOException e) {
-            throw JmsExceptionSupport.createMessageFormatException(e);
+        } catch (NumberFormatException nfe) {
+            index--;
+            throw nfe;
         }
     }
 
@@ -621,57 +506,45 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     public String readString() throws JMSException {
         initializeReading();
         try {
+            checkEndOfStream();
 
-            this.dataIn.mark(65);
-            int dataType = this.dataIn.read();
-            if (dataType == -1) {
-                throw new MessageEOFException("reached end of data");
-            }
-            if (dataType == MarshallingSupport.NULL) {
+            Object value = stream.get(index++);
+            if (value == null) {
                 return null;
             }
-            if (dataType == MarshallingSupport.BIG_STRING_TYPE) {
-                return dataIn.readUTF();
+            if (value instanceof String) {
+                return (String) value;
             }
-            if (dataType == MarshallingSupport.STRING_TYPE) {
-                return this.dataIn.readUTF();
+            if (value instanceof Double) {
+                return ((Double) value).toString();
             }
-            if (dataType == MarshallingSupport.LONG_TYPE) {
-                return new Long(this.dataIn.readLong()).toString();
+            if (value instanceof Float) {
+                return ((Float) value).toString();
             }
-            if (dataType == MarshallingSupport.INTEGER_TYPE) {
-                return new Integer(this.dataIn.readInt()).toString();
+            if (value instanceof Long) {
+                return ((Long) value).toString();
             }
-            if (dataType == MarshallingSupport.SHORT_TYPE) {
-                return new Short(this.dataIn.readShort()).toString();
+            if (value instanceof Integer) {
+                return ((Integer) value).toString();
             }
-            if (dataType == MarshallingSupport.BYTE_TYPE) {
-                return new Byte(this.dataIn.readByte()).toString();
+            if (value instanceof Short) {
+                return ((Short) value).toString();
             }
-            if (dataType == MarshallingSupport.FLOAT_TYPE) {
-                return new Float(this.dataIn.readFloat()).toString();
+            if (value instanceof Byte) {
+                return ((Byte) value).toString();
             }
-            if (dataType == MarshallingSupport.DOUBLE_TYPE) {
-                return new Double(this.dataIn.readDouble()).toString();
+            if (value instanceof Character) {
+                return ((Character) value).toString();
             }
-            if (dataType == MarshallingSupport.BOOLEAN_TYPE) {
-                return (this.dataIn.readBoolean() ? Boolean.TRUE : Boolean.FALSE).toString();
+            if (value instanceof Boolean) {
+                return ((Boolean) value).toString();
             }
-            if (dataType == MarshallingSupport.CHAR_TYPE) {
-                return new Character(this.dataIn.readChar()).toString();
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a String type");
-            }
-        } catch (NumberFormatException mfe) {
-            try {
-                this.dataIn.reset();
-            } catch (IOException e) {
-                throw JmsExceptionSupport.createMessageFormatException(e);
-            }
-            throw mfe;
-        } catch (IOException e) {
-            throw JmsExceptionSupport.createMessageFormatException(e);
+
+            index--;
+            throw new MessageFormatException("Cannot convert byte array to String.");
+        } catch (NumberFormatException nfe) {
+            index--;
+            throw nfe;
         }
     }
 
@@ -723,38 +596,39 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
      */
     @Override
     public int readBytes(byte[] value) throws JMSException {
-
         initializeReading();
         try {
             if (value == null) {
                 throw new NullPointerException();
             }
 
+            checkEndOfStream();
+
             if (remainingBytes == -1) {
-                this.dataIn.mark(value.length + 1);
-                int dataType = this.dataIn.read();
-                if (dataType == -1) {
-                    throw new MessageEOFException("reached end of data");
-                }
-                if (dataType != MarshallingSupport.BYTE_ARRAY_TYPE) {
+                Object data = stream.get(index++);
+                if (!(data instanceof Buffer)) {
                     throw new MessageFormatException("Not a byte array");
                 }
-                remainingBytes = this.dataIn.readInt();
+
+                bytes = (Buffer) data;
+                remainingBytes = bytes.length();
             } else if (remainingBytes == 0) {
                 remainingBytes = -1;
+                bytes = null;
                 return -1;
             }
 
             if (value.length <= remainingBytes) {
                 // small buffer
                 remainingBytes -= value.length;
-                this.dataIn.readFully(value);
+                System.arraycopy(bytes.data, bytes.offset, value, 0, value.length);
+                bytes.offset += value.length;
                 return value.length;
             } else {
                 // big buffer
-                int rc = this.dataIn.read(value, 0, remainingBytes);
+                System.arraycopy(bytes.data, bytes.offset, value, 0, remainingBytes);
                 remainingBytes = 0;
-                return rc;
+                return bytes.length();
             }
         } catch (Throwable e) {
             throw JmsExceptionSupport.createMessageFormatException(e);
@@ -797,64 +671,48 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     public Object readObject() throws JMSException {
         initializeReading();
         try {
-            this.dataIn.mark(65);
-            int dataType = this.dataIn.read();
-            if (dataType == -1) {
-                throw new MessageEOFException("reached end of data");
-            }
-            if (dataType == MarshallingSupport.NULL) {
+            checkEndOfStream();
+
+            Object value = stream.get(index++);
+            if (value == null) {
                 return null;
             }
-            if (dataType == MarshallingSupport.BIG_STRING_TYPE) {
-                return dataIn.readUTF();
-            }
-            if (dataType == MarshallingSupport.STRING_TYPE) {
-                return this.dataIn.readUTF();
-            }
-            if (dataType == MarshallingSupport.LONG_TYPE) {
-                return Long.valueOf(this.dataIn.readLong());
-            }
-            if (dataType == MarshallingSupport.INTEGER_TYPE) {
-                return Integer.valueOf(this.dataIn.readInt());
-            }
-            if (dataType == MarshallingSupport.SHORT_TYPE) {
-                return Short.valueOf(this.dataIn.readShort());
-            }
-            if (dataType == MarshallingSupport.BYTE_TYPE) {
-                return Byte.valueOf(this.dataIn.readByte());
-            }
-            if (dataType == MarshallingSupport.FLOAT_TYPE) {
-                return new Float(this.dataIn.readFloat());
-            }
-            if (dataType == MarshallingSupport.DOUBLE_TYPE) {
-                return new Double(this.dataIn.readDouble());
-            }
-            if (dataType == MarshallingSupport.BOOLEAN_TYPE) {
-                return this.dataIn.readBoolean() ? Boolean.TRUE : Boolean.FALSE;
-            }
-            if (dataType == MarshallingSupport.CHAR_TYPE) {
-                return Character.valueOf(this.dataIn.readChar());
-            }
-            if (dataType == MarshallingSupport.BYTE_ARRAY_TYPE) {
-                int len = this.dataIn.readInt();
-                byte[] value = new byte[len];
-                this.dataIn.readFully(value);
+            if (value instanceof String) {
                 return value;
+            }
+            if (value instanceof Double) {
+                return value;
+            }
+            if (value instanceof Float) {
+                return value;
+            }
+            if (value instanceof Long) {
+                return value;
+            }
+            if (value instanceof Integer) {
+                return value;
+            }
+            if (value instanceof Short) {
+                return value;
+            }
+            if (value instanceof Byte) {
+                return value;
+            }
+            if (value instanceof Character) {
+                return value;
+            }
+            if (value instanceof Boolean) {
+                return value;
+            }
+            if (value instanceof Buffer) {
+                return ((Buffer) value).toByteArray();
             } else {
-                this.dataIn.reset();
-                throw new MessageFormatException("unknown type");
+                index--;
+                throw new MessageFormatException("Unknown type found in stream");
             }
-        } catch (NumberFormatException mfe) {
-            try {
-                this.dataIn.reset();
-            } catch (IOException e) {
-                throw JmsExceptionSupport.createMessageFormatException(e);
-            }
-            throw mfe;
-        } catch (IOException e) {
-            JMSException jmsEx = new MessageFormatException(e.getMessage());
-            jmsEx.setLinkedException(e);
-            throw jmsEx;
+        } catch (Exception ex) {
+            index--;
+            throw JmsExceptionSupport.create(ex);
         }
     }
 
@@ -874,11 +732,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public void writeBoolean(boolean value) throws JMSException {
         initializeWriting();
-        try {
-            MarshallingSupport.marshalBoolean(dataOut, value);
-        } catch (IOException ioe) {
-            throw JmsExceptionSupport.create(ioe);
-        }
+        stream.add(value);
     }
 
     /**
@@ -895,11 +749,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public void writeByte(byte value) throws JMSException {
         initializeWriting();
-        try {
-            MarshallingSupport.marshalByte(dataOut, value);
-        } catch (IOException ioe) {
-            throw JmsExceptionSupport.create(ioe);
-        }
+        stream.add(value);
     }
 
     /**
@@ -916,11 +766,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public void writeShort(short value) throws JMSException {
         initializeWriting();
-        try {
-            MarshallingSupport.marshalShort(dataOut, value);
-        } catch (IOException ioe) {
-            throw JmsExceptionSupport.create(ioe);
-        }
+        stream.add(value);
     }
 
     /**
@@ -937,11 +783,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public void writeChar(char value) throws JMSException {
         initializeWriting();
-        try {
-            MarshallingSupport.marshalChar(dataOut, value);
-        } catch (IOException ioe) {
-            throw JmsExceptionSupport.create(ioe);
-        }
+        stream.add(value);
     }
 
     /**
@@ -958,11 +800,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public void writeInt(int value) throws JMSException {
         initializeWriting();
-        try {
-            MarshallingSupport.marshalInt(dataOut, value);
-        } catch (IOException ioe) {
-            throw JmsExceptionSupport.create(ioe);
-        }
+        stream.add(value);
     }
 
     /**
@@ -979,11 +817,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public void writeLong(long value) throws JMSException {
         initializeWriting();
-        try {
-            MarshallingSupport.marshalLong(dataOut, value);
-        } catch (IOException ioe) {
-            throw JmsExceptionSupport.create(ioe);
-        }
+        stream.add(value);
     }
 
     /**
@@ -1000,11 +834,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public void writeFloat(float value) throws JMSException {
         initializeWriting();
-        try {
-            MarshallingSupport.marshalFloat(dataOut, value);
-        } catch (IOException ioe) {
-            throw JmsExceptionSupport.create(ioe);
-        }
+        stream.add(value);
     }
 
     /**
@@ -1021,11 +851,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public void writeDouble(double value) throws JMSException {
         initializeWriting();
-        try {
-            MarshallingSupport.marshalDouble(dataOut, value);
-        } catch (IOException ioe) {
-            throw JmsExceptionSupport.create(ioe);
-        }
+        stream.add(value);
     }
 
     /**
@@ -1042,16 +868,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public void writeString(String value) throws JMSException {
         initializeWriting();
-        try {
-            // TODO - Support strings larger than short.MAX_VALUE
-            if (value == null) {
-                MarshallingSupport.marshalNull(dataOut);
-            } else {
-                MarshallingSupport.marshalString(dataOut, value);
-            }
-        } catch (IOException ioe) {
-            throw JmsExceptionSupport.create(ioe);
-        }
+        stream.add(value);
     }
 
     /**
@@ -1099,11 +916,8 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     @Override
     public void writeBytes(byte[] value, int offset, int length) throws JMSException {
         initializeWriting();
-        try {
-            MarshallingSupport.marshalByteArray(dataOut, value, offset, length);
-        } catch (IOException ioe) {
-            throw JmsExceptionSupport.create(ioe);
-        }
+        Buffer temp = new Buffer(value, offset, length);
+        stream.add(temp.deepCopy());
     }
 
     /**
@@ -1128,11 +942,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     public void writeObject(Object value) throws JMSException {
         initializeWriting();
         if (value == null) {
-            try {
-                MarshallingSupport.marshalNull(dataOut);
-            } catch (IOException ioe) {
-                throw JmsExceptionSupport.create(ioe);
-            }
+            stream.add(null);
         } else if (value instanceof String) {
             writeString(value.toString());
         } else if (value instanceof Character) {
@@ -1167,17 +977,18 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
      */
     @Override
     public void reset() throws JMSException {
-        storeContent();
-        this.dataIn = null;
-        this.dataOut = null;
-        this.remainingBytes = -1;
+        stream = null;
+        index = 0;
+        bytes = null;
+        remainingBytes = -1;
         setReadOnlyBody(true);
     }
 
     private void initializeWriting() throws MessageNotWriteableException {
         checkReadOnlyBody();
-        if (this.dataOut == null) {
-            this.dataOut = new DataByteArrayOutputStream();
+        if (stream == null) {
+            content.clear();
+            stream = content;
         }
     }
 
@@ -1189,17 +1000,22 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
 
     private void initializeReading() throws MessageNotReadableException {
         checkWriteOnlyBody();
-        if (this.dataIn == null) {
-            Buffer buffer = getContent();
-            if (buffer == null) {
-                buffer = new Buffer(new byte[] {}, 0, 0);
-            }
-            this.dataIn = new DataInputStream(new ByteArrayInputStream(buffer));
+        if (stream == null) {
+            stream = content;
+            index = 0;
+            bytes = null;
+            remainingBytes = -1;
+        }
+    }
+
+    private void checkEndOfStream() throws MessageEOFException {
+        if (stream.isEmpty() || index >= stream.size()) {
+            throw new MessageEOFException("Cannot read beyond end of stream");
         }
     }
 
     @Override
     public String toString() {
-        return super.toString() + " JmsStreamMessage{ dataOut = " + dataOut + ", dataIn = " + dataIn + " }";
+        return super.toString() + " JmsStreamMessage{ " + content + " }";
     }
 }

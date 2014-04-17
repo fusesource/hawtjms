@@ -18,6 +18,7 @@ package io.hawtjms.jms.producer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import io.hawtjms.jms.JmsConnection;
 import io.hawtjms.jms.JmsConnectionFactory;
 import io.hawtjms.test.support.AmqpTestSupport;
@@ -25,6 +26,7 @@ import io.hawtjms.test.support.AmqpTestSupport;
 import javax.jms.BytesMessage;
 import javax.jms.MapMessage;
 import javax.jms.Message;
+import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
@@ -107,15 +109,24 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
         assertNotNull(connection);
         connection.start();
 
+        String payload = "TEST";
+
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue("test.queue");
+        Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         StreamMessage message = session.createStreamMessage();
-        message.writeString("TEST");
+        message.writeString(payload);
         producer.send(message);
-        QueueViewMBean proxy = getProxyToQueue("test.queue");
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
+
+        MessageConsumer consumer = session.createConsumer(queue);
+        Message received = consumer.receive(5000);
+        assertNotNull(received);
+        assertTrue(received instanceof StreamMessage);
+        StreamMessage stream = (StreamMessage) received;
+        assertEquals(payload, stream.readString());
 
         connection.close();
     }
