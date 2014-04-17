@@ -47,10 +47,6 @@ public class JmsTextMessage extends JmsMessage implements TextMessage {
         return text;
     }
 
-    @Override
-    public void storeContent() throws JMSException {
-    }
-
     /**
      * Clears out the message body. Clearing a message's body does not clear its
      * header values or property entries.
