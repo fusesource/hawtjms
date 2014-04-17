@@ -95,6 +95,10 @@ public class StompFrame {
         return propertiesMap.get(key);
     }
 
+    public String removeProperty(String key) {
+        return this.propertiesMap.remove(key);
+    }
+
     public void clearProperties() {
         propertiesMap.clear();
     }
