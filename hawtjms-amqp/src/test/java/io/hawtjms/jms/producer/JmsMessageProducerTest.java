@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import io.hawtjms.test.support.AmqpTestSupport;
 
-import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.JMSSecurityException;
 import javax.jms.Message;
@@ -41,7 +40,7 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)
     public void testCreateMessageProducer() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
@@ -52,12 +51,11 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
 
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(0, proxy.getQueueSize());
-        connection.close();
     }
 
     @Test
     public void testSendWorksWhenConnectionNotStarted() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -72,12 +70,11 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         producer.send(message);
 
         assertEquals(1, proxy.getQueueSize());
-        connection.close();
     }
 
     @Test
     public void testSendWorksAfterConnectionStopped() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
@@ -94,12 +91,11 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         producer.send(message);
 
         assertEquals(1, proxy.getQueueSize());
-        connection.close();
     }
 
     @Test
     public void testPersistentSendsAreMarkedPersistent() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
@@ -121,13 +117,11 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         message = consumer.receive(5000);
         assertNotNull(message);
         assertTrue(message.getJMSDeliveryMode() == DeliveryMode.PERSISTENT);
-
-        connection.close();
     }
 
     @Test
     public void testProducerWithNoTTLSendsMessagesWithoutTTL() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
@@ -149,8 +143,6 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertNotNull(message);
         assertEquals(0, message.getJMSExpiration());
         assertEquals(0, message.getJMSTimestamp());
-
-        connection.close();
     }
 
     private String createLargeString(int sizeInBytes) {
@@ -166,7 +158,7 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
 
     @Test(timeout = 60 * 1000)
     public void testSendLargeMessage() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -189,17 +181,14 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         LOG.debug(">>>> Received message of length {}", textMessage.getText().length());
         assertEquals(messageSize, textMessage.getText().length());
         assertEquals(messageText, textMessage.getText());
-
-        connection.close();
     }
 
     @Test(timeout=90000, expected=JMSSecurityException.class)
     public void testProducerNotAuthorized() throws Exception{
-        Connection connection = createAmqpConnection("guest", "password");
+        connection = createAmqpConnection("guest", "password");
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue("USERS." + name.getMethodName());
         session.createProducer(queue);
-        connection.close();
     }
 }
