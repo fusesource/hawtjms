@@ -54,6 +54,7 @@
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
     <jetty-version>8.1.14.v20131031</jetty-version>
     <vertex-version>2.0.2-final</vertex-version>
+    <mockito-version>1.9.5</mockito-version>
 
     <!-- Maven Plugin Version for this Project -->
     <maven-surefire-plugin-version>2.16</maven-surefire-plugin-version>
@@ -132,6 +133,12 @@
         <artifactId>junit</artifactId>
         <version>${junit-version}</version>
         <scope>test</scope>
+      </dependency>
+      <dependency>
+          <groupId>org.mockito</groupId>
+          <artifactId>mockito-all</artifactId>
+        <version>${mockito-version}</version>
+          <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
