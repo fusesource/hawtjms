@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.hawtjms.stomp.adapters;
+package io.hawtjms.provider.stomp.adapters;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -24,15 +24,16 @@ import io.hawtjms.provider.stomp.adapters.StompServerAdapterFactory;
 import org.junit.Test;
 
 /**
- * Test case for the Apache Apollo STOMP Server Adapter.
+ * Test case for the Apache ActiveMQ STOMP Server Adapter.
  */
-public class ApolloServerAdapterTest {
+public class ActiveMQServerAdapterTest {
 
     @Test
     public void testCreateServerAdapter() {
-        StompServerAdapter adapter = StompServerAdapterFactory.create("apache-apollo/1.7.0");
+        StompServerAdapter adapter = StompServerAdapterFactory.create("ActiveMQ/5.9.0");
         assertNotNull(adapter);
-        assertEquals("1.7.0", adapter.getServerVersion());
-        assertEquals("Apache-Apollo", adapter.getServerName());
+        assertEquals("5.9.0", adapter.getServerVersion());
+        assertEquals("ActiveMQ", adapter.getServerName());
     }
+
 }
