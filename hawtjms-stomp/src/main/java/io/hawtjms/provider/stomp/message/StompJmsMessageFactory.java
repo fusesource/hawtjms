@@ -77,7 +77,7 @@ public class StompJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsBytesMessage createBytesMessage() throws UnsupportedOperationException {
-        throw new UnsupportedOperationException("STOMP Provider does not currently support BytesMessage");
+        return new StompJmsBytesMessage(new StompJmsMessageFacade(new StompFrame(MESSAGE), connection));
     }
 
     @Override
