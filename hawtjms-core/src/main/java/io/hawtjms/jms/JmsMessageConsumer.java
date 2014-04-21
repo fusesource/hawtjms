@@ -230,7 +230,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageListener, 
 
     protected void checkClosed() throws IllegalStateException {
         if (this.closed.get()) {
-            throw new IllegalStateException("The MessageProducer is closed");
+            throw new IllegalStateException("The MessageConsumer is closed");
         }
     }
 
