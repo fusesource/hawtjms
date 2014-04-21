@@ -26,13 +26,12 @@ public final class JmsConsumerId extends JmsAbstractResourceId implements Compar
     private transient JmsSessionId parentId;
 
     public JmsConsumerId(String str) throws IllegalArgumentException {
-        if (str != null){
+        if (str != null) {
             String[] splits = str.split(":");
-            if (splits != null && splits.length >= 3){
+            if (splits != null && splits.length >= 3) {
                 this.connectionId = splits[0];
-                this.sessionId =  Long.parseLong(splits[1]);
+                this.sessionId = Long.parseLong(splits[1]);
                 this.value = Long.parseLong(splits[2]);
-
                 return;
             }
         }
@@ -82,7 +81,7 @@ public final class JmsConsumerId extends JmsAbstractResourceId implements Compar
     @Override
     public int hashCode() {
         if (hashCode == 0) {
-            hashCode = connectionId.hashCode() ^ (int)sessionId ^ (int)value;
+            hashCode = connectionId.hashCode() ^ (int) sessionId ^ (int) value;
         }
         return hashCode;
     }
@@ -95,7 +94,7 @@ public final class JmsConsumerId extends JmsAbstractResourceId implements Compar
         if (o == null || o.getClass() != JmsConsumerId.class) {
             return false;
         }
-        JmsConsumerId id = (JmsConsumerId)o;
+        JmsConsumerId id = (JmsConsumerId) o;
         return sessionId == id.sessionId && value == id.value && connectionId.equals(id.connectionId);
     }
 
