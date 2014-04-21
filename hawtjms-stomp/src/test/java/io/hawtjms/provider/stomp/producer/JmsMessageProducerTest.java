@@ -68,7 +68,6 @@ public class JmsMessageProducerTest extends StompTestSupport {
         assertEquals(1, proxy.getQueueSize());
     }
 
-    @Ignore
     @Test(timeout=60000)
     public void testSendWorksAfterConnectionStopped() throws Exception {
         connection = createStompConnection();
@@ -177,7 +176,6 @@ public class JmsMessageProducerTest extends StompTestSupport {
         assertEquals(messageText, textMessage.getText());
     }
 
-    @Ignore
     @Test(timeout=90000, expected=JMSSecurityException.class)
     public void testProducerNotAuthorized() throws Exception{
         connection = createStompConnection("guest", "password");
