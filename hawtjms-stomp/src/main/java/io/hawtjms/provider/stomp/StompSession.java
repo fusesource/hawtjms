@@ -24,8 +24,11 @@ import io.hawtjms.jms.meta.JmsSessionId;
 import io.hawtjms.jms.meta.JmsSessionInfo;
 import io.hawtjms.provider.AsyncResult;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.jms.JMSException;
 
 /**
  * Represents a logical Session instance for a STOMP connection.
@@ -102,12 +105,14 @@ public class StompSession {
      *        the asynchronous request that is waiting for this action to complete.
      *
      * @return a newly created StompConsumer instance.
+     *
+     * @throws IOException if an error occurs on sending the subscribe request.
+     * @throws JMSException if there is an error creating the requested type of subscription.
      */
-    public void createConsumer(JmsConsumerInfo consumerInfo, AsyncResult<Void> request) {
+    public void createConsumer(JmsConsumerInfo consumerInfo, AsyncResult<Void> request) throws JMSException, IOException {
         StompConsumer consumer = new StompConsumer(this, consumerInfo);
         consumers.put(consumerInfo.getConsumerId(), consumer);
-        request.onSuccess();
-        // TODO - Send subscribe frame.
+        consumer.subscribe(request);
     }
 
     /**

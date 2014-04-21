@@ -134,6 +134,11 @@ public class GenericStompServerAdaptor implements StompServerAdapter {
     }
 
     @Override
+    public boolean isEndOfBrowse(StompFrame message) {
+        return false;
+    }
+
+    @Override
     public StompFrame createUnsubscribeFrame(JmsConsumerInfo consumerInfo) throws JMSException {
         if (consumerInfo.isDurable()) {
             throw new JMSException("Server does not support un-subscribing durable subscriptions over STOMP");

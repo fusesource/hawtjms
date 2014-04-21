@@ -16,14 +16,23 @@
  */
 package io.hawtjms.provider.stomp;
 
+import static io.hawtjms.provider.stomp.StompConstants.ACK_MODE;
+import static io.hawtjms.provider.stomp.StompConstants.DESTINATION;
+import static io.hawtjms.provider.stomp.StompConstants.ID;
+import static io.hawtjms.provider.stomp.StompConstants.SELECTOR;
+import static io.hawtjms.provider.stomp.StompConstants.SUBSCRIBE;
+import static io.hawtjms.provider.stomp.StompConstants.UNSUBSCRIBE;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.meta.JmsConsumerId;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
 import io.hawtjms.jms.meta.JmsSessionId;
 import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
+import io.hawtjms.provider.stomp.adapters.StompServerAdapter;
 
 import java.io.IOException;
+
+import javax.jms.JMSException;
 
 /**
  * STOMP Consumer class used to manage the subscription process for
@@ -33,6 +42,7 @@ public class StompConsumer {
 
     private final JmsConsumerInfo consumerInfo;
     private final StompSession session;
+    private final StompConnection connection;
     private boolean started;
 
     /**
@@ -47,6 +57,7 @@ public class StompConsumer {
     public StompConsumer(StompSession session, JmsConsumerInfo consumerInfo) {
         this.consumerInfo = consumerInfo;
         this.session = session;
+        this.connection = session.getConnection();
 
         this.consumerInfo.getConsumerId().setProviderHint(this);
     }
@@ -60,14 +71,53 @@ public class StompConsumer {
     }
 
     /**
+     * Performs the actual subscription by creating an appropriate SUBSCRIBE
+     * frame and sending it to the server.
+     *
+     * @param request
+     *        the request that initiated this operation.
+     *
+     * @throws JMSException if the subscription requested is not supported or invalid.
+     * @throws IOException if an error occurs while sending the frame.
+     */
+    public void subscribe(AsyncResult<Void> request) throws JMSException, IOException {
+        StompServerAdapter adapter = connection.getServerAdapter();
+
+        StompFrame subscribe = new StompFrame(SUBSCRIBE);
+        subscribe.setProperty(ID, consumerInfo.getConsumerId().toString());
+        subscribe.setProperty(DESTINATION, adapter.toStompDestination(consumerInfo.getDestination()));
+        // For either the Auto case or the Client Ack case we use client so we can control the flow
+        // of messages based on prefetch and delivery.
+        // TODO - We could add an Individual Ack Mode to the JMS frameworks and let the provider
+        //        error out if that's not supported.
+        subscribe.setProperty(ACK_MODE, "client");
+        if (consumerInfo.getSelector() != null) {
+            subscribe.setProperty(SELECTOR, consumerInfo.getSelector());
+        }
+
+        adapter.addSubscribeHeaders(subscribe, consumerInfo);
+        connection.request(subscribe, request);
+    }
+
+    /**
      * Close the consumer by sending an UNSUBSCRIBE command to the remote peer and then
      * removing the consumer from the session's state information.
+     *
      * @param request
+     *        the request that initiated this operation/
      */
     public void close(AsyncResult<Void> request) throws IOException {
         session.removeConsumer(getConsumerId());
-        // TODO - send STOMP UNSUBSCRIBE and register to receive the response.
-        request.onSuccess();
+        StompFrame frame = new StompFrame(UNSUBSCRIBE);
+        frame.setProperty(ID, consumerInfo.getConsumerId().toString());
+        connection.request(frame, request);
+    }
+
+    /**
+     * Handles any incoming messages for this consumer.  The Frame is converted into the
+     * appropriate JmsMessage type and fired to the provider listener.
+     */
+    public void processMessage(StompFrame message) {
     }
 
     /**

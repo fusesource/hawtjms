@@ -22,6 +22,7 @@ import static io.hawtjms.provider.stomp.StompConstants.CONNECTED;
 import static io.hawtjms.provider.stomp.StompConstants.ERROR;
 import static io.hawtjms.provider.stomp.StompConstants.HEARTBEAT;
 import static io.hawtjms.provider.stomp.StompConstants.HOST;
+import static io.hawtjms.provider.stomp.StompConstants.ID;
 import static io.hawtjms.provider.stomp.StompConstants.INVALID_CLIENTID_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.JMS_SECURITY_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.LOGIN;
@@ -229,13 +230,36 @@ public class StompConnection {
     }
 
     /**
+     * Handles an incoming MESSAGE frame.  The Frame is inspected for it's ID header and that
+     * value is turned into a JmsConsumerId which should allow us to locate the consumer that
+     * is subscribed for the destination the message was sent to.
+     *
+     * @param message
+     *        the incoming message frame.
+     */
+    protected void processMessage(StompFrame message) {
+        String id = message.getProperty(ID);
+        if (id == null) {
+            provider.fireProviderException(new IOException("Invalid Message frame received, no ID."));
+        }
+
+        JmsConsumerId consumerId = new JmsConsumerId(id);
+        StompConsumer consumer = getConsumer(consumerId);
+        if (consumer == null) {
+            provider.fireProviderException(new IOException("Received message for unknown consumer: " + consumerId));
+        }
+
+        consumer.processMessage(message);
+    }
+
+    /**
      * Handle incoming RECEIPT frames from the broker by triggering the onSuccess callback
      * for the associated AsyncResult instance awaiting an answer.
      *
      * @param receiptFrame
      *        the receipt frame to process.
      */
-    public void processReceipt(StompFrame receiptFrame) {
+    protected void processReceipt(StompFrame receiptFrame) {
 
         String receipt = receiptFrame.getProperty(RECEIPT_ID);
         if (receipt == null || receipt.isEmpty()) {
@@ -258,7 +282,7 @@ public class StompConnection {
      * @param errorFrame
      *        the ERROR frame to process.
      */
-    public void processError(StompFrame errorFrame) {
+    protected void processError(StompFrame errorFrame) {
 
         JMSException error = exceptionFromErrorFrame(errorFrame);
         String receipt = errorFrame.getProperty(RECEIPT_ID);

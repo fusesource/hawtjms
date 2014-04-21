@@ -133,7 +133,7 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                         @Override
                         public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
                             StompSession session = connection.getSession(consumerInfo.getParentId());
-                            session.createConsumer(consumerInfo, request);
+                            session.createConsumer(consumerInfo, request);                            
                         }
 
                         @Override

@@ -104,6 +104,17 @@ public interface StompServerAdapter {
     void addSubscribeHeaders(StompFrame frame, JmsConsumerInfo consumerInfo) throws JMSException;
 
     /**
+     * Checks the incoming frame to determine if it indicates the end of a Queue browse
+     * operation.  The method is called from a browser instance on receipt of a new frame
+     * with the MESSAGE command.  This method doesn't need to validate support for Queue
+     * browse as this should be done in the subscribe request.
+     *
+     * @param message
+     *        a new incoming message that should be checked for end of browse markers.
+     */
+    boolean isEndOfBrowse(StompFrame message);
+
+    /**
      * Creates a proper UNSUBSCRIBE frame for the given consumer.
      *
      * @param consumer

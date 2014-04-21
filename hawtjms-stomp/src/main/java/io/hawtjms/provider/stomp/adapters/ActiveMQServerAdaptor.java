@@ -16,6 +16,7 @@
  */
 package io.hawtjms.provider.stomp.adapters;
 
+import static io.hawtjms.provider.stomp.StompConstants.BROWSER;
 import static io.hawtjms.provider.stomp.StompConstants.TRUE;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
 import io.hawtjms.provider.stomp.StompConnection;
@@ -30,6 +31,7 @@ public class ActiveMQServerAdaptor extends GenericStompServerAdaptor {
 
     private static final String SUBSCRIPTION_NAME = "activemq.subscriptionName";
     private static final String NO_LOCAL = "activemq.noLocal";
+    private static final String PREFETCH = "activemq.prefetchSize";
 
     /**
      * Creates a new ActiveMQ Server Adapter instance.
@@ -70,16 +72,33 @@ public class ActiveMQServerAdaptor extends GenericStompServerAdaptor {
 
     @Override
     public void addSubscribeHeaders(StompFrame frame, JmsConsumerInfo consumerInfo) throws JMSException {
+        String version = getServerVersion();
+
         if (consumerInfo.isBrowser()) {
-            // TODO - We can do this, just need to check versions.
-            throw new JMSException("ActiveMQ does not support browsing over STOMP");
+            if (version == null || version.isEmpty()) {
+                throw new JMSException("ActiveMQ does not support browsing over STOMP");
+            }
+
+            // 5.6 and above reports it's version and support Queue browser.
+            frame.setProperty(BROWSER, "true");
         }
         if (consumerInfo.isNoLocal()) {
             frame.setProperty(NO_LOCAL, TRUE);
         }
         if (consumerInfo.isDurable()) {
-            // TODO - In newer broker versions we don't need to have matching sub name and id
-            frame.setProperty(SUBSCRIPTION_NAME, consumerInfo.getConsumerId().toString());
+            frame.setProperty(SUBSCRIPTION_NAME, consumerInfo.getSubscriptionName());
+        }
+
+        frame.setProperty(PREFETCH, String.valueOf(consumerInfo.getPrefetchSize()));
+    }
+
+    @Override
+    public boolean isEndOfBrowse(StompFrame message) {
+        String browser = message.getProperty(BROWSER);
+        if (browser != null && !browser.isEmpty()) {
+            return browser.equalsIgnoreCase("end");
+        } else {
+            return false;
         }
     }
 }
