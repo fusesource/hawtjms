@@ -133,7 +133,7 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                         @Override
                         public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
                             StompSession session = connection.getSession(consumerInfo.getParentId());
-                            session.createConsumer(consumerInfo, request);                            
+                            session.createConsumer(consumerInfo, request);
                         }
 
                         @Override
@@ -230,9 +230,6 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
                             StompSession session = connection.getSession(sessionInfo.getSessionId());
                             session.close(request);
-
-                            // TODO - Remove once the close is fully implemented.
-                            request.onSuccess();
                         }
 
                         @Override
@@ -292,6 +289,7 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
                     checkClosed();
                     StompSession amqpSession = connection.getSession(sessionId);
                     amqpSession.acknowledge();
+                    // TODO - Remove after this is implemented.
                     request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);

@@ -16,14 +16,21 @@
  */
 package io.hawtjms.provider.stomp.adapters;
 
+import static io.hawtjms.provider.stomp.StompConstants.CONTENT_TYPE;
 import static io.hawtjms.provider.stomp.StompConstants.ID;
+import static io.hawtjms.provider.stomp.StompConstants.TRANSFORMATION;
 import static io.hawtjms.provider.stomp.StompConstants.UNSUBSCRIBE;
 import io.hawtjms.jms.JmsDestination;
 import io.hawtjms.jms.JmsQueue;
 import io.hawtjms.jms.JmsTopic;
+import io.hawtjms.jms.message.JmsMessage;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
 import io.hawtjms.provider.stomp.StompConnection;
 import io.hawtjms.provider.stomp.StompFrame;
+import io.hawtjms.provider.stomp.message.StompJmsBytesMessage;
+import io.hawtjms.provider.stomp.message.StompJmsMessageFacade;
+import io.hawtjms.provider.stomp.message.StompJmsMessageFactory;
+import io.hawtjms.provider.stomp.message.StompJmsTextMessage;
 
 import javax.jms.JMSException;
 
@@ -149,6 +156,41 @@ public class GenericStompServerAdaptor implements StompServerAdapter {
         return frame;
     }
 
+    public JmsMessage convertToJmsMessage(StompFrame frame) throws JMSException {
+        StompJmsMessageFactory messageFactory = connection.getMessageFactory();
+        String transformation = frame.getProperty(TRANSFORMATION);
+        if (transformation != null) {
+            switch (StompJmsMessageFactory.JmsMsgType.valueOf(transformation)) {
+                case BYTES:
+                    return messageFactory.wrapBytesMessage(frame);
+                case TEXT:
+                    return messageFactory.wrapTextMessage(frame);
+                case TEXT_NULL:
+                    return messageFactory.wrapTextMessage(frame);
+                case MAP:
+                    return messageFactory.wrapMapMessage(frame);
+                case OBJECT:
+                    return messageFactory.wrapObjectMessage(frame);
+                case STREAM:
+                    return messageFactory.wrapStreamMessage(frame);
+                case MESSAGE:
+                    return messageFactory.wrapMessage(frame);
+                default:
+            }
+        }
+
+        transformation = frame.getProperty(CONTENT_TYPE);
+        if (transformation != null ) {
+            if( transformation.startsWith("text") ||
+                transformation.endsWith("json") ||
+                transformation.endsWith("xml")) {
+                return messageFactory.wrapTextMessage(frame);
+            }
+        }
+
+        return messageFactory.wrapBytesMessage(frame);
+    }
+
     @Override
     public String getServerVersion() {
         return this.version;
@@ -158,4 +200,26 @@ public class GenericStompServerAdaptor implements StompServerAdapter {
     public String getServerName() {
         return "Generic";
     }
+
+    /**
+     * Creates a new JmsMessage that wraps the incoming MESSAGE frame.
+     */
+    public JmsMessage wrapMessage(StompFrame message) {
+        return new JmsMessage(new StompJmsMessageFacade(message, connection));
+    }
+
+    /**
+     * Creates a new JmsTextMessage that wraps the incoming MESSAGE frame.
+     */
+    public StompJmsTextMessage wrapTextMessage(StompFrame message) {
+        return new StompJmsTextMessage(new StompJmsMessageFacade(message, connection));
+    }
+
+    /**
+     * Creates a new JmsBytesMessage that wraps the incoming MESSAGE frame.
+     */
+    public StompJmsBytesMessage wrapBytesMessage(StompFrame message) {
+        return new StompJmsBytesMessage(new StompJmsMessageFacade(message, connection));
+    }
+
 }

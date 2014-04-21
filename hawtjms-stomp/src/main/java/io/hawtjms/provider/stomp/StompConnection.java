@@ -22,10 +22,10 @@ import static io.hawtjms.provider.stomp.StompConstants.CONNECTED;
 import static io.hawtjms.provider.stomp.StompConstants.ERROR;
 import static io.hawtjms.provider.stomp.StompConstants.HEARTBEAT;
 import static io.hawtjms.provider.stomp.StompConstants.HOST;
-import static io.hawtjms.provider.stomp.StompConstants.ID;
 import static io.hawtjms.provider.stomp.StompConstants.INVALID_CLIENTID_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.JMS_SECURITY_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.LOGIN;
+import static io.hawtjms.provider.stomp.StompConstants.MESSAGE;
 import static io.hawtjms.provider.stomp.StompConstants.PASSCODE;
 import static io.hawtjms.provider.stomp.StompConstants.RECEIPT;
 import static io.hawtjms.provider.stomp.StompConstants.RECEIPT_ID;
@@ -34,6 +34,7 @@ import static io.hawtjms.provider.stomp.StompConstants.SECURITY_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.SERVER;
 import static io.hawtjms.provider.stomp.StompConstants.SESSION;
 import static io.hawtjms.provider.stomp.StompConstants.STOMP;
+import static io.hawtjms.provider.stomp.StompConstants.SUBSCRIPTION;
 import static io.hawtjms.provider.stomp.StompConstants.VERSION;
 import io.hawtjms.jms.meta.JmsConnectionId;
 import io.hawtjms.jms.meta.JmsConnectionInfo;
@@ -181,7 +182,9 @@ public class StompConnection {
             return;
         }
 
-        if (frame.getCommand().equals(RECEIPT)) {
+        if (frame.getCommand().equals(MESSAGE)) {
+            processMessage(frame);
+        } else if (frame.getCommand().equals(RECEIPT)) {
             processReceipt(frame);
         } else if (frame.getCommand().equals(ERROR)) {
             processError(frame);
@@ -236,9 +239,11 @@ public class StompConnection {
      *
      * @param message
      *        the incoming message frame.
+     *
+     * @throws JMSException if an error occurs while dispatching the incoming message.
      */
-    protected void processMessage(StompFrame message) {
-        String id = message.getProperty(ID);
+    protected void processMessage(StompFrame message) throws JMSException {
+        String id = message.getProperty(SUBSCRIPTION);
         if (id == null) {
             provider.fireProviderException(new IOException("Invalid Message frame received, no ID."));
         }

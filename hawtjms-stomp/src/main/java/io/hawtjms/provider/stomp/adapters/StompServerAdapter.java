@@ -17,6 +17,7 @@
 package io.hawtjms.provider.stomp.adapters;
 
 import io.hawtjms.jms.JmsDestination;
+import io.hawtjms.jms.message.JmsMessage;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
 import io.hawtjms.provider.stomp.StompConnection;
 import io.hawtjms.provider.stomp.StompFrame;
@@ -125,6 +126,20 @@ public interface StompServerAdapter {
      * @throws JMSException
      */
     StompFrame createUnsubscribeFrame(JmsConsumerInfo consumer) throws JMSException;
+
+    /**
+     * Given a STOMP MESSAGE frame determine the proper JmsMessage type provide a
+     * return value that wraps or converts the incoming frame to the JMS Message
+     * type that's a best fit.
+     *
+     * @param frame
+     *        the incoming MESSAGE frame to process.
+     *
+     * @return a new JmsMessage based message instance that wraps the frame.
+     *
+     * @throws JMSException if an error occurs while converting the frame.
+     */
+    JmsMessage convertToJmsMessage(StompFrame frame) throws JMSException;
 
     /**
      * @return the name of the remote server this adapter supports.

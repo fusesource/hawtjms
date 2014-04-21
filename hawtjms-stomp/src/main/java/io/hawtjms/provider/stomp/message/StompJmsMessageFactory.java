@@ -17,6 +17,7 @@
 package io.hawtjms.provider.stomp.message;
 
 import static io.hawtjms.provider.stomp.StompConstants.SEND;
+import static io.hawtjms.provider.stomp.StompConstants.TRANSFORMATION;
 import io.hawtjms.jms.message.JmsBytesMessage;
 import io.hawtjms.jms.message.JmsMapMessage;
 import io.hawtjms.jms.message.JmsMessage;
@@ -35,6 +36,22 @@ import javax.jms.MessageNotWriteableException;
  * STOMP based Message Factory.
  */
 public class StompJmsMessageFactory implements JmsMessageFactory {
+
+    public static enum JmsMsgType {
+        MESSAGE("jms/message"),
+        BYTES("jms/bytes-message"),
+        MAP("jms/map-message"),
+        OBJECT("jms/object-message"),
+        STREAM("jms/stream-message"),
+        TEXT("jms/text-message"),
+        TEXT_NULL("jms/text-message-null");
+
+        public final String mime;
+
+        JmsMsgType(String mime){
+            this.mime = mime;
+        }
+    }
 
     private StompConnection connection;
 
@@ -55,17 +72,23 @@ public class StompJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsMessage createMessage() throws UnsupportedOperationException {
-        return new JmsMessage(new StompJmsMessageFacade(new StompFrame(SEND), connection));
+        StompFrame frame = new StompFrame(SEND);
+        frame.setProperty(TRANSFORMATION, JmsMsgType.MESSAGE.name());
+        return new JmsMessage(new StompJmsMessageFacade(frame, connection));
     }
 
     @Override
     public JmsTextMessage createTextMessage(String payload) throws UnsupportedOperationException {
-        StompJmsTextMessage message = new StompJmsTextMessage(new StompJmsMessageFacade(new StompFrame(SEND), connection));
+        StompFrame frame = new StompFrame(SEND);
+        StompJmsTextMessage message = new StompJmsTextMessage(new StompJmsMessageFacade(frame, connection));
         if (payload != null) {
             try {
+                frame.setProperty(TRANSFORMATION, JmsMsgType.TEXT.name());
                 message.setText(payload);
             } catch (MessageNotWriteableException e) {
             }
+        } else {
+            frame.setProperty(TRANSFORMATION, JmsMsgType.TEXT_NULL.name());
         }
         return message;
     }
@@ -77,7 +100,9 @@ public class StompJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsBytesMessage createBytesMessage() throws UnsupportedOperationException {
-        return new StompJmsBytesMessage(new StompJmsMessageFacade(new StompFrame(SEND), connection));
+        StompFrame frame = new StompFrame(SEND);
+        frame.setProperty(TRANSFORMATION, JmsMsgType.BYTES.name());
+        return new StompJmsBytesMessage(new StompJmsMessageFacade(frame, connection));
     }
 
     @Override

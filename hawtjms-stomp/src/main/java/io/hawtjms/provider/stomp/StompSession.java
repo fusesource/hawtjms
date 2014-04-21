@@ -67,6 +67,7 @@ public class StompSession {
      *        the AsyncResult that awaits the close of this session.
      */
     public void close(AsyncResult<Void> request) {
+        request.onSuccess();
     }
 
     /**

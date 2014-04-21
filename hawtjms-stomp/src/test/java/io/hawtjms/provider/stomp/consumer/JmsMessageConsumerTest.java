@@ -76,7 +76,6 @@ public class JmsMessageConsumerTest extends StompTestSupport {
         connection.close();
     }
 
-    @Ignore
     @Test(timeout = 60000)
     public void testSyncConsumeFromQueue() throws Exception {
         Connection connection = createStompConnection();

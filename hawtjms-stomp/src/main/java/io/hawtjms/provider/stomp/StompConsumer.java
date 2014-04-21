@@ -16,23 +16,33 @@
  */
 package io.hawtjms.provider.stomp;
 
+import static io.hawtjms.provider.stomp.StompConstants.ACK;
 import static io.hawtjms.provider.stomp.StompConstants.ACK_MODE;
 import static io.hawtjms.provider.stomp.StompConstants.DESTINATION;
 import static io.hawtjms.provider.stomp.StompConstants.ID;
 import static io.hawtjms.provider.stomp.StompConstants.SELECTOR;
 import static io.hawtjms.provider.stomp.StompConstants.SUBSCRIBE;
+import static io.hawtjms.provider.stomp.StompConstants.SUBSCRIPTION;
 import static io.hawtjms.provider.stomp.StompConstants.UNSUBSCRIBE;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
+import io.hawtjms.jms.message.JmsMessage;
 import io.hawtjms.jms.meta.JmsConsumerId;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
+import io.hawtjms.jms.meta.JmsMessageId;
 import io.hawtjms.jms.meta.JmsSessionId;
 import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
+import io.hawtjms.provider.ProviderListener;
 import io.hawtjms.provider.stomp.adapters.StompServerAdapter;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.jms.JMSException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * STOMP Consumer class used to manage the subscription process for
@@ -40,10 +50,15 @@ import javax.jms.JMSException;
  */
 public class StompConsumer {
 
+    private static final Logger LOG = LoggerFactory.getLogger(StompConsumer.class);
+
     private final JmsConsumerInfo consumerInfo;
     private final StompSession session;
     private final StompConnection connection;
     private boolean started;
+
+    protected final Map<JmsMessageId, JmsMessageId> delivered =
+        new LinkedHashMap<JmsMessageId, JmsMessageId>();
 
     /**
      * Create a new STOMP Consumer that maps a STOMP subscription to a JMS Framework
@@ -116,8 +131,39 @@ public class StompConsumer {
     /**
      * Handles any incoming messages for this consumer.  The Frame is converted into the
      * appropriate JmsMessage type and fired to the provider listener.
+     *
+     * @param message
+     *        the incoming STOMP MESSAGE frame to dispatch.
+     *
+     * @throws JMSException if an error occurs while processing the frame.
      */
-    public void processMessage(StompFrame message) {
+    public void processMessage(StompFrame message) throws JMSException {
+        StompServerAdapter adapter = connection.getServerAdapter();
+        JmsMessage converted = adapter.convertToJmsMessage(message);
+
+        JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch();
+        envelope.setConsumerId(consumerInfo.getConsumerId());
+        envelope.setMessage(converted);
+        envelope.setProviderHint(this);
+
+        connection.getProvider().getProviderListener().onMessage(envelope);
+    }
+
+    /**
+     * Called to acknowledge all messages that have been marked as delivered but
+     * have not yet been marked consumed.  Usually this is called as part of an
+     * client acknowledge session operation.
+     *
+     * Only messages that have already been acknowledged as delivered by the JMS
+     * framework will be in the delivered Map.
+     */
+    public void acknowledge() {
+        LOG.trace("Session Acknowledge for consumer: {}", getConsumerId());
+//        for (Delivery delivery : delivered.values()) {
+//            delivery.disposition(Accepted.getInstance());
+//            delivery.settle();
+//        }
+//        delivered.clear();
     }
 
     /**
@@ -130,9 +176,38 @@ public class StompConsumer {
      *        the type of acknowledge operation that should be performed.
      * @param request
      *        the asynchronous request awaiting completion of this operation.
+     *
+     * @throws IOException if an error occurs while writing the frame.
      */
-    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult<Void> request) {
-        // TODO Auto-generated method stub
+    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult<Void> request) throws IOException {
+        JmsMessageId messageId = envelope.getMessage().getFacade().getMessageId();
+
+        if (ackType.equals(ACK_TYPE.DELIVERED)) {
+            LOG.debug("Delivered Ack of message: {}", messageId);
+            delivered.put(messageId, messageId);
+
+            // TODO - Credit fame.
+
+        } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
+            LOG.debug("Consumed Ack of message: {}", messageId);
+            delivered.remove(messageId);
+            StompFrame ack = new StompFrame(ACK);
+            ack.setProperty(ID, messageId.toString());
+            ack.setProperty(SUBSCRIPTION, getConsumerId().toString());
+
+            // TODO - Transaction.
+
+            connection.request(ack, request);
+            return;
+        } else if (ackType.equals(ACK_TYPE.REDELIVERED)) {
+            LOG.debug("Redelivered Ack of message: {}", messageId);
+        } else if (ackType.equals(ACK_TYPE.POISONED)) {
+            LOG.debug("Poisoned Ack of message: {}", messageId);
+        } else {
+            LOG.warn("Unsupporeted Ack Type for message: {}", messageId);
+        }
+
+        request.onSuccess();
     }
 
     public JmsConsumerId getConsumerId() {
@@ -149,5 +224,21 @@ public class StompConsumer {
 
     public boolean isStarted() {
         return started;
+    }
+
+    //---------- Internal helper methods -------------------------------------//
+
+    protected void deliver(JmsInboundMessageDispatch envelope) {
+        ProviderListener listener = connection.getProvider().getProviderListener();
+        if (listener != null) {
+            if (envelope.getMessage() != null) {
+                LOG.debug("Dispatching received message: {}", envelope.getMessage().getFacade().getMessageId());
+            } else {
+                LOG.debug("Dispatching end of browse to: {}", envelope.getConsumerId());
+            }
+            listener.onMessage(envelope);
+        } else {
+            LOG.error("Provider listener is not set, message will be dropped.");
+        }
     }
 }
