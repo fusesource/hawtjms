@@ -18,19 +18,25 @@ package io.hawtjms.provider.stomp.adapters;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import io.hawtjms.provider.stomp.adapters.StompServerAdapter;
-import io.hawtjms.provider.stomp.adapters.StompServerAdapterFactory;
+import io.hawtjms.provider.stomp.StompConnection;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 /**
  * Test case for the Apache Apollo STOMP Server Adapter.
  */
+@RunWith(MockitoJUnitRunner.class)
 public class ApolloServerAdapterTest {
+
+    @Mock
+    private StompConnection connection;
 
     @Test
     public void testCreateServerAdapter() {
-        StompServerAdapter adapter = StompServerAdapterFactory.create("apache-apollo/1.7.0");
+        StompServerAdapter adapter = StompServerAdapterFactory.create(connection, "apache-apollo/1.7.0");
         assertNotNull(adapter);
         assertEquals("1.7.0", adapter.getServerVersion());
         assertEquals("Apache-Apollo", adapter.getServerName());

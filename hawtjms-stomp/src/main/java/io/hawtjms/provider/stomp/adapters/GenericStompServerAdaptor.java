@@ -18,7 +18,11 @@ package io.hawtjms.provider.stomp.adapters;
 
 import static io.hawtjms.provider.stomp.StompConstants.ID;
 import static io.hawtjms.provider.stomp.StompConstants.UNSUBSCRIBE;
+import io.hawtjms.jms.JmsDestination;
+import io.hawtjms.jms.JmsQueue;
+import io.hawtjms.jms.JmsTopic;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
+import io.hawtjms.provider.stomp.StompConnection;
 import io.hawtjms.provider.stomp.StompFrame;
 
 import javax.jms.JMSException;
@@ -30,13 +34,85 @@ import javax.jms.JMSException;
 public class GenericStompServerAdaptor implements StompServerAdapter {
 
     private final String version;
+    private final StompConnection connection;
 
-    public GenericStompServerAdaptor() {
+    public GenericStompServerAdaptor(StompConnection connection) {
         this.version = "Unknown";
+        this.connection = connection;
     }
 
-    public GenericStompServerAdaptor(String version) {
+    public GenericStompServerAdaptor(StompConnection connection, String version) {
         this.version = version;
+        this.connection = connection;
+    }
+
+    @Override
+    public StompConnection getStompConnection() {
+        return this.connection;
+    }
+
+    @Override
+    public String getQueuePrefix() {
+        return connection.getQueuePrefix();
+    }
+
+    @Override
+    public String getTopicPrefix() {
+        return connection.getTopicPrefix();
+    }
+
+    @Override
+    public String getTempQueuePrefix() {
+        return connection.getTempQueuePrefix();
+    }
+
+    @Override
+    public String getTempTopicPrefix() {
+        return connection.getTempTopicPrefix();
+    }
+
+    @Override
+    public String toStompDestination(JmsDestination destination) {
+        String result = null;
+
+        if (destination.isTopic()) {
+            if (destination.isTemporary()) {
+                result = getTempTopicPrefix() + destination.getName();
+            } else {
+                result = getTopicPrefix() + destination.getName();
+            }
+        } else {
+            if (destination.isTemporary()) {
+                result = getTempQueuePrefix() + destination.getName();
+            } else {
+                result = getQueuePrefix() + destination.getName();
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public JmsDestination toJmsDestination(String destinationName) throws JMSException {
+        JmsDestination result = null;
+
+        if (destinationName == null) {
+            return null;
+        }
+
+        if (destinationName.startsWith(getTopicPrefix())) {
+            result = new JmsTopic(destinationName.substring(getTopicPrefix().length()));
+        } else if (destinationName.startsWith(getQueuePrefix())) {
+            result = new JmsQueue(destinationName.substring(getQueuePrefix().length()));
+        } else if (destinationName.startsWith(getTempTopicPrefix())) {
+            result = new JmsQueue(destinationName.substring(getTempTopicPrefix().length()));
+        } else if (destinationName.startsWith(getTempQueuePrefix())) {
+            result = new JmsQueue(destinationName.substring(getTempQueuePrefix().length()));
+        } else {
+            throw new JMSException("Cannot transform unknown destination type: " + destinationName);
+        }
+
+        return result;
     }
 
     @Override

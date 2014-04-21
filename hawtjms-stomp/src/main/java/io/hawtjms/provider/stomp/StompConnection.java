@@ -99,6 +99,10 @@ public class StompConnection {
         this.connectionInfo = connectionInfo;
         this.provider = provider;
         this.messageFactory = new StompJmsMessageFactory(this);
+        this.tempQueuePrefix = connectionInfo.getTempQueuePrefix();
+        this.tempTopicPrefix = connectionInfo.getTempTopicPrefix();
+        this.queuePrefix = connectionInfo.getQueuePrefix();
+        this.topicPrefix = connectionInfo.getTopicPrefix();
 
         connectionInfo.getConnectionId().setProviderHint(this);
     }
@@ -155,7 +159,7 @@ public class StompConnection {
             throw new IOException("A Session with the given ID already exists.");
         }
 
-        StompSession session = new StompSession(sessionInfo);
+        StompSession session = new StompSession(this, sessionInfo);
         sessions.put(sessionInfo.getSessionId(), session);
         request.onSuccess();
     }
@@ -204,9 +208,9 @@ public class StompConnection {
 
             String server = frame.getProperty(SERVER);
             if (server != null) {
-                serverAdapter = StompServerAdapterFactory.create(server);
+                serverAdapter = StompServerAdapterFactory.create(this, server);
             } else {
-                serverAdapter = new GenericStompServerAdaptor();
+                serverAdapter = new GenericStompServerAdaptor(this);
             }
 
             version = frame.getProperty(VERSION);
@@ -216,8 +220,9 @@ public class StompConnection {
 
             LOG.info("Using STOMP server adapter: {}", serverAdapter.getServerName());
 
-            this.connected = true;
-            this.pendingConnect.onSuccess();
+            connected = true;
+            pendingConnect.onSuccess();
+            pendingConnect = null;
         } else {
             throw new IOException("Received Unexpected frame during connect: " + frame.getCommand());
         }
@@ -472,6 +477,10 @@ public class StompConnection {
 
     public void setTempTopicPrefix(String tempTopicPrefix) {
         this.tempTopicPrefix = tempTopicPrefix;
+    }
+
+    public StompServerAdapter getServerAdapter() {
+        return this.serverAdapter;
     }
 
     //---------- Internal utilities ------------------------------------------//

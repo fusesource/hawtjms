@@ -51,8 +51,7 @@ public class JmsMessageProducerTest extends StompTestSupport {
         session.createProducer(queue);
     }
 
-    @Ignore
-    @Test
+    @Test(timeout=60000)
     public void testSendWorksWhenConnectionNotStarted() throws Exception {
         connection = createStompConnection();
         assertNotNull(connection);
@@ -62,17 +61,15 @@ public class JmsMessageProducerTest extends StompTestSupport {
         Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
-        assertEquals(0, proxy.getQueueSize());
-
         Message message = session.createMessage();
         producer.send(message);
 
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
     }
 
     @Ignore
-    @Test
+    @Test(timeout=60000)
     public void testSendWorksAfterConnectionStopped() throws Exception {
         connection = createStompConnection();
         assertNotNull(connection);
@@ -92,7 +89,7 @@ public class JmsMessageProducerTest extends StompTestSupport {
     }
 
     @Ignore
-    @Test
+    @Test(timeout=60000)
     public void testPersistentSendsAreMarkedPersistent() throws Exception {
         connection = createStompConnection();
         assertNotNull(connection);
@@ -117,7 +114,7 @@ public class JmsMessageProducerTest extends StompTestSupport {
     }
 
     @Ignore
-    @Test
+    @Test(timeout=60000)
     public void testProducerWithNoTTLSendsMessagesWithoutTTL() throws Exception {
         connection = createStompConnection();
         assertNotNull(connection);

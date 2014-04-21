@@ -37,8 +37,6 @@ import static io.hawtjms.provider.stomp.StompConstants.TRUE;
 import static io.hawtjms.provider.stomp.StompConstants.TYPE;
 import static io.hawtjms.provider.stomp.StompConstants.USERID;
 import io.hawtjms.jms.JmsDestination;
-import io.hawtjms.jms.JmsQueue;
-import io.hawtjms.jms.JmsTopic;
 import io.hawtjms.jms.message.JmsMessageFacade;
 import io.hawtjms.jms.meta.JmsMessageId;
 import io.hawtjms.provider.stomp.StompConnection;
@@ -374,44 +372,10 @@ public class StompJmsMessageFacade implements JmsMessageFacade {
     }
 
     private String toStompDestination(JmsDestination destination) {
-        String result = null;
-
-        if (destination.isTopic()) {
-            if (destination.isTemporary()) {
-                result = connection.getTempTopicPrefix() + destination.getName();
-            } else {
-                result = connection.getTopicPrefix() + destination.getName();
-            }
-        } else {
-            if (destination.isTemporary()) {
-                result = connection.getTempQueuePrefix() + destination.getName();
-            } else {
-                result = connection.getQueuePrefix() + destination.getName();
-            }
-        }
-
-        return result;
+        return connection.getServerAdapter().toStompDestination(destination);
     }
 
     private JmsDestination toJmsDestination(String destinationName) throws JMSException {
-        JmsDestination result = null;
-
-        if (destinationName == null) {
-            return null;
-        }
-
-        if (destinationName.startsWith(connection.getTopicPrefix())) {
-            result = new JmsTopic(destinationName.substring(connection.getTopicPrefix().length()));
-        } else if (destinationName.startsWith(connection.getQueuePrefix())) {
-            result = new JmsQueue(destinationName.substring(connection.getQueuePrefix().length()));
-        } else if (destinationName.startsWith(connection.getTempTopicPrefix())) {
-            result = new JmsQueue(destinationName.substring(connection.getTempTopicPrefix().length()));
-        } else if (destinationName.startsWith(connection.getTempQueuePrefix())) {
-            result = new JmsQueue(destinationName.substring(connection.getTempQueuePrefix().length()));
-        } else {
-            throw new JMSException("Cannot transform unknown destination type: " + destinationName);
-        }
-
-        return result;
+        return connection.getServerAdapter().toJmsDestination(destinationName);
     }
 }

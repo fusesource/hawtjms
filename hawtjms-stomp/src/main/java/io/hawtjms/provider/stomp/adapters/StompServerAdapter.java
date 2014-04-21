@@ -16,7 +16,9 @@
  */
 package io.hawtjms.provider.stomp.adapters;
 
+import io.hawtjms.jms.JmsDestination;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
+import io.hawtjms.provider.stomp.StompConnection;
 import io.hawtjms.provider.stomp.StompFrame;
 
 import javax.jms.JMSException;
@@ -27,6 +29,55 @@ import javax.jms.JMSException;
  * various STOMP server implementations.
  */
 public interface StompServerAdapter {
+
+    /**
+     * @return the Queue prefix used to define Queue destinations on the Server.
+     */
+    String getQueuePrefix();
+
+    /**
+     * @return the Topic prefix used to define Topic destinations on the Server.
+     */
+    String getTopicPrefix();
+
+    /**
+     * @return the Temporary Queue prefix used to define temporary destinations on the Server.
+     */
+    String getTempQueuePrefix();
+
+    /**
+     * @return the Temporary Topic prefix used to define temporary destinations on the Server.
+     */
+    String getTempTopicPrefix();
+
+    /**
+     * @returns the StompConnection instance that owns this adapter.
+     */
+    StompConnection getStompConnection();
+
+    /**
+     * Converts the given JmsDestination into a Server compatible STOMP destination
+     * name string.
+     *
+     * @param destination
+     *        the JmsDestination to convert to the STOMP format appropriate to the Server.
+     */
+    String toStompDestination(JmsDestination destination);
+
+    /**
+     * Converts from a STOMP frame's destination or reply-to destination name string to
+     * the appropriate JmsDestination type with correct destination name.  The returned
+     * JmsDestination name should be stripped of any Server specific destination name
+     * prefix values.
+     *
+     * @param destination
+     *        the STOMP destination name string from a frame.
+     *
+     * @return a new JmsDesitnation instance with the correct type and name values.
+     *
+     * @throws JMSException if the name cannot be converted to a JmsDestination instance.
+     */
+    JmsDestination toJmsDestination(String destination) throws JMSException;
 
     /**
      * Creates a Credit frame which can be used to release additional messages from a Broker

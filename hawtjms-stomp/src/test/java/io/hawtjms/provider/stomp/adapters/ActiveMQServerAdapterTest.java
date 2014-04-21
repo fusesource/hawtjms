@@ -18,22 +18,27 @@ package io.hawtjms.provider.stomp.adapters;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import io.hawtjms.provider.stomp.adapters.StompServerAdapter;
-import io.hawtjms.provider.stomp.adapters.StompServerAdapterFactory;
+import io.hawtjms.provider.stomp.StompConnection;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 /**
  * Test case for the Apache ActiveMQ STOMP Server Adapter.
  */
+@RunWith(MockitoJUnitRunner.class)
 public class ActiveMQServerAdapterTest {
+
+    @Mock
+    private StompConnection connection;
 
     @Test
     public void testCreateServerAdapter() {
-        StompServerAdapter adapter = StompServerAdapterFactory.create("ActiveMQ/5.9.0");
+        StompServerAdapter adapter = StompServerAdapterFactory.create(connection, "ActiveMQ/5.9.0");
         assertNotNull(adapter);
         assertEquals("5.9.0", adapter.getServerVersion());
         assertEquals("ActiveMQ", adapter.getServerName());
     }
-
 }

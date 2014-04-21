@@ -16,7 +16,7 @@
  */
 package io.hawtjms.provider.stomp.message;
 
-import static io.hawtjms.provider.stomp.StompConstants.MESSAGE;
+import static io.hawtjms.provider.stomp.StompConstants.SEND;
 import io.hawtjms.jms.message.JmsBytesMessage;
 import io.hawtjms.jms.message.JmsMapMessage;
 import io.hawtjms.jms.message.JmsMessage;
@@ -55,12 +55,12 @@ public class StompJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsMessage createMessage() throws UnsupportedOperationException {
-        return new JmsMessage(new StompJmsMessageFacade(new StompFrame(MESSAGE), connection));
+        return new JmsMessage(new StompJmsMessageFacade(new StompFrame(SEND), connection));
     }
 
     @Override
     public JmsTextMessage createTextMessage(String payload) throws UnsupportedOperationException {
-        StompJmsTextMessage message = new StompJmsTextMessage(new StompJmsMessageFacade(new StompFrame(MESSAGE), connection));
+        StompJmsTextMessage message = new StompJmsTextMessage(new StompJmsMessageFacade(new StompFrame(SEND), connection));
         if (payload != null) {
             try {
                 message.setText(payload);
@@ -77,7 +77,7 @@ public class StompJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsBytesMessage createBytesMessage() throws UnsupportedOperationException {
-        return new StompJmsBytesMessage(new StompJmsMessageFacade(new StompFrame(MESSAGE), connection));
+        return new StompJmsBytesMessage(new StompJmsMessageFacade(new StompFrame(SEND), connection));
     }
 
     @Override
@@ -98,5 +98,47 @@ public class StompJmsMessageFactory implements JmsMessageFactory {
     @Override
     public JmsObjectMessage createObjectMessage() throws UnsupportedOperationException {
         return createObjectMessage(null);
+    }
+
+    /**
+     * Creates a new JmsMessage that wraps the incoming MESSAGE frame.
+     */
+    public JmsMessage wrapMessage(StompFrame message) {
+        return new JmsMessage(new StompJmsMessageFacade(message, connection));
+    }
+
+    /**
+     * Creates a new JmsTextMessage that wraps the incoming MESSAGE frame.
+     */
+    public StompJmsTextMessage wrapTextMessage(StompFrame message) {
+        return new StompJmsTextMessage(new StompJmsMessageFacade(message, connection));
+    }
+
+    /**
+     * Creates a new JmsBytesMessage that wraps the incoming MESSAGE frame.
+     */
+    public StompJmsBytesMessage wrapBytesMessage(StompFrame message) {
+        return new StompJmsBytesMessage(new StompJmsMessageFacade(message, connection));
+    }
+
+    /**
+     * Creates a new JmsMapMessage that wraps the incoming MESSAGE frame.
+     */
+    public JmsMapMessage wrapMapMessage(StompFrame message) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    /**
+     * Creates a new JmsMapMessage that wraps the incoming MESSAGE frame.
+     */
+    public JmsStreamMessage wrapStreamMessage(StompFrame message) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    /**
+     * Creates a new JmsMapMessage that wraps the incoming MESSAGE frame.
+     */
+    public JmsObjectMessage wrapObjectMessage(StompFrame message) {
+        throw new RuntimeException("Not yet implemented");
     }
 }

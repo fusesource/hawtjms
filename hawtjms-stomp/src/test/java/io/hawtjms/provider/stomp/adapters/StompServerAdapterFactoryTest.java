@@ -18,26 +18,32 @@ package io.hawtjms.provider.stomp.adapters;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import io.hawtjms.provider.stomp.adapters.StompServerAdapter;
-import io.hawtjms.provider.stomp.adapters.StompServerAdapterFactory;
+import io.hawtjms.provider.stomp.StompConnection;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 /**
  * Tests for the STOMP server adapter factory.
  */
+@RunWith(MockitoJUnitRunner.class)
 public class StompServerAdapterFactoryTest {
+
+    @Mock
+    private StompConnection connection;
 
     @Test
     public void testCreateServerAdapter() {
-        StompServerAdapter adapter = StompServerAdapterFactory.create("ActiveMQ");
+        StompServerAdapter adapter = StompServerAdapterFactory.create(connection, "ActiveMQ");
         assertNotNull(adapter);
         assertEquals("ActiveMQ", adapter.getServerName());
     }
 
     @Test
     public void testUnknownCreatesGenericAdapter() {
-        StompServerAdapter adapter = StompServerAdapterFactory.create("Unknown");
+        StompServerAdapter adapter = StompServerAdapterFactory.create(connection, "Unknown");
         assertNotNull(adapter);
         assertEquals("Generic", adapter.getServerName());
     }

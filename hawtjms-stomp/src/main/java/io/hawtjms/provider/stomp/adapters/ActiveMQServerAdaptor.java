@@ -18,6 +18,7 @@ package io.hawtjms.provider.stomp.adapters;
 
 import static io.hawtjms.provider.stomp.StompConstants.TRUE;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
+import io.hawtjms.provider.stomp.StompConnection;
 import io.hawtjms.provider.stomp.StompFrame;
 
 import javax.jms.JMSException;
@@ -33,16 +34,38 @@ public class ActiveMQServerAdaptor extends GenericStompServerAdaptor {
     /**
      * Creates a new ActiveMQ Server Adapter instance.
      *
+     * @param connection
+     *        the connection instance that owns this ServerAdapter.
      * @param version
      *        the version of ActiveMQ that we've connected to.
      */
-    public ActiveMQServerAdaptor(String version) {
-        super(version);
+    public ActiveMQServerAdaptor(StompConnection connection, String version) {
+        super(connection, version);
     }
 
     @Override
     public String getServerName() {
         return "ActiveMQ";
+    }
+
+    @Override
+    public String getQueuePrefix() {
+        return "/queue/";
+    }
+
+    @Override
+    public String getTopicPrefix() {
+        return "/topic/";
+    }
+
+    @Override
+    public String getTempQueuePrefix() {
+        return "/temp-queue/";
+    }
+
+    @Override
+    public String getTempTopicPrefix() {
+        return "/temp-topic/";
     }
 
     @Override

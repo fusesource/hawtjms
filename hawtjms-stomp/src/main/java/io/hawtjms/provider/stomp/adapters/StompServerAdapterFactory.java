@@ -16,6 +16,7 @@
  */
 package io.hawtjms.provider.stomp.adapters;
 
+import io.hawtjms.provider.stomp.StompConnection;
 import io.hawtjms.util.FactoryFinder;
 
 import java.io.IOException;
@@ -38,14 +39,18 @@ public abstract class StompServerAdapterFactory {
      * Creates a new instance of a STOMP server adapter based on the server String that
      * is returned in the STOMP CONNECTED frame.
      *
+     * @param connection
+     *        the StompConnection instance that will own this adapter.
      * @param server
      *        the server String returned from the CONNECTED frame.
+     * @param version
+     *        the version string extracted from the CONNECTED frame.
      *
      * @return a STOMP server adapter based on the server string.
      *
      * @throws Exception if an error occurs while parsing the server string and creating an adapter.
      */
-    public abstract StompServerAdapter createAdapter(String server, String version) throws Exception;
+    public abstract StompServerAdapter createAdapter(StompConnection connection, String server, String version) throws Exception;
 
     /**
      * @return the name of this STOMP server adapter factory, e.g. ActiveMQ, Apollo...etc
@@ -57,17 +62,19 @@ public abstract class StompServerAdapterFactory {
      * configuration and setup.  If a specific server adapter cannot be found this method will
      * return a generic server adapter instead of throwing an exception.
      *
+     * @param connection
+     *        the StompConnection instance that will own this adapter.
      * @param server
      *        the server String returned from the CONNECTED frame.
      *
      * @return a new StompServerAdapter instance that is ready for use.
      */
-    public static StompServerAdapter create(String server) {
+    public static StompServerAdapter create(StompConnection connection, String server) {
         StompServerAdapter result = null;
 
         String[] parts = server.split("/");
         if (parts.length == 0) {
-            result = new GenericStompServerAdaptor();
+            result = new GenericStompServerAdaptor(connection);
         } else {
             String serverName = parts[0];
             String version = "";
@@ -77,11 +84,11 @@ public abstract class StompServerAdapterFactory {
 
             try {
                 StompServerAdapterFactory factory = findProviderFactory(serverName);
-                result = factory.createAdapter(serverName, version);
+                result = factory.createAdapter(connection, serverName, version);
             } catch (Exception ex) {
                 LOG.error("Failed to create StompServerAdapter instance for: {}", serverName);
                 LOG.trace("Error: ", ex);
-                result = new GenericStompServerAdaptor();
+                result = new GenericStompServerAdaptor(connection);
             }
         }
         return result;

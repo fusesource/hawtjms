@@ -21,6 +21,7 @@ import io.hawtjms.jms.meta.JmsProducerId;
 import io.hawtjms.jms.meta.JmsProducerInfo;
 import io.hawtjms.jms.meta.JmsSessionId;
 import io.hawtjms.provider.AsyncResult;
+import io.hawtjms.provider.stomp.message.StompJmsMessageFacade;
 
 import java.io.IOException;
 
@@ -32,6 +33,7 @@ public class StompProducer {
 
     private final JmsProducerInfo producerInfo;
     private final StompSession session;
+    private final StompConnection connection;
 
     /**
      * Creates a new StompProducer instance with the given parent session and
@@ -44,6 +46,7 @@ public class StompProducer {
      */
     public StompProducer(StompSession session, JmsProducerInfo producerInfo) {
         this.session = session;
+        this.connection = session.getConnection();
         this.producerInfo = producerInfo;
 
         this.producerInfo.getProducerId().setProviderHint(this);
@@ -70,7 +73,13 @@ public class StompProducer {
      *        the asynchronous request that will await the completed send operation.
      */
     public void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException {
-        // TODO
+        StompJmsMessageFacade facade = (StompJmsMessageFacade) envelope.getMessage().getFacade();
+        StompFrame sendFrame = facade.getStompMessage();
+
+        // TODO - Get current TX Id and append it to the Frame.
+
+        // Frame will be marshaled by the Providers Codec.
+        connection.request(sendFrame, request);
     }
 
     public JmsProducerId getProducerId() {

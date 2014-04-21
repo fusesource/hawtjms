@@ -21,6 +21,7 @@ import static io.hawtjms.provider.stomp.StompConstants.COLON_ESCAPE_SEQ;
 import static io.hawtjms.provider.stomp.StompConstants.ESCAPE_BYTE;
 import static io.hawtjms.provider.stomp.StompConstants.ESCAPE_ESCAPE_SEQ;
 import static io.hawtjms.provider.stomp.StompConstants.NEWLINE_BYTE;
+import static io.hawtjms.provider.stomp.StompConstants.NEWLINE_ESCAPE_SEQ;
 import static io.hawtjms.provider.stomp.StompConstants.NULL_BYTE;
 import static io.hawtjms.provider.stomp.StompConstants.UTF8;
 import static io.hawtjms.provider.stomp.StompConstants.V1_0;
@@ -39,12 +40,16 @@ import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.BufferOutputStream;
 import org.fusesource.hawtbuf.ByteArrayOutputStream;
 import org.fusesource.hawtbuf.DataByteArrayOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Codec class used to handle incoming byte packets from the broker and
  * build a STOMP command from it.
  */
 public class StompCodec {
+
+    private static final Logger LOG = LoggerFactory.getLogger(StompCodec.class);
 
     /**
      * Pair like object used to hold parsed Header key / value entries.
@@ -168,6 +173,7 @@ public class StompCodec {
                 if (scratch.position() != 0) {
                     scratch.flip();
                     AsciiBuffer command = new Buffer(scratch).trim().ascii();
+                    LOG.trace("New incoming STOMP frame, command := {}", command);
                     StompFrame frame = new StompFrame(command.toString());
                     currentParser = initiateHeaderRead(frame);
                     return currentParser.parse(data);
@@ -303,6 +309,7 @@ public class StompCodec {
                         }
                     } else {
                         applyContent(frame, content);
+                        scratch.clear();
                         currentParser = commandParser;
                         return frame;
                     }
@@ -445,7 +452,7 @@ public class StompCodec {
                         out.write(COLON_ESCAPE_SEQ.getBytes(UTF8));
                         break;
                     case NEWLINE_BYTE:
-                        out.write(COLON_ESCAPE_SEQ.getBytes(UTF8));
+                        out.write(NEWLINE_ESCAPE_SEQ.getBytes(UTF8));
                         break;
                     default:
                         out.write(d);

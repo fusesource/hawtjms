@@ -22,6 +22,7 @@ import static io.hawtjms.provider.stomp.StompConstants.PERSISTENT;
 import static io.hawtjms.provider.stomp.StompConstants.TRUE;
 import static io.hawtjms.provider.stomp.StompConstants.UNSUBSCRIBE;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
+import io.hawtjms.provider.stomp.StompConnection;
 import io.hawtjms.provider.stomp.StompFrame;
 
 import javax.jms.JMSException;
@@ -31,8 +32,8 @@ import javax.jms.JMSException;
  */
 public class ApolloServerAdaptor extends GenericStompServerAdaptor {
 
-    public ApolloServerAdaptor(String version) {
-        super(version);
+    public ApolloServerAdaptor(StompConnection connection, String version) {
+        super(connection, version);
     }
 
     @Override

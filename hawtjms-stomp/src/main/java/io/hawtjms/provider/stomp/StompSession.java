@@ -32,14 +32,26 @@ import java.util.Map;
  */
 public class StompSession {
 
+    private final StompConnection connection;
     private final JmsSessionInfo sessionInfo;
     private final Map<JmsProducerId, StompProducer> producers = new HashMap<JmsProducerId, StompProducer>();
     private final Map<JmsConsumerId, StompConsumer> consumers = new HashMap<JmsConsumerId, StompConsumer>();
 
-    public StompSession(JmsSessionInfo sessionInfo) {
+    public StompSession(StompConnection connection, JmsSessionInfo sessionInfo) {
+        this.connection = connection;
         this.sessionInfo = sessionInfo;
     }
 
+    /**
+     * @return the StompConnection that created this Session.
+     */
+    public StompConnection getConnection() {
+        return this.connection;
+    }
+
+    /**
+     * @return the assigned JmsSessionId that identifies this Session.
+     */
     public JmsSessionId getSessionId() {
         return this.sessionInfo.getSessionId();
     }

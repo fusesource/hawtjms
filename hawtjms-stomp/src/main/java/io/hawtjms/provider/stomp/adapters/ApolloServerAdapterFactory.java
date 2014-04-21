@@ -16,14 +16,16 @@
  */
 package io.hawtjms.provider.stomp.adapters;
 
+import io.hawtjms.provider.stomp.StompConnection;
+
 /**
  * Creates the ServerAdapter for Apache Apollo connections.
  */
 public class ApolloServerAdapterFactory extends StompServerAdapterFactory {
 
     @Override
-    public StompServerAdapter createAdapter(String server, String version) throws Exception {
-        return new ApolloServerAdaptor(version);
+    public StompServerAdapter createAdapter(StompConnection connection, String server, String version) throws Exception {
+        return new ApolloServerAdaptor(connection, version);
     }
 
     @Override
