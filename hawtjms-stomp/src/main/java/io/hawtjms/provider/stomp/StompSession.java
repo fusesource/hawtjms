@@ -67,9 +67,18 @@ public class StompSession {
      *
      * @param request
      *        the AsyncResult that awaits the close of this session.
+     *
+     * @throws IOException if an error occurs while closing a consumer.
      */
-    public void close(AsyncResult<Void> request) {
-        request.onSuccess();
+    public void close(AsyncResult<Void> request) throws IOException {
+        if (consumers.isEmpty()) {
+            request.onSuccess();
+        }
+
+        AggregateResult pending = new AggregateResult(consumers.size(), request);
+        for (StompConsumer consumer : consumers.values()) {
+            consumer.close(pending);
+        }
     }
 
     /**
@@ -141,7 +150,7 @@ public class StompSession {
      * @throws IOException if an error occurs sending any ACK frames.
      */
     public void acknowledge(AsyncResult<Void> request) throws IOException {
-        AcknowledgeResult pending = new AcknowledgeResult(consumers.size(), request);
+        AggregateResult pending = new AggregateResult(consumers.size(), request);
         for (StompConsumer consumer : consumers.values()) {
             consumer.acknowledge(pending);
         }
@@ -197,11 +206,11 @@ public class StompSession {
      * at the time of the Session Acknowledge call to complete the acknowledge of all
      * their delivered messages.
      */
-    private static class AcknowledgeResult extends ProviderRequest<Void> {
+    private static class AggregateResult extends ProviderRequest<Void> {
 
         private final AtomicInteger consumers;
 
-        public AcknowledgeResult(int numConsumers, AsyncResult<Void> request) {
+        public AggregateResult(int numConsumers, AsyncResult<Void> request) {
             super(request);
             this.consumers = new AtomicInteger(numConsumers);
         }
