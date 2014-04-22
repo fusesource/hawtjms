@@ -18,10 +18,8 @@ package io.hawtjms.jms.destinations;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import io.hawtjms.jms.consumer.JmsMessageConsumerTest;
 import io.hawtjms.test.support.AmqpTestSupport;
 
-import javax.jms.Connection;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 
@@ -34,11 +32,11 @@ import org.slf4j.LoggerFactory;
  */
 public class JmsTemporaryQueueTest extends AmqpTestSupport {
 
-    protected static final Logger LOG = LoggerFactory.getLogger(JmsMessageConsumerTest.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(JmsTemporaryQueueTest.class);
 
     @Test(timeout = 60000)
     public void testCreateTemporaryQueue() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -47,7 +45,5 @@ public class JmsTemporaryQueueTest extends AmqpTestSupport {
         session.createConsumer(queue);
 
         assertEquals(1, brokerService.getAdminView().getTemporaryQueues().length);
-
-        connection.close();
     }
 }

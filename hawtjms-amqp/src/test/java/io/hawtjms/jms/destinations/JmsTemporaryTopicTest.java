@@ -18,10 +18,8 @@ package io.hawtjms.jms.destinations;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import io.hawtjms.jms.consumer.JmsMessageConsumerTest;
 import io.hawtjms.test.support.AmqpTestSupport;
 
-import javax.jms.Connection;
 import javax.jms.Session;
 import javax.jms.TemporaryTopic;
 
@@ -35,13 +33,13 @@ import org.slf4j.LoggerFactory;
  */
 public class JmsTemporaryTopicTest extends AmqpTestSupport {
 
-    protected static final Logger LOG = LoggerFactory.getLogger(JmsMessageConsumerTest.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(JmsTemporaryTopicTest.class);
 
     // Temp Topics not yet supported on the Broker.
     @Ignore
     @Test(timeout = 60000)
     public void testCreateTemporaryTopic() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -50,7 +48,5 @@ public class JmsTemporaryTopicTest extends AmqpTestSupport {
         session.createConsumer(topic);
 
         assertEquals(1, brokerService.getAdminView().getTemporaryTopics().length);
-
-        connection.close();
     }
 }
