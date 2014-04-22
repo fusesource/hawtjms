@@ -88,6 +88,30 @@ public class JmsMessageProducerTest extends StompTestSupport {
     }
 
     @Test(timeout=60000)
+    public void testMessagePrioritySetCorrectly() throws Exception {
+        connection = createStompConnection();
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageProducer producer = session.createProducer(queue);
+        producer.setPriority(9);
+
+        Message message = session.createMessage();
+        producer.send(message);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(1, proxy.getQueueSize());
+
+        MessageConsumer consumer = session.createConsumer(queue);
+        message = consumer.receive(5000);
+        assertNotNull(message);
+        assertEquals(9, message.getJMSPriority());
+    }
+
+    @Test(timeout=60000)
     public void testPersistentSendsAreMarkedPersistent() throws Exception {
         connection = createStompConnection();
         assertNotNull(connection);
@@ -111,7 +135,6 @@ public class JmsMessageProducerTest extends StompTestSupport {
         assertTrue(message.getJMSDeliveryMode() == DeliveryMode.PERSISTENT);
     }
 
-    @Ignore
     @Test(timeout=60000)
     public void testProducerWithNoTTLSendsMessagesWithoutTTL() throws Exception {
         connection = createStompConnection();
@@ -133,7 +156,6 @@ public class JmsMessageProducerTest extends StompTestSupport {
         message = consumer.receive(5000);
         assertNotNull(message);
         assertEquals(0, message.getJMSExpiration());
-        assertEquals(0, message.getJMSTimestamp());
     }
 
     private String createLargeString(int sizeInBytes) {
