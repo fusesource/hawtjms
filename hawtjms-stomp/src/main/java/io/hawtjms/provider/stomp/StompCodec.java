@@ -17,10 +17,13 @@
 package io.hawtjms.provider.stomp;
 
 import static io.hawtjms.provider.stomp.StompConstants.COLON_BYTE;
+import static io.hawtjms.provider.stomp.StompConstants.COLON_ESCAPE_BYTE;
 import static io.hawtjms.provider.stomp.StompConstants.COLON_ESCAPE_SEQ;
 import static io.hawtjms.provider.stomp.StompConstants.ESCAPE_BYTE;
+import static io.hawtjms.provider.stomp.StompConstants.ESCAPE_ESCAPE_BYTE;
 import static io.hawtjms.provider.stomp.StompConstants.ESCAPE_ESCAPE_SEQ;
 import static io.hawtjms.provider.stomp.StompConstants.NEWLINE_BYTE;
+import static io.hawtjms.provider.stomp.StompConstants.NEWLINE_ESCAPE_BYTE;
 import static io.hawtjms.provider.stomp.StompConstants.NEWLINE_ESCAPE_SEQ;
 import static io.hawtjms.provider.stomp.StompConstants.NULL_BYTE;
 import static io.hawtjms.provider.stomp.StompConstants.UTF8;
@@ -379,13 +382,13 @@ public class StompCodec {
                 } else {
                     byte escaped = header.get();
                     switch (escaped) {
-                        case COLON_BYTE:
+                        case COLON_ESCAPE_BYTE:
                             decoded.put(COLON_BYTE);
                             break;
-                        case ESCAPE_BYTE:
+                        case ESCAPE_ESCAPE_BYTE:
                             decoded.put(ESCAPE_BYTE);
                             break;
-                        case NEWLINE_BYTE:
+                        case NEWLINE_ESCAPE_BYTE:
                             decoded.put(NEWLINE_BYTE);
                             break;
                     }
