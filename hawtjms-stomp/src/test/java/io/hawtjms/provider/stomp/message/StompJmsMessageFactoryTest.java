@@ -25,6 +25,7 @@ import io.hawtjms.jms.JmsTopic;
 import io.hawtjms.jms.message.JmsMessage;
 import io.hawtjms.provider.stomp.StompConnection;
 import io.hawtjms.provider.stomp.StompFrame;
+import io.hawtjms.provider.stomp.adapters.GenericStompServerAdaptor;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +44,9 @@ public class StompJmsMessageFactoryTest {
 
     @Before
     public void setUp() throws Exception {
+        GenericStompServerAdaptor adapter = new GenericStompServerAdaptor(connection);
+
+        when(connection.getServerAdapter()).thenReturn(adapter);
         when(connection.getTempQueuePrefix()).thenReturn("temp-queue://");
         when(connection.getTempTopicPrefix()).thenReturn("temp-topic://");
         when(connection.getQueuePrefix()).thenReturn("queue://");
