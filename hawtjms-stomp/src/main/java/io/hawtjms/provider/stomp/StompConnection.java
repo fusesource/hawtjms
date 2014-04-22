@@ -252,11 +252,11 @@ public class StompConnection {
 
         JmsConsumerId consumerId = new JmsConsumerId(id);
         StompConsumer consumer = getConsumer(consumerId);
-        if (consumer == null) {
-            provider.fireProviderException(new IOException("Received message for unknown consumer: " + consumerId));
+        if (consumer != null) {
+            consumer.processMessage(message);
+        } else {
+            LOG.debug("Received message for a consumer that doesn't exist.");
         }
-
-        consumer.processMessage(message);
     }
 
     /**

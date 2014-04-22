@@ -60,7 +60,7 @@ public class JmsClientAckTest extends StompTestSupport {
         super.tearDown();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testAckedMessageAreConsumed() throws Exception {
         connection = createStompConnection();
         connection.start();
@@ -89,7 +89,7 @@ public class JmsClientAckTest extends StompTestSupport {
         connection.close();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testLastMessageAcked() throws Exception {
         connection = createStompConnection();
         connection.start();
@@ -122,7 +122,7 @@ public class JmsClientAckTest extends StompTestSupport {
         }));
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testUnAckedMessageAreNotConsumedOnSessionClose() throws Exception {
         connection = createStompConnection();
         connection.start();
@@ -161,7 +161,7 @@ public class JmsClientAckTest extends StompTestSupport {
         }));
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testAckedMessageAreConsumedByAsync() throws Exception {
         connection = createStompConnection();
         connection.start();
@@ -196,8 +196,7 @@ public class JmsClientAckTest extends StompTestSupport {
         }));
     }
 
-    @Ignore
-    @Test
+    @Test(timeout = 60000)
     public void testUnAckedAsyncMessageAreNotConsumedOnSessionClose() throws Exception {
         connection = createStompConnection();
         connection.start();
@@ -206,6 +205,7 @@ public class JmsClientAckTest extends StompTestSupport {
         MessageProducer producer = session.createProducer(queue);
         producer.send(session.createTextMessage("Hello"));
 
+        final CountDownLatch latch = new CountDownLatch(1);
         final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
@@ -215,9 +215,11 @@ public class JmsClientAckTest extends StompTestSupport {
 
             @Override
             public void onMessage(Message message) {
-                // Don't ack the message.
+                latch.countDown();
             }
         });
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
 
         session.close();
         assertEquals(1, proxy.getQueueSize());
