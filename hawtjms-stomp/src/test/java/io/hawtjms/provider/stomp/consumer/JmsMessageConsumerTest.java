@@ -63,7 +63,7 @@ public class JmsMessageConsumerTest extends StompTestSupport {
 
     @Test(timeout = 60000)
     public void testCreateMessageConsumer() throws Exception {
-        Connection connection = createStompConnection();
+        connection = createStompConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -73,12 +73,11 @@ public class JmsMessageConsumerTest extends StompTestSupport {
 
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(0, proxy.getQueueSize());
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testSyncConsumeFromQueue() throws Exception {
-        Connection connection = createStompConnection();
+        connection = createStompConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -90,7 +89,6 @@ public class JmsMessageConsumerTest extends StompTestSupport {
 
         final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
-
         assertNotNull("Failed to receive any message.", consumer.receive(200000));
 
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
@@ -100,13 +98,11 @@ public class JmsMessageConsumerTest extends StompTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
-        connection.close();
     }
 
-    @Ignore
     @Test(timeout = 60000)
     public void testSyncConsumeFromTopic() throws Exception {
-        Connection connection = createStompConnection();
+        connection = createStompConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -117,8 +113,7 @@ public class JmsMessageConsumerTest extends StompTestSupport {
         sendToAmqTopic(1);
 
         final TopicViewMBean proxy = getProxyToTopic(name.getMethodName());
-        //assertEquals(1, proxy.getQueueSize());
-
+        assertEquals(1, proxy.getEnqueueCount());
         assertNotNull("Failed to receive any message.", consumer.receive(2000));
 
         assertTrue("Published message not consumed.", Wait.waitFor(new Wait.Condition() {
@@ -128,7 +123,6 @@ public class JmsMessageConsumerTest extends StompTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
-        connection.close();
     }
 
     /**
@@ -140,10 +134,10 @@ public class JmsMessageConsumerTest extends StompTestSupport {
      *
      * @throws Exception
      */
-    @Ignore
     @Test(timeout = 60000)
     public void testConsumerReceiveBeforeMessageDispatched() throws Exception {
         final Connection connection = createStompConnection();
+        this.connection = connection;
         connection.start();
 
         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -165,18 +159,16 @@ public class JmsMessageConsumerTest extends StompTestSupport {
         MessageConsumer consumer = session.createConsumer(queue);
         Message msg = consumer.receive(60000);
         assertNotNull(msg);
-        connection.close();
     }
 
-    @Ignore
     @Test(timeout = 60000)
     public void testAsynchronousMessageConsumption() throws Exception {
-
         final int msgCount = 4;
-
         final Connection connection = createStompConnection();
         final AtomicInteger counter = new AtomicInteger(0);
         final CountDownLatch done = new CountDownLatch(1);
+
+        this.connection = connection;
 
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -198,18 +190,15 @@ public class JmsMessageConsumerTest extends StompTestSupport {
         assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
         TimeUnit.SECONDS.sleep(1);
         assertEquals(msgCount, counter.get());
-        connection.close();
     }
 
-    @Ignore
     @Test(timeout = 60000)
     public void testSyncReceiveFailsWhenListenerSet() throws Exception {
-
         final int msgCount = 4;
-
         final Connection connection = createStompConnection();
         final AtomicInteger counter = new AtomicInteger(0);
         final CountDownLatch done = new CountDownLatch(1);
+        this.connection = connection;
 
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -244,19 +233,15 @@ public class JmsMessageConsumerTest extends StompTestSupport {
             fail("Should have thrown an exception.");
         } catch (JMSException ex) {
         }
-
-        connection.close();
     }
 
-    @Ignore
     @Test(timeout = 60000)
     public void testSetMessageListenerAfterStartAndSend() throws Exception {
-
         final int msgCount = 4;
-
         final Connection connection = createStompConnection();
         final AtomicInteger counter = new AtomicInteger(0);
         final CountDownLatch done = new CountDownLatch(1);
+        this.connection = connection;
 
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -278,44 +263,41 @@ public class JmsMessageConsumerTest extends StompTestSupport {
         assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
         TimeUnit.SECONDS.sleep(1);
         assertEquals(msgCount, counter.get());
-        connection.close();
     }
 
-    @Ignore
     @Test(timeout = 60000)
     public void testNoReceivedMessagesWhenConnectionNotStarted() throws Exception {
-        Connection connection = createStompConnection();
+        connection = createStompConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         sendToAmqQueue(3);
         assertNull(consumer.receive(2000));
-        connection.close();
     }
 
-    @Ignore
     @Test(timeout = 60000)
     public void testMessagesAreAckedAMQProducer() throws Exception {
         int messagesSent = 3;
         assertTrue(brokerService.isPersistent());
 
-        Connection connection = createActiveMQConnection();
+        connection = createActiveMQConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
-        MessageProducer p = session.createProducer(queue);
+        MessageProducer producer = session.createProducer(queue);
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
         TextMessage message = null;
-        for (int i=0; i < messagesSent; i++) {
+        for (int i = 0; i < messagesSent; i++) {
             message = session.createTextMessage();
             String messageText = "Hello " + i + " sent at " + new java.util.Date().toString();
             message.setText(messageText);
             LOG.debug(">>>> Sent [{}]", messageText);
-            p.send(message);
+            producer.send(message);
         }
 
         // After the first restart we should get all messages sent above
         restartPrimaryBroker();
         int messagesReceived = readAllMessages();
-        assertEquals(messagesSent, messagesReceived);
+        assertEquals("Should have read: " + messagesSent, messagesSent, messagesReceived);
 
         // This time there should be no messages on this queue
         restartPrimaryBroker();
@@ -323,18 +305,17 @@ public class JmsMessageConsumerTest extends StompTestSupport {
         assertEquals(0, messagesReceived);
     }
 
-    @Ignore
     @Test(timeout = 60000)
-    public void testMessagesAreAckedAMQPProducer() throws Exception {
+    public void testMessagesAreAckedStompProducer() throws Exception {
         int messagesSent = 3;
 
-        Connection connection = createStompConnection();
+        connection = createStompConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
         TextMessage message = null;
-        for (int i=0; i < messagesSent; i++) {
+        for (int i = 0; i < messagesSent; i++) {
             message = session.createTextMessage();
             String messageText = "Hello " + i + " sent at " + new java.util.Date().toString();
             message.setText(messageText);
@@ -360,41 +341,37 @@ public class JmsMessageConsumerTest extends StompTestSupport {
     }
 
     private int readAllMessages(String selector) throws Exception {
-        Connection connection = createStompConnection();
+        connection = createStompConnection();
         connection.start();
-        try {
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue(name.getMethodName());
-            int messagesReceived = 0;
-            MessageConsumer consumer;
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+        int messagesReceived = 0;
+        MessageConsumer consumer;
 
-            if (selector == null) {
-                consumer = session.createConsumer(queue);
-            } else {
-                consumer = session.createConsumer(queue, selector);
-            }
-
-            Message msg = consumer.receive(5000);
-            while (msg != null) {
-                assertNotNull(msg);
-                assertTrue(msg instanceof TextMessage);
-                TextMessage textMessage = (TextMessage) msg;
-                LOG.debug(">>>> Received [{}]", textMessage.getText());
-                messagesReceived++;
-                msg = consumer.receive(5000);
-            }
-
-            consumer.close();
-            return messagesReceived;
-        } finally {
-            connection.close();
+        if (selector == null) {
+            consumer = session.createConsumer(queue);
+        } else {
+            consumer = session.createConsumer(queue, selector);
         }
+
+        Message msg = consumer.receive(5000);
+        while (msg != null) {
+            assertNotNull(msg);
+            assertTrue(msg instanceof TextMessage);
+            TextMessage textMessage = (TextMessage) msg;
+            LOG.debug(">>>> Received [{}]", textMessage.getText());
+            messagesReceived++;
+            msg = consumer.receive(5000);
+        }
+
+        consumer.close();
+        return messagesReceived;
     }
 
     @Ignore
     @Test(timeout = 30000)
     public void testSelectors() throws Exception{
-        Connection connection = createStompConnection();
+        connection = createStompConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -417,28 +394,23 @@ public class JmsMessageConsumerTest extends StompTestSupport {
         assertTrue(msg instanceof TextMessage);
         assertEquals("hello + 9", ((TextMessage) msg).getText());
         assertNull(consumer.receive(1000));
-        connection.close();
     }
 
-    @Ignore
     @Test(timeout = 90000, expected=JMSSecurityException.class)
     public void testConsumerNotAuthorized() throws Exception{
-        Connection connection = createStompConnection("guest", "password");
+        connection = createStompConnection("guest", "password");
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue("USERS." + name.getMethodName());
         session.createConsumer(queue);
-        connection.close();
     }
 
-    @Ignore
     @Test(timeout = 90000, expected=InvalidSelectorException.class)
     public void testInvalidSelector() throws Exception{
-        Connection connection = createStompConnection();
+        connection = createStompConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
         session.createConsumer(queue, "3+5");
-        connection.close();
     }
 }
