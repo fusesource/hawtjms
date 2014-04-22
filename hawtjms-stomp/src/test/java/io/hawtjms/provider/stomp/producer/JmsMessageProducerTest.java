@@ -87,7 +87,6 @@ public class JmsMessageProducerTest extends StompTestSupport {
         assertEquals(1, proxy.getQueueSize());
     }
 
-    @Ignore
     @Test(timeout=60000)
     public void testPersistentSendsAreMarkedPersistent() throws Exception {
         connection = createStompConnection();
