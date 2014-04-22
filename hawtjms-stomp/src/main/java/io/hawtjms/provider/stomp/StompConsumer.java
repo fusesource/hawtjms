@@ -38,8 +38,7 @@ import io.hawtjms.provider.ProviderListener;
 import io.hawtjms.provider.stomp.adapters.StompServerAdapter;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.LinkedList;
 
 import javax.jms.JMSException;
 
@@ -59,8 +58,8 @@ public class StompConsumer {
     private final StompConnection connection;
     private boolean started;
 
-    protected final Map<JmsMessageId, JmsInboundMessageDispatch> delivered =
-        new LinkedHashMap<JmsMessageId, JmsInboundMessageDispatch>();
+    protected final LinkedList<JmsInboundMessageDispatch> delivered =
+        new LinkedList<JmsInboundMessageDispatch>();
 
     /**
      * Create a new STOMP Consumer that maps a STOMP subscription to a JMS Framework
@@ -158,14 +157,23 @@ public class StompConsumer {
      *
      * Only messages that have already been acknowledged as delivered by the JMS
      * framework will be in the delivered Map.
+     *
+     * @param request
+     *        the request that awaits completion of this action.
+     *
+     * @throws IOException if an error occurs while sending the ACK frame.
      */
-    public void acknowledge() {
+    public void acknowledge(AsyncResult<Void> request) throws IOException {
         LOG.trace("Session Acknowledge for consumer: {}", getConsumerId());
-//        for (Delivery delivery : delivered.values()) {
-//            delivery.disposition(Accepted.getInstance());
-//            delivery.settle();
-//        }
-//        delivered.clear();
+
+        // STOMP client Ack messages are cumulative so one frame is all we need.
+        if (!delivered.isEmpty()) {
+            JmsInboundMessageDispatch envelope = delivered.getLast();
+            acknowledge(envelope, ACK_TYPE.CONSUMED, request);
+            delivered.clear();
+        } else {
+            request.onSuccess();
+        }
     }
 
     /**
@@ -187,13 +195,13 @@ public class StompConsumer {
 
         if (ackType.equals(ACK_TYPE.DELIVERED)) {
             LOG.debug("Delivered Ack of message: {}", messageId);
-            delivered.put(messageId, envelope);
+            delivered.add(envelope);
 
             // TODO - Credit fame.
 
         } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
             LOG.debug("Consumed Ack of message: {}", messageId);
-            delivered.remove(messageId);
+            delivered.remove(envelope);
             StompFrame ack = new StompFrame(ACK);
             ack.setProperty(MESSAGE_ID, messageId.toString());
             ack.setProperty(SUBSCRIPTION, getConsumerId().toString());

@@ -23,10 +23,12 @@ import io.hawtjms.jms.meta.JmsProducerInfo;
 import io.hawtjms.jms.meta.JmsSessionId;
 import io.hawtjms.jms.meta.JmsSessionInfo;
 import io.hawtjms.provider.AsyncResult;
+import io.hawtjms.provider.ProviderRequest;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.JMSException;
 
@@ -132,9 +134,17 @@ public class StompSession {
 
     /**
      * For all consumers in this session force an acknowledge of all unacknowledged messages.
+     *
+     * @param request
+     *        the request that awaits the completion of this operation.
+     *
+     * @throws IOException if an error occurs sending any ACK frames.
      */
-    public void acknowledge() {
-        // TODO Auto-generated method stub
+    public void acknowledge(AsyncResult<Void> request) throws IOException {
+        AcknowledgeResult pending = new AcknowledgeResult(consumers.size(), request);
+        for (StompConsumer consumer : consumers.values()) {
+            consumer.acknowledge(pending);
+        }
     }
 
     /**
@@ -178,5 +188,29 @@ public class StompSession {
             return (StompConsumer) consumerId.getProviderHint();
         }
         return this.consumers.get(consumerId);
+    }
+
+    //---------- Internal Utilities ------------------------------------------//
+
+    /*
+     * Implements an accumulating result monitor that watches for all active consumers
+     * at the time of the Session Acknowledge call to complete the acknowledge of all
+     * their delivered messages.
+     */
+    private static class AcknowledgeResult extends ProviderRequest<Void> {
+
+        private final AtomicInteger consumers;
+
+        public AcknowledgeResult(int numConsumers, AsyncResult<Void> request) {
+            super(request);
+            this.consumers = new AtomicInteger(numConsumers);
+        }
+
+        @Override
+        public void onSuccess(Void result) {
+            if (consumers.decrementAndGet() == 0) {
+                super.onSuccess(result);
+            }
+        }
     }
 }
