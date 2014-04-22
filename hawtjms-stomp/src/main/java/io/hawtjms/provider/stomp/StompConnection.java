@@ -23,6 +23,7 @@ import static io.hawtjms.provider.stomp.StompConstants.ERROR;
 import static io.hawtjms.provider.stomp.StompConstants.HEARTBEAT;
 import static io.hawtjms.provider.stomp.StompConstants.HOST;
 import static io.hawtjms.provider.stomp.StompConstants.INVALID_CLIENTID_EXCEPTION;
+import static io.hawtjms.provider.stomp.StompConstants.INVALID_SELECTOR_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.JMS_SECURITY_EXCEPTION;
 import static io.hawtjms.provider.stomp.StompConstants.LOGIN;
 import static io.hawtjms.provider.stomp.StompConstants.MESSAGE;
@@ -53,6 +54,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.jms.InvalidClientIDException;
+import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 
@@ -538,6 +540,8 @@ public class StompConnection {
 
         if (errorDetail.contains(INVALID_CLIENTID_EXCEPTION)) {
             exception = new InvalidClientIDException(frame.getErrorMessage());
+        } else if (errorDetail.contains(INVALID_SELECTOR_EXCEPTION)) {
+            exception = new InvalidSelectorException(frame.getErrorMessage());
         } else if (errorDetail.contains(JMS_SECURITY_EXCEPTION)) {
             exception = new JMSSecurityException(frame.getErrorMessage());
         } else if (errorDetail.contains(SECURITY_EXCEPTION)) {

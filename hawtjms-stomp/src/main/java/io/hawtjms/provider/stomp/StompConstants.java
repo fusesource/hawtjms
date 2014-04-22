@@ -129,6 +129,7 @@ public interface StompConstants {
      * Well known JMSException types that we want to map when throwing from
      * the provider on ERROR frames.
      */
+    final String INVALID_SELECTOR_EXCEPTION = "InvalidSelectorException";
     final String INVALID_CLIENTID_EXCEPTION = "InvalidClientIDException";
     final String JMS_SECURITY_EXCEPTION = "JmsSecurityException";
     final String SECURITY_EXCEPTION = "SecurityException";
