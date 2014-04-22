@@ -62,7 +62,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)
     public void testCreateMessageConsumer() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -72,12 +72,11 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(0, proxy.getQueueSize());
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testSyncConsumeFromQueue() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -99,12 +98,11 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testSyncConsumeFromTopic() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -126,7 +124,6 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
-        connection.close();
     }
 
     /**
@@ -138,9 +135,10 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testConsumerReceiveBeforeMessageDispatched() throws Exception {
         final Connection connection = createAmqpConnection();
+        this.connection = connection;
         connection.start();
 
         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -162,17 +160,15 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         MessageConsumer consumer = session.createConsumer(queue);
         Message msg = consumer.receive(60000);
         assertNotNull(msg);
-        connection.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testAsynchronousMessageConsumption() throws Exception {
-
         final int msgCount = 4;
-
         final Connection connection = createAmqpConnection();
         final AtomicInteger counter = new AtomicInteger(0);
         final CountDownLatch done = new CountDownLatch(1);
+        this.connection = connection;
 
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -194,17 +190,15 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
         TimeUnit.SECONDS.sleep(1);
         assertEquals(msgCount, counter.get());
-        connection.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testSyncReceiveFailsWhenListenerSet() throws Exception {
-
         final int msgCount = 4;
-
         final Connection connection = createAmqpConnection();
         final AtomicInteger counter = new AtomicInteger(0);
         final CountDownLatch done = new CountDownLatch(1);
+        this.connection = connection;
 
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -239,18 +233,15 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
             fail("Should have thrown an exception.");
         } catch (JMSException ex) {
         }
-
-        connection.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testSetMessageListenerAfterStartAndSend() throws Exception {
-
         final int msgCount = 4;
-
         final Connection connection = createAmqpConnection();
         final AtomicInteger counter = new AtomicInteger(0);
         final CountDownLatch done = new CountDownLatch(1);
+        this.connection = connection;
 
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -272,18 +263,16 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
         TimeUnit.SECONDS.sleep(1);
         assertEquals(msgCount, counter.get());
-        connection.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testNoReceivedMessagesWhenConnectionNotStarted() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue destination = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         sendToAmqQueue(3);
         assertNull(consumer.receive(2000));
-        connection.close();
     }
 
     @Test(timeout = 60000)
@@ -291,7 +280,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         int messagesSent = 3;
         assertTrue(brokerService.isPersistent());
 
-        Connection connection = createActiveMQConnection();
+        connection = createActiveMQConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
         MessageProducer p = session.createProducer(queue);
@@ -319,7 +308,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
     public void testMessagesAreAckedAMQPProducer() throws Exception {
         int messagesSent = 3;
 
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
@@ -384,7 +373,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
     @Test(timeout=30000)
     public void testSelectors() throws Exception{
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -407,26 +396,23 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertTrue(msg instanceof TextMessage);
         assertEquals("hello + 9", ((TextMessage) msg).getText());
         assertNull(consumer.receive(1000));
-        connection.close();
     }
 
     @Test(timeout=90000, expected=JMSSecurityException.class)
     public void testConsumerNotAuthorized() throws Exception{
-        Connection connection = createAmqpConnection("guest", "password");
+        connection = createAmqpConnection("guest", "password");
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue("USERS." + name.getMethodName());
         session.createConsumer(queue);
-        connection.close();
     }
 
     @Test(timeout=90000, expected=InvalidSelectorException.class)
     public void testInvalidSelector() throws Exception{
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
         session.createConsumer(queue, "3+5");
-        connection.close();
     }
 }

@@ -38,7 +38,7 @@ import org.junit.Test;
  */
 public class JmsCreateResourcesInOnMessageTest extends AmqpTestSupport {
 
-    @Test(timeout = 200000)
+    @Test(timeout = 60000)
     public void testCreateProducerInOnMessage() throws Exception {
         Connection connection = createAmqpConnection();
         connection.start();

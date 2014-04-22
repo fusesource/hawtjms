@@ -58,7 +58,7 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         consumer.setMessageListener(listener);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testPullConsumerWorks() throws Exception {
         connection = createAmqpConnection();
         ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
@@ -81,7 +81,7 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
     }
 
     @Ignore // ActiveMQ doesn't honor link credit.
-    @Test
+    @Test(timeout = 60000)
     public void testTwoConsumers() throws Exception {
         connection = createAmqpConnection();
         ((JmsConnection)connection).getPrefetchPolicy().setAll(0);

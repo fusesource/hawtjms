@@ -19,8 +19,6 @@ package io.hawtjms.jms.producer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import io.hawtjms.jms.JmsConnection;
-import io.hawtjms.jms.JmsConnectionFactory;
 import io.hawtjms.test.support.AmqpTestSupport;
 
 import javax.jms.BytesMessage;
@@ -44,9 +42,7 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)
     public void testSendJMSMessage() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
-        assertNotNull(connection);
+        connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -57,15 +53,11 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
         producer.send(message);
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
-
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testSendJMSBytesMessage() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
-        assertNotNull(connection);
+        connection = createAmqpConnection();
         connection.start();
 
         String payload = "TEST";
@@ -86,15 +78,11 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
         assertTrue(received instanceof BytesMessage);
         BytesMessage bytes = (BytesMessage) received;
         assertEquals(payload, bytes.readUTF());
-
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testSendJMSMapMessage() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
-        assertNotNull(connection);
+        connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -115,15 +103,11 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
         MapMessage map = (MapMessage) received;
         assertEquals("TEST", map.getString("STRING"));
         assertEquals(false, map.getBooleanProperty("Boolean"));
-
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testSendJMSStreamMessage() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
-        assertNotNull(connection);
+        connection = createAmqpConnection();
         connection.start();
 
         String payload = "TEST";
@@ -144,15 +128,11 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
         assertTrue(received instanceof StreamMessage);
         StreamMessage stream = (StreamMessage) received;
         assertEquals(payload, stream.readString());
-
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testSendJMSTextMessage() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
-        assertNotNull(connection);
+        connection = createAmqpConnection();
         connection.start();
 
         String payload = "TEST";
@@ -172,15 +152,11 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
         assertTrue(received instanceof TextMessage);
         TextMessage text = (TextMessage) received;
         assertEquals(payload, text.getText());
-
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testSendJMSObjectMessage() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
-        assertNotNull(connection);
+        connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -191,7 +167,5 @@ public class JmsProduceMessageTypesTest extends AmqpTestSupport {
         producer.send(message);
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
-
-        connection.close();
     }
 }

@@ -37,9 +37,9 @@ public class JmsMessageGroupTest extends AmqpTestSupport {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsMessageGroupTest.class);
 
-    @Test
+    @Test(timeout = 60000)
     public void testGroupedMessagesDeliveredToOnlyOneConsumer() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -82,7 +82,6 @@ public class JmsMessageGroupTest extends AmqpTestSupport {
         // assert that there are no other messages left for the consumer 2
         Message m = consumer2.receive(100);
         assertNull("consumer 2 has some messages left", m);
-        connection.close();
         connection1.close();
     }
 }

@@ -59,7 +59,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         super.tearDown();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testAckedMessageAreConsumed() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -88,7 +88,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testLastMessageAcked() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -121,7 +121,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         }));
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testUnAckedMessageAreNotConsumedOnSessionClose() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -157,7 +157,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         }));
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testAckedMessageAreConsumedByAsync() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -192,7 +192,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         }));
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testUnAckedAsyncMessageAreNotConsumedOnSessionClose() throws Exception {
         connection = createAmqpConnection();
         connection.start();

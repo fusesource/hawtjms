@@ -24,7 +24,6 @@ import io.hawtjms.test.support.AmqpTestSupport;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
@@ -51,7 +50,7 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)
     public void testCreateDuableSubscriber() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");
         connection.start();
 
@@ -64,13 +63,11 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
 
         assertEquals(1, brokerService.getAdminView().getDurableTopicSubscribers().length);
-
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testDurableGoesOfflineAndReturns() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");
         connection.start();
 
@@ -94,13 +91,11 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
 
         assertEquals(1, brokerService.getAdminView().getDurableTopicSubscribers().length);
         assertEquals(0, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
-
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testOfflineSubscriberGetsItsMessages() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");
         connection.start();
 
@@ -130,7 +125,5 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         });
 
         assertTrue("Only recieved messages: " + messages.getCount(), messages.await(30, TimeUnit.SECONDS));
-
-        connection.close();
     }
 }

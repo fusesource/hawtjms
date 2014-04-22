@@ -49,7 +49,7 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
         connection = createAmqpConnection();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testPrefetchedMessageArePriorityOrdered() throws Exception {
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -83,7 +83,7 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testPrefetchedMessageAreNotPriorityOrdered() throws Exception {
         // We are assuming that Broker side priority support is not enabled in the create
         // broker method in AmqpTestSupport.  If that changes then this test will sometimes

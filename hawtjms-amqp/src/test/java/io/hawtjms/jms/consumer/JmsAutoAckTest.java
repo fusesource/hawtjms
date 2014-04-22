@@ -22,7 +22,6 @@ import static org.junit.Assert.assertTrue;
 import io.hawtjms.test.support.AmqpTestSupport;
 import io.hawtjms.test.support.Wait;
 
-import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -43,7 +42,7 @@ public class JmsAutoAckTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)
     public void testAckedMessageAreConsumed() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -65,12 +64,11 @@ public class JmsAutoAckTest extends AmqpTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testAckedMessageAreConsumedAsync() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -98,6 +96,5 @@ public class JmsAutoAckTest extends AmqpTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
-        connection.close();
     }
 }
