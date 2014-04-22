@@ -36,6 +36,10 @@ public interface StompConstants {
 
     final byte ESCAPE_BYTE = '\\';
 
+    final byte ESCAPE_ESCAPE_BYTE = 92;
+    final byte COLON_ESCAPE_BYTE = 99;
+    final byte NEWLINE_ESCAPE_BYTE = 110;
+
     final String ESCAPE_ESCAPE_SEQ = "\\\\";
     final String COLON_ESCAPE_SEQ = "\\c";
     final String NEWLINE_ESCAPE_SEQ = "\\n";
