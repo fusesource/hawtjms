@@ -91,7 +91,7 @@ public class JmsMessageConsumerTest extends StompTestSupport {
         final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
-        assertNotNull("Failed to receive any message.", consumer.receive(2000));
+        assertNotNull("Failed to receive any message.", consumer.receive(200000));
 
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 

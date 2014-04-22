@@ -17,9 +17,11 @@
 package io.hawtjms.provider.stomp;
 
 import static io.hawtjms.provider.stomp.StompConstants.ACK;
+import static io.hawtjms.provider.stomp.StompConstants.ACK_ID;
 import static io.hawtjms.provider.stomp.StompConstants.ACK_MODE;
 import static io.hawtjms.provider.stomp.StompConstants.DESTINATION;
 import static io.hawtjms.provider.stomp.StompConstants.ID;
+import static io.hawtjms.provider.stomp.StompConstants.MESSAGE_ID;
 import static io.hawtjms.provider.stomp.StompConstants.SELECTOR;
 import static io.hawtjms.provider.stomp.StompConstants.SUBSCRIBE;
 import static io.hawtjms.provider.stomp.StompConstants.SUBSCRIPTION;
@@ -57,8 +59,8 @@ public class StompConsumer {
     private final StompConnection connection;
     private boolean started;
 
-    protected final Map<JmsMessageId, JmsMessageId> delivered =
-        new LinkedHashMap<JmsMessageId, JmsMessageId>();
+    protected final Map<JmsMessageId, JmsInboundMessageDispatch> delivered =
+        new LinkedHashMap<JmsMessageId, JmsInboundMessageDispatch>();
 
     /**
      * Create a new STOMP Consumer that maps a STOMP subscription to a JMS Framework
@@ -144,7 +146,7 @@ public class StompConsumer {
         JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch();
         envelope.setConsumerId(consumerInfo.getConsumerId());
         envelope.setMessage(converted);
-        envelope.setProviderHint(this);
+        envelope.setProviderHint(message);
 
         connection.getProvider().getProviderListener().onMessage(envelope);
     }
@@ -180,11 +182,12 @@ public class StompConsumer {
      * @throws IOException if an error occurs while writing the frame.
      */
     public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult<Void> request) throws IOException {
+        StompFrame messageFrame = (StompFrame) envelope.getProviderHint();
         JmsMessageId messageId = envelope.getMessage().getFacade().getMessageId();
 
         if (ackType.equals(ACK_TYPE.DELIVERED)) {
             LOG.debug("Delivered Ack of message: {}", messageId);
-            delivered.put(messageId, messageId);
+            delivered.put(messageId, envelope);
 
             // TODO - Credit fame.
 
@@ -192,8 +195,13 @@ public class StompConsumer {
             LOG.debug("Consumed Ack of message: {}", messageId);
             delivered.remove(messageId);
             StompFrame ack = new StompFrame(ACK);
-            ack.setProperty(ID, messageId.toString());
+            ack.setProperty(MESSAGE_ID, messageId.toString());
             ack.setProperty(SUBSCRIPTION, getConsumerId().toString());
+
+            String ackHeader = messageFrame.getProperty(ACK_ID);
+            if (ackHeader != null) {
+                ack.setProperty(ID, ackHeader);
+            }
 
             // TODO - Transaction.
 

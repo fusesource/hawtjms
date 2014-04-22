@@ -94,6 +94,7 @@ public interface StompConstants {
     final String USERID = "JMSXUserID";
     final String PROPERTIES = "JMSXProperties";
     final String ACK_MODE = "ack";
+    final String ACK_ID = "ack";
     final String ID = "id";
     final String SELECTOR = "selector";
     final String BROWSER = "browser";
