@@ -16,6 +16,7 @@
  */
 package io.hawtjms.provider.stomp.adapters;
 
+import static io.hawtjms.provider.stomp.StompConstants.CONTENT_LENGTH;
 import static io.hawtjms.provider.stomp.StompConstants.CONTENT_TYPE;
 import static io.hawtjms.provider.stomp.StompConstants.ID;
 import static io.hawtjms.provider.stomp.StompConstants.TRANSFORMATION;
@@ -156,6 +157,7 @@ public class GenericStompServerAdaptor implements StompServerAdapter {
         return frame;
     }
 
+    @Override
     public JmsMessage convertToJmsMessage(StompFrame frame) throws JMSException {
         StompJmsMessageFactory messageFactory = connection.getMessageFactory();
         String transformation = frame.getProperty(TRANSFORMATION);
@@ -186,6 +188,13 @@ public class GenericStompServerAdaptor implements StompServerAdapter {
                 transformation.endsWith("xml")) {
                 return messageFactory.wrapTextMessage(frame);
             }
+        }
+
+        // Standard STOMP contract is that if there is no content-length then the
+        // message is a text message.
+        transformation = frame.getProperty(CONTENT_LENGTH);
+        if (transformation == null) {
+            return messageFactory.wrapTextMessage(frame);
         }
 
         return messageFactory.wrapBytesMessage(frame);
