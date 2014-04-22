@@ -122,7 +122,6 @@ public class JmsClientAckTest extends StompTestSupport {
         }));
     }
 
-    @Ignore
     @Test
     public void testUnAckedMessageAreNotConsumedOnSessionClose() throws Exception {
         connection = createStompConnection();
@@ -146,6 +145,9 @@ public class JmsClientAckTest extends StompTestSupport {
         // Consume the message...and this time we ack it.
         session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         consumer = session.createConsumer(queue);
+
+        assertEquals(1, proxy.getQueueSize());
+
         msg = consumer.receive(2000);
         assertNotNull(msg);
         msg.acknowledge();
