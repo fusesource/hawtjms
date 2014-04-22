@@ -111,6 +111,10 @@ public class StompSession {
      * @throws JMSException if there is an error creating the requested type of subscription.
      */
     public void createConsumer(JmsConsumerInfo consumerInfo, AsyncResult<Void> request) throws JMSException, IOException {
+        if (consumerInfo.getPrefetchSize() == 0) {
+            throw new JMSException("Cannot create a consumer with Zero Prefetch in STOMP");
+        }
+
         StompConsumer consumer = new StompConsumer(this, consumerInfo);
         consumers.put(consumerInfo.getConsumerId(), consumer);
         consumer.subscribe(request);
