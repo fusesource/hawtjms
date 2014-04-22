@@ -18,26 +18,12 @@ package io.hawtjms.jms.meta;
 
 public final class JmsConsumerId extends JmsAbstractResourceId implements Comparable<JmsConsumerId> {
 
-    private final String connectionId;
-    private final long sessionId;
-    private final long value;
+    private String connectionId;
+    private long sessionId;
+    private long value;
 
     private transient String key;
     private transient JmsSessionId parentId;
-
-    public JmsConsumerId(String str) throws IllegalArgumentException {
-        if (str != null) {
-            String[] splits = str.split(":");
-            if (splits != null && splits.length >= 3) {
-                this.connectionId = splits[0];
-                this.sessionId = Long.parseLong(splits[1]);
-                this.value = Long.parseLong(splits[2]);
-                return;
-            }
-        }
-
-        throw new IllegalArgumentException("Failed to parse Id string: " + str);
-    }
 
     public JmsConsumerId(String connectionId, long sessionId, long consumerId) {
         this.connectionId = connectionId;
@@ -57,6 +43,16 @@ public final class JmsConsumerId extends JmsAbstractResourceId implements Compar
         this.sessionId = id.getSessionId();
         this.value = id.getValue();
         this.parentId = id.getParentId();
+    }
+
+    public JmsConsumerId(String consumerKey) throws IllegalArgumentException {
+        // Parse off the consumer Id value
+        int p = consumerKey.lastIndexOf(":");
+        if (p >= 0) {
+            value = Long.parseLong(consumerKey.substring(p + 1));
+            consumerKey = consumerKey.substring(0, p);
+        }
+        setConsumerSessionKey(consumerKey);
     }
 
     public JmsSessionId getParentId() {
@@ -109,5 +105,17 @@ public final class JmsConsumerId extends JmsAbstractResourceId implements Compar
     @Override
     public int compareTo(JmsConsumerId other) {
         return toString().compareTo(other.toString());
+    }
+
+    private void setConsumerSessionKey(String sessionKey) {
+        // Parse off the value of the session Id
+        int p = sessionKey.lastIndexOf(":");
+        if (p >= 0) {
+            sessionId = Long.parseLong(sessionKey.substring(p + 1));
+            sessionKey = sessionKey.substring(0, p);
+        }
+
+        // The rest is the value of the connection Id.
+        connectionId = sessionKey;
     }
 }

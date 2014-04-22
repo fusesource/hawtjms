@@ -63,14 +63,17 @@ public final class JmsProducerId extends JmsAbstractResourceId implements Compar
     }
 
     private void setProducerSessionKey(String sessionKey) {
-        // Parse off the value
+        // Parse off the value of the session Id
         int p = sessionKey.lastIndexOf(":");
         if (p >= 0) {
             sessionId = Long.parseLong(sessionKey.substring(p + 1));
             sessionKey = sessionKey.substring(0, p);
         }
-        // The rest is the value
+
+        // The rest is the value of the connection Id.
         connectionId = sessionKey;
+
+        parentId = new JmsSessionId(connectionId, sessionId);
     }
 
     public String getConnectionId() {
