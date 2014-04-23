@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import io.hawtjms.test.support.AmqpTestSupport;
 
-import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
@@ -37,7 +36,7 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)
     public void testCreateProducer() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
@@ -46,12 +45,11 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
         session.createProducer(null);
 
         assertTrue(brokerService.getAdminView().getTotalProducerCount() == 0);
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testAnonymousSend() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
@@ -65,13 +63,11 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
 
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
-
-        connection.close();
     }
 
     @Test(timeout = 60000)
     public void testAnonymousSendToMultipleDestinations() throws Exception {
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
@@ -93,7 +89,5 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
         assertEquals(1, proxy.getQueueSize());
         proxy = getProxyToQueue(name.getMethodName() + 3);
         assertEquals(1, proxy.getQueueSize());
-
-        connection.close();
     }
 }
