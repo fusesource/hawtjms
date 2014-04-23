@@ -195,9 +195,11 @@ public class StompConsumer {
         if (ackType.equals(ACK_TYPE.DELIVERED)) {
             LOG.debug("Delivered Ack of message: {}", messageId);
             delivered.add(envelope);
-
-            // TODO - Credit fame.
-
+            StompFrame credit = adapter.createCreditFrame(messageFrame);
+            if (credit != null) {
+                connection.send(credit);
+            }
+            request.onSuccess();
         } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
             LOG.debug("Consumed Ack of message: {}", messageId);
             delivered.remove(envelope);
@@ -216,13 +218,14 @@ public class StompConsumer {
             return;
         } else if (ackType.equals(ACK_TYPE.REDELIVERED)) {
             LOG.debug("Redelivered Ack of message: {}", messageId);
+            request.onSuccess();
         } else if (ackType.equals(ACK_TYPE.POISONED)) {
             LOG.debug("Poisoned Ack of message: {}", messageId);
+            request.onSuccess();
         } else {
             LOG.warn("Unsupporeted Ack Type for message: {}", messageId);
+            request.onFailure(new JMSException("Failed to send ack for: " + messageId));
         }
-
-        request.onSuccess();
     }
 
     public JmsConsumerId getConsumerId() {
