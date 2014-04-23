@@ -16,14 +16,18 @@
  */
 package io.hawtjms.provider.stomp;
 
+import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
+
+import javax.jms.JMSException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * QueueBrowser implementation for those STOMP servers that support
- * doing a Queue browse.
+ * doing a Queue browse.  The browser will check incoming messages for
+ * the end of browse indicator using the configured STOMP server adapter.
  */
 public class StompQueueBrowser extends StompConsumer {
 
@@ -39,5 +43,23 @@ public class StompQueueBrowser extends StompConsumer {
      */
     public StompQueueBrowser(StompSession session, JmsConsumerInfo consumerInfo) {
         super(session, consumerInfo);
+    }
+
+    @Override
+    public void processMessage(StompFrame message) throws JMSException {
+        if (adapter.isEndOfBrowse(message)) {
+            LOG.debug("Received end of browse frame: {}", getConsumerId());
+            JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch();
+            browseDone.setConsumerId(getConsumerId());
+            browseDone.setProviderHint(message);
+            connection.getProvider().getProviderListener().onMessage(browseDone);
+        } else {
+            super.processMessage(message);
+        }
+    }
+
+    @Override
+    public boolean isBrowser() {
+        return true;
     }
 }

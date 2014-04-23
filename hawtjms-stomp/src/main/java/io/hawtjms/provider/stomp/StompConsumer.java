@@ -53,10 +53,11 @@ public class StompConsumer {
 
     private static final Logger LOG = LoggerFactory.getLogger(StompConsumer.class);
 
-    private final JmsConsumerInfo consumerInfo;
-    private final StompSession session;
-    private final StompConnection connection;
-    private boolean started;
+    protected final JmsConsumerInfo consumerInfo;
+    protected final StompSession session;
+    protected final StompConnection connection;
+    protected final StompServerAdapter adapter;
+    protected boolean started;
 
     protected final LinkedList<JmsInboundMessageDispatch> delivered =
         new LinkedList<JmsInboundMessageDispatch>();
@@ -74,6 +75,7 @@ public class StompConsumer {
         this.consumerInfo = consumerInfo;
         this.session = session;
         this.connection = session.getConnection();
+        this.adapter = connection.getServerAdapter();
 
         this.consumerInfo.getConsumerId().setProviderHint(this);
     }
@@ -97,8 +99,6 @@ public class StompConsumer {
      * @throws IOException if an error occurs while sending the frame.
      */
     public void subscribe(AsyncResult<Void> request) throws JMSException, IOException {
-        StompServerAdapter adapter = connection.getServerAdapter();
-
         StompFrame subscribe = new StompFrame(SUBSCRIBE);
         subscribe.setProperty(ID, consumerInfo.getConsumerId().toString());
         subscribe.setProperty(DESTINATION, adapter.toStompDestination(consumerInfo.getDestination()));
@@ -139,7 +139,6 @@ public class StompConsumer {
      * @throws JMSException if an error occurs while processing the frame.
      */
     public void processMessage(StompFrame message) throws JMSException {
-        StompServerAdapter adapter = connection.getServerAdapter();
         JmsMessage converted = adapter.convertToJmsMessage(message);
 
         JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch();
@@ -240,6 +239,10 @@ public class StompConsumer {
 
     public boolean isStarted() {
         return started;
+    }
+
+    public boolean isBrowser() {
+        return false;
     }
 
     //---------- Internal helper methods -------------------------------------//

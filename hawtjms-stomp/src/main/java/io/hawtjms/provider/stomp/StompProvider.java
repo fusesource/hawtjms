@@ -371,6 +371,36 @@ public class StompProvider extends AbstractAsyncProvider implements TransportLis
     }
 
     @Override
+    public void pull(final JmsConsumerId consumerId, long timeout, final AsyncResult<Void> request) throws IOException, UnsupportedOperationException {
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    StompSession session = connection.getSession(consumerId.getParentId());
+                    StompConsumer consumer = session.getConsumer(consumerId);
+
+                    /*
+                     * Client will trying to perform a pull in order to allow a browser to
+                     * check it's state and retrieve any pending messages.  We don't error
+                     * in this case as we know in STOMP if we are done or not by an end of
+                     * browse but other protocols might need the kick.
+                     */
+                    if (consumer.isBrowser()) {
+                        request.onSuccess();
+                    } else {
+                        request.onFailure(new UnsupportedOperationException("STOMP consumer cannot pull messages."));
+                    }
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
+    }
+
+    @Override
     public void unsubscribe(final String subscription, final AsyncResult<Void> request) throws IOException, JMSException, UnsupportedOperationException {
         checkClosed();
         serializer.execute(new Runnable() {

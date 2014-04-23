@@ -126,7 +126,12 @@ public class StompSession {
             throw new JMSException("Cannot create a consumer with Zero Prefetch in STOMP");
         }
 
-        StompConsumer consumer = new StompConsumer(this, consumerInfo);
+        StompConsumer consumer;
+        if (consumerInfo.isBrowser()) {
+            consumer = new StompQueueBrowser(this, consumerInfo);
+        } else {
+            consumer = new StompConsumer(this, consumerInfo);
+        }
         consumers.put(consumerInfo.getConsumerId(), consumer);
         consumer.subscribe(request);
     }
