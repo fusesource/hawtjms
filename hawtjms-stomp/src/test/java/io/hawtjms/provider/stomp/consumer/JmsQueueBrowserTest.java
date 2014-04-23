@@ -30,7 +30,6 @@ import javax.jms.QueueBrowser;
 import javax.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +58,6 @@ public class JmsQueueBrowserTest extends StompTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Ignore
     @SuppressWarnings("rawtypes")
     @Test(timeout = 60000)
     public void testNoMessagesBrowserHasNoElements() throws Exception {
@@ -81,7 +79,6 @@ public class JmsQueueBrowserTest extends StompTestSupport {
         assertFalse(enumeration.hasMoreElements());
     }
 
-    @Ignore
     @SuppressWarnings("rawtypes")
     @Test(timeout = 60000)
     public void testBrowseAllInQueue() throws Exception {
@@ -110,7 +107,6 @@ public class JmsQueueBrowserTest extends StompTestSupport {
         assertEquals(5, count);
     }
 
-    @Ignore
     @SuppressWarnings("rawtypes")
     @Test(timeout = 90000)
     public void testBrowseAllInQueueSmallPrefetch() throws Exception {
