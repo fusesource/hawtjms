@@ -88,7 +88,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private MessageListener messageListener;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
-    private boolean forceAsyncSend;
     private final LinkedBlockingQueue<JmsInboundMessageDispatch> stoppedMessages =
         new LinkedBlockingQueue<JmsInboundMessageDispatch>(10000);
     private JmsPrefetchPolicy prefetchPolicy;
@@ -104,7 +103,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         this.connection = connection;
         this.acknowledgementMode = acknowledgementMode;
-        this.forceAsyncSend = connection.isForceAsyncSend();
         this.prefetchPolicy = new JmsPrefetchPolicy(connection.getPrefetchPolicy());
 
         setTransactionContext(new JmsLocalTransactionContext(this));
@@ -711,21 +709,17 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 copy.setJMSDestination(destination);
             }
 
-            boolean sync = !forceAsyncSend && deliveryMode == DeliveryMode.PERSISTENT && !getTransacted();
+            boolean sync = connection.isAlwaysSyncSend() ||
+                           (!connection.isForceAsyncSend() && deliveryMode == DeliveryMode.PERSISTENT && !getTransacted());
 
             copy.onSend();
             JmsOutboundMessageDispatch envelope = new JmsOutboundMessageDispatch();
             envelope.setMessage(copy);
             envelope.setProducerId(producer.getProducerId());
             envelope.setDestination(destination);
+            envelope.setSendAsync(!sync);
 
-            if (sync) {
-                this.connection.send(envelope);
-            } else {
-                this.connection.send(envelope);
-                // TODO - Async sends should be supported
-                //        we could force this down into the provider though
-            }
+            this.connection.send(envelope);
         } finally {
             sendLock.unlock();
         }
@@ -845,14 +839,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 consumer.start();
             }
         }
-    }
-
-    public boolean isForceAsyncSend() {
-        return forceAsyncSend;
-    }
-
-    public void setForceAsyncSend(boolean forceAsyncSend) {
-        this.forceAsyncSend = forceAsyncSend;
     }
 
     protected void stop() throws JMSException {

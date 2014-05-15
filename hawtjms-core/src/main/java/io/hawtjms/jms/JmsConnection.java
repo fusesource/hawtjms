@@ -775,6 +775,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connectionInfo.setForceAsyncSends(forceAsyncSend);
     }
 
+    public boolean isAlwaysSyncSend() {
+        return connectionInfo.isAlwaysSyncSend();
+    }
+
+    public void setAlwaysSyncSend(boolean alwaysSyncSend) {
+        this.connectionInfo.setAlwaysSyncSend(alwaysSyncSend);
+    }
+
     public String getTopicPrefix() {
         return connectionInfo.getTopicPrefix();
     }

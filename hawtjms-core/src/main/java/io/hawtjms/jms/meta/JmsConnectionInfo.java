@@ -36,6 +36,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private String username;
     private String password;
     private boolean forceAsyncSend;
+    private boolean alwaysSyncSend;
     private boolean omitHost;
     private boolean watchRemoteDestinations;
     public long sendTimeout = DEFAULT_SEND_TIMEOUT;
@@ -63,6 +64,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.password = password;
         copy.clientIp = clientIp;
         copy.forceAsyncSend = forceAsyncSend;
+        copy.alwaysSyncSend = alwaysSyncSend;
         copy.omitHost = omitHost;
         copy.sendTimeout = sendTimeout;
         copy.requestTimeout = requestTimeout;
@@ -79,6 +81,14 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setForceAsyncSends(boolean forceAsyncSend) {
         this.forceAsyncSend = forceAsyncSend;
+    }
+
+    public boolean isAlwaysSyncSend() {
+        return alwaysSyncSend;
+    }
+
+    public void setAlwaysSyncSend(boolean alwaysSyncSend) {
+        this.alwaysSyncSend = alwaysSyncSend;
     }
 
     public JmsConnectionId getConnectionId() {

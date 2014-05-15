@@ -27,6 +27,7 @@ public class JmsOutboundMessageDispatch {
     private JmsProducerId producerId;
     private JmsMessage message;
     private JmsDestination destination;
+    private boolean sendAsync;
 
     public JmsDestination getDestination() {
         return destination;
@@ -50,5 +51,13 @@ public class JmsOutboundMessageDispatch {
 
     public void setProducerId(JmsProducerId producerId) {
         this.producerId = producerId;
+    }
+
+    public void setSendAsync(boolean sendAsync) {
+        this.sendAsync = sendAsync;
+    }
+
+    public boolean isSendAsync() {
+        return sendAsync;
     }
 }

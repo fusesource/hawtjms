@@ -56,6 +56,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String username;
     private String password;
     private boolean forceAsyncSend;
+    private boolean alwaysSyncSend;
     private boolean omitHost;
     private boolean messagePrioritySupported = true;
     private String queuePrefix = "queue://";
@@ -617,5 +618,26 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setWatchRemoteDestinations(boolean watchRemoteDestinations) {
         this.watchRemoteDestinations = watchRemoteDestinations;
+    }
+
+    /**
+     * Returns true if the client should always send messages using a synchronous
+     * send operation regardless of persistence mode, or inside a transaction.
+     *
+     * @return true if sends should always be done synchronously.
+     */
+    public boolean isAlwaysSyncSend() {
+        return alwaysSyncSend;
+    }
+
+    /**
+     * Configures whether or not the client will always send messages synchronously or not
+     * regardless of other factors that might result in an asynchronous send.
+     *
+     * @param alwaysSyncSend
+     *        if true sends are always done synchronously.
+     */
+    public void setAlwaysSyncSend(boolean alwaysSyncSend) {
+        this.alwaysSyncSend = alwaysSyncSend;
     }
 }
