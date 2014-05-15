@@ -19,6 +19,8 @@ package io.hawtjms.provider.amqp;
 import io.hawtjms.jms.meta.JmsResource;
 import io.hawtjms.provider.AsyncResult;
 
+import java.io.IOException;
+
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 
@@ -27,6 +29,8 @@ import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Endpoint;
 import org.apache.qpid.proton.engine.EndpointState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract base for all AmqpResource implementations to extend.
@@ -36,6 +40,8 @@ import org.apache.qpid.proton.engine.EndpointState;
  * and shutdown.
  */
 public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endpoint> implements AmqpResource {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractAmqpResource.class);
 
     protected AsyncResult<Void> openRequest;
     protected AsyncResult<Void> closeRequest;
@@ -82,6 +88,11 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
     }
 
     @Override
+    public boolean isAwaitingOpen() {
+        return this.openRequest != null;
+    }
+
+    @Override
     public void opened() {
         if (this.openRequest != null) {
             this.openRequest.onSuccess();
@@ -91,6 +102,12 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
 
     @Override
     public void close(AsyncResult<Void> request) {
+        // If already closed signal success or else the caller might never get notified.
+        if (endpoint.getLocalState() == EndpointState.CLOSED &&
+            endpoint.getRemoteState() == EndpointState.CLOSED) {
+            request.onSuccess();
+        }
+
         this.closeRequest = request;
         doClose();
         this.endpoint.close();
@@ -99,6 +116,11 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
     @Override
     public boolean isClosed() {
         return this.endpoint.getRemoteState() == EndpointState.CLOSED;
+    }
+
+    @Override
+    public boolean isAwaitingClose() {
+        return this.closeRequest != null;
     }
 
     @Override
@@ -176,7 +198,46 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
         return message;
     }
 
+    @Override
+    public void processStateChange() throws IOException {
+        EndpointState remoteState = endpoint.getRemoteState();
+
+        if (remoteState == EndpointState.ACTIVE) {
+            if (isAwaitingOpen()) {
+                LOG.debug("Link {} is now open: ", this);
+                opened();
+            }
+
+            // Should not receive an ACTIVE event if not awaiting the open state.
+        } else if (remoteState == EndpointState.CLOSED) {
+            if (isAwaitingClose()) {
+                LOG.debug("Link {} is now closed: ", this);
+                closed();
+            } else if (isAwaitingOpen()) {
+                // Error on Open, create exception and signal failure.
+                LOG.warn("Open of link {} failed: ", this);
+                Exception remoteError = this.getRemoteError();
+                failed(remoteError);
+            } else {
+                // TODO - Handle remote asynchronous close.
+            }
+        }
+    }
+
+    @Override
+    public void processDeliveryUpdates() throws IOException {
+    }
+
+    @Override
+    public void processFlowUpdates() throws IOException {
+    }
+
+    @Override
+    public void processUpdates() throws IOException {
+    }
+
     protected abstract void doOpen();
 
     protected abstract void doClose();
+
 }

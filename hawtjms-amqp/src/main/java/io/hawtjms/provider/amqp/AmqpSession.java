@@ -26,9 +26,7 @@ import io.hawtjms.jms.meta.JmsSessionInfo;
 import io.hawtjms.jms.meta.JmsTransactionId;
 import io.hawtjms.provider.AsyncResult;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import javax.jms.IllegalStateException;
@@ -47,9 +45,6 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
 
     private final Map<JmsConsumerId, AmqpConsumer> consumers = new HashMap<JmsConsumerId, AmqpConsumer>();
     private final Map<JmsProducerId, AmqpProducer> producers = new HashMap<JmsProducerId, AmqpProducer>();
-
-    private final ArrayList<AmqpLink> pendingOpenLinks = new ArrayList<AmqpLink>();
-    private final ArrayList<AmqpLink> pendingCloseLinks = new ArrayList<AmqpLink>();
 
     public AmqpSession(AmqpConnection connection, JmsSessionInfo info) {
         super(info, connection.getProtonConnection().session());
@@ -74,12 +69,12 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
 
     @Override
     protected void doOpen() {
-        this.connection.addToPendingOpen(this);
+        this.connection.addSession(this);
     }
 
     @Override
     protected void doClose() {
-        this.connection.addToPendingClose(this);
+        this.connection.removeSession(this);
     }
 
     /**
@@ -202,74 +197,20 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
         getTransactionContext().rollback(request);
     }
 
-    /**
-     * Called from the parent Connection to check for and react to state changes in the
-     * underlying Proton connection which might indicate a sender / receiver / link state
-     * has changed.
-     */
-    @Override
-    public void processUpdates() {
-        processPendingLinks();
-
-        processTransactionState();
-
-        // Settle any pending deliveries.
-        for (AmqpProducer producer : this.producers.values()) {
-            producer.processUpdates();
-        }
-
-        for (AmqpConsumer consumer : this.consumers.values()) {
-            consumer.processUpdates();
-        }
+    void addResource(AmqpConsumer consumer) {
+        consumers.put(consumer.getConsumerId(), consumer);
     }
 
-    private void processTransactionState() {
-        if (this.txContext != null) {
-            this.txContext.processUpdates();
-        }
+    void removeResource(AmqpConsumer consumer) {
+        consumers.remove(consumer.getConsumerId());
     }
 
-    private void processPendingLinks() {
+    void addResource(AmqpProducer producer) {
+        producers.put(producer.getProducerId(), producer);
+    }
 
-        if (pendingOpenLinks.isEmpty() && pendingCloseLinks.isEmpty()) {
-            return;
-        }
-
-        Iterator<AmqpLink> linkIterator = pendingOpenLinks.iterator();
-        while (linkIterator.hasNext()) {
-            AmqpLink candidate = linkIterator.next();
-            LOG.trace("Checking Link {} for open state: {}", candidate, candidate.isOpen());
-            if (candidate.isOpen()) {
-                if (candidate instanceof AmqpConsumer) {
-                    AmqpConsumer consumer = (AmqpConsumer) candidate;
-                    consumers.put(consumer.getConsumerId(), consumer);
-                } else if (candidate instanceof AmqpProducer) {
-                    AmqpProducer producer = (AmqpProducer) candidate;
-                    producers.put(producer.getProducerId(), producer);
-                }
-
-                LOG.debug("Link {} is now open: ", candidate);
-                candidate.opened();
-            } else if (candidate.isClosed()) {
-                LOG.warn("Open of link {} failed: ", candidate);
-                Exception remoteError = candidate.getRemoteError();
-                candidate.failed(remoteError);
-            } else {
-                // Don't remove, it's still pending.
-                continue;
-            }
-
-            linkIterator.remove();
-        }
-
-        linkIterator = pendingCloseLinks.iterator();
-        while (linkIterator.hasNext()) {
-            AmqpLink candidate = linkIterator.next();
-            if (candidate.isClosed()) {
-                candidate.closed();
-                linkIterator.remove();
-            }
-        }
+    void removeResource(AmqpProducer producer) {
+        producers.remove(producer.getProducerId());
     }
 
     /**
@@ -317,14 +258,6 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
 
     public MessageFactory getMessageFactory() {
         return this.connection.getMessageFactory();
-    }
-
-    void addPedingLinkOpen(AmqpLink link) {
-        this.pendingOpenLinks.add(link);
-    }
-
-    void addPedingLinkClose(AmqpLink link) {
-        this.pendingCloseLinks.add(link);
     }
 
     boolean isTransacted() {

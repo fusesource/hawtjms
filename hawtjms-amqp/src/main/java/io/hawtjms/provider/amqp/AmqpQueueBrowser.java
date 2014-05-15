@@ -20,6 +20,8 @@ import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.meta.JmsConsumerInfo;
 import io.hawtjms.provider.AsyncResult;
 
+import java.io.IOException;
+
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,16 +67,32 @@ public class AmqpQueueBrowser extends AmqpConsumer {
         if (!endpoint.getDrain() && endpoint.current() == null && endpoint.getUnsettled() == 0) {
             LOG.trace("QueueBrowser {} will try to drain remote.", getConsumerId());
             this.endpoint.drain(info.getPrefetchSize());
+        } else {
+            endpoint.setDrain(false);
         }
     }
 
     @Override
-    public void processUpdates() {
+    public void processFlowUpdates() throws IOException {
+        if (endpoint.getDrain() && endpoint.getCredit() == endpoint.getRemoteCredit()) {
+            JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch();
+            browseDone.setConsumerId(getConsumerId());
+            deliver(browseDone);
+        } else {
+            endpoint.setDrain(false);
+        }
+
+        super.processFlowUpdates();
+    }
+
+    @Override
+    public void processDeliveryUpdates() throws IOException {
         if (endpoint.getDrain() && endpoint.current() != null) {
             LOG.trace("{} incoming delivery, cancel drain.", getConsumerId());
             endpoint.setDrain(false);
         }
-        super.processUpdates();
+
+        super.processDeliveryUpdates();
 
         if (endpoint.getDrain() && endpoint.getCredit() == endpoint.getRemoteCredit()) {
             JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch();

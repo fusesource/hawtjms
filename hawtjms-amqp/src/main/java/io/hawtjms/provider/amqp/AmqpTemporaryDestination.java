@@ -22,7 +22,7 @@ import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
-import org.apache.qpid.proton.engine.Link;
+import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Sender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * the broker in the case where the user does not have authorization to access temporary
  * destinations.
  */
-public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestination, Sender> implements AmqpLink {
+public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestination, Sender> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpTemporaryDestination.class);
 
@@ -54,8 +54,36 @@ public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestinatio
 
     @Override
     public void processUpdates() {
+        // TODO remove one event processing is complete.
+    }
+
+    @Override
+    public void processStateChange() {
         // TODO - We might want to check on our producer to see if it becomes closed
-        //        which might indicate that the broker purged the temp dest.
+        //        which might indicate that the broker purged the temporary destination.
+
+        EndpointState remoteState = endpoint.getRemoteState();
+        if (remoteState == EndpointState.ACTIVE) {
+            LOG.trace("Temporary Destination: {} is now open", this.info);
+            opened();
+        } else if (remoteState == EndpointState.CLOSED) {
+            LOG.trace("Temporary Destination: {} is now closed", this.info);
+            closed();
+        }
+    }
+
+    @Override
+    public void opened() {
+
+        // Once our producer is opened we can read the updated name from the target address.
+        String oldDestinationName = info.getName();
+        String destinationName = this.endpoint.getRemoteTarget().getAddress();
+
+        this.info.setName(destinationName);
+
+        LOG.trace("Updated temp destination to: {} from: {}", info, oldDestinationName);
+
+        super.opened();
     }
 
     @Override
@@ -79,31 +107,12 @@ public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestinatio
         endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
         endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
-        this.connection.addToPendingOpen(this);
-    }
-
-    @Override
-    public void opened() {
-
-        // Once our producer is opened we can read the updated name from the target address.
-        String oldDestinationName = info.getName();
-        String destinationName = this.endpoint.getRemoteTarget().getAddress();
-
-        this.info.setName(destinationName);
-
-        LOG.trace("Updated temp destination to: {} from: {}", info, oldDestinationName);
-
-        super.opened();
+        this.connection.addTemporaryDestination(this);
     }
 
     @Override
     protected void doClose() {
-        this.connection.addToPendingClose(this);
-    }
-
-    @Override
-    public Link getProtonLink() {
-        return this.endpoint;
+        this.connection.removeTemporaryDestination(this);
     }
 
     public AmqpConnection getConnection() {

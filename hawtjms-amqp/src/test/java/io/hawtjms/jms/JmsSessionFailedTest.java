@@ -46,6 +46,7 @@ public class JmsSessionFailedTest extends JmsSessionClosedTest {
         connection.start();
         stopPrimaryBroker();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
+        TimeUnit.MILLISECONDS.sleep(500);
         return session;
     }
 }

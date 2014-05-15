@@ -25,7 +25,6 @@ import io.hawtjms.util.IdGenerator;
 import java.io.IOException;
 
 import org.apache.qpid.proton.engine.EndpointState;
-import org.apache.qpid.proton.engine.Link;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +55,7 @@ public class AmqpAnonymousProducer extends AmqpProducer {
     }
 
     @Override
-    public void send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException {
+    public boolean send(JmsOutboundMessageDispatch envelope, AsyncResult<Void> request) throws IOException {
 
         LOG.trace("Started send chain for anonymous producer: {}", getProducerId());
 
@@ -71,10 +70,8 @@ public class AmqpAnonymousProducer extends AmqpProducer {
         AmqpFixedProducer producer = new AmqpFixedProducer(session, info);
         AnonymousOpenRequest open = new AnonymousOpenRequest(request, producer, envelope);
         producer.open(open);
-    }
 
-    @Override
-    public void processUpdates() {
+        return true;
     }
 
     @Override
@@ -97,11 +94,6 @@ public class AmqpAnonymousProducer extends AmqpProducer {
 
     @Override
     protected void doClose() {
-    }
-
-    @Override
-    public Link getProtonLink() {
-        return null;
     }
 
     @Override

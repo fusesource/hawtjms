@@ -41,7 +41,6 @@ import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
-import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.message.Message;
 import org.slf4j.Logger;
@@ -53,7 +52,7 @@ import org.slf4j.LoggerFactory;
  * The Transaction will carry a JmsTransactionId while the Transaction is open, once a
  * transaction has been committed or rolled back the Transaction Id is cleared.
  */
-public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo, Sender> implements AmqpLink {
+public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo, Sender> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpTransactionContext.class);
 
@@ -82,7 +81,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
     }
 
     @Override
-    public void processUpdates() {
+    public void processDeliveryUpdates() {
         if (pendingDelivery != null && pendingDelivery.remotelySettled()) {
             DeliveryState state = pendingDelivery.getRemoteState();
             if (state instanceof Declared) {
@@ -123,9 +122,6 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
                 request.onSuccess();
             }
         }
-
-        // TODO check for and handle endpoint detached state.
-        //endpoint.getRemoteState().equals(EndpointState.CLOSED);
     }
 
     @Override
@@ -140,13 +136,10 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
         endpoint.setTarget(coordinator);
         endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
         endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
-
-        this.session.addPedingLinkOpen(this);
     }
 
     @Override
     protected void doClose() {
-        this.session.addPedingLinkClose(this);
     }
 
     public void begin(JmsTransactionId txId, AsyncResult<Void> request) throws Exception {
@@ -223,11 +216,6 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
             result = (Binary) current.getProviderHint();
         }
         return result;
-    }
-
-    @Override
-    public Link getProtonLink() {
-        return this.endpoint;
     }
 
     @Override

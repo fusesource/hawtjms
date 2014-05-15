@@ -36,13 +36,26 @@ public class AmqpTestSupport extends HawtJmsTestSupport {
         return false;
     }
 
+    protected boolean isForceAsyncSends() {
+        return false;
+    }
+
+    protected boolean isAlwaysSyncSend() {
+        return false;
+    }
+
+    protected String getAmqpTransformer() {
+        return "jms";
+    }
+
     @Override
     protected void addAdditionalConnectors(BrokerService brokerService, Map<String, Integer> portMap) throws Exception {
         int port = 0;
         if (portMap.containsKey("amqp")) {
             port = portMap.get("amqp");
         }
-        TransportConnector connector = brokerService.addConnector("amqp://0.0.0.0:" + port);
+        TransportConnector connector = brokerService.addConnector(
+            "amqp://0.0.0.0:" + port + "?transport.transformer=" + getAmqpTransformer());
         connector.setName("amqp");
         if (isAmqpDiscovery()) {
             connector.setDiscoveryUri(new URI("multicast://default"));
@@ -89,6 +102,8 @@ public class AmqpTestSupport extends HawtJmsTestSupport {
 
     public Connection createAmqpConnection(URI brokerURI, String username, String password) throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
+        factory.setForceAsyncSend(isForceAsyncSends());
+        factory.setAlwaysSyncSend(isAlwaysSyncSend());
         if (username != null) {
             factory.setUsername(username);
         }

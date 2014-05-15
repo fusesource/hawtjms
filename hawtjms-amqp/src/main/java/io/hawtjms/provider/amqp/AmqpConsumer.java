@@ -46,7 +46,6 @@ import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
-import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.jms.EncodedMessage;
 import org.apache.qpid.proton.jms.InboundTransformer;
@@ -59,7 +58,7 @@ import org.slf4j.LoggerFactory;
 /**
  * AMQP Consumer object that is used to manage JMS MessageConsumer semantics.
  */
-public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver> implements AmqpLink {
+public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConsumer.class);
 
@@ -88,25 +87,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         request.onSuccess();
     }
 
-    /**
-     * Process all incoming deliveries that have been fully read.
-     */
-    @Override
-    public void processUpdates() {
-
-        Delivery incoming = null;
-        do {
-            incoming = endpoint.current();
-            if (incoming != null && incoming.isReadable() && !incoming.isPartial()) {
-                LOG.trace("{} has incoming Message(s).", this);
-                processDelivery(incoming);
-            } else {
-                incoming = null;
-            }
-            endpoint.advance();
-        } while (incoming != null);
-    }
-
     @Override
     protected void doOpen() {
         JmsDestination destination  = info.getDestination();
@@ -130,8 +110,18 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         endpoint.setTarget(target);
         endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
         endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+    }
 
-        this.session.addPedingLinkOpen(this);
+    @Override
+    public void opened() {
+        this.session.addResource(this);
+        super.opened();
+    }
+
+    @Override
+    public void closed() {
+        this.session.removeResource(this);
+        super.closed();
     }
 
     protected void configureSource(Source source) {
@@ -269,7 +259,22 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         }
     }
 
-    protected void processDelivery(Delivery incoming) {
+    @Override
+    public void processDeliveryUpdates() throws IOException {
+        Delivery incoming = null;
+        do {
+            incoming = endpoint.current();
+            if (incoming != null && incoming.isReadable() && !incoming.isPartial()) {
+                LOG.trace("{} has incoming Message(s).", this);
+                processDelivery(incoming);
+            } else {
+                incoming = null;
+            }
+            endpoint.advance();
+        } while (incoming != null);
+    }
+
+    private void processDelivery(Delivery incoming) {
         EncodedMessage encoded = readIncomingMessage(incoming);
         JmsMessage message = null;
         try {
@@ -308,12 +313,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     @Override
     protected void doClose() {
-        this.session.addPedingLinkClose(this);
-    }
-
-    @Override
-    public Link getProtonLink() {
-        return this.endpoint;
     }
 
     public AmqpSession getSession() {
@@ -334,7 +333,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     @Override
     public String toString() {
-        return "AmqpConsumer: " + this.info.getConsumerId();
+        return "AmqpConsumer { " + this.info.getConsumerId() + " }";
     }
 
     protected void deliveryFailed(Delivery incoming, boolean expandCredit) {

@@ -18,6 +18,8 @@ package io.hawtjms.provider.amqp;
 
 import io.hawtjms.provider.AsyncResult;
 
+import java.io.IOException;
+
 /**
  * AmqpResource specification.
  *
@@ -41,6 +43,11 @@ public interface AmqpResource {
     boolean isOpen();
 
     /**
+     * @return true if the resource is awaiting the remote end to signal opened.
+     */
+    boolean isAwaitingOpen();
+
+    /**
      * Called to indicate that this resource is now remotely opened.  Once opened a
      * resource can start accepting incoming requests.
      */
@@ -59,6 +66,11 @@ public interface AmqpResource {
      * @return if the resource has moved to the closed state on the remote.
      */
     boolean isClosed();
+
+    /**
+     * @return true if the resource is awaiting the remote end to signal closed.
+     */
+    boolean isAwaitingClose();
 
     /**
      * Called to indicate that this resource is now remotely closed.  Once closed a
@@ -82,11 +94,37 @@ public interface AmqpResource {
     void failed(Exception cause);
 
     /**
+     * Called when the Proton Engine signals that the state of the given resource has
+     * changed on the remote side.
+     *
+     * @throws IOException if an error occurs while processing the update.
+     */
+    void processStateChange() throws IOException;
+
+    /**
+     * Called when the Proton Engine signals an Delivery related event has been triggered
+     * for the given endpoint.
+     *
+     * @throws IOException if an error occurs while processing the update.
+     */
+    void processDeliveryUpdates() throws IOException;
+
+    /**
+     * Called when the Proton Engine signals an Flow related event has been triggered
+     * for the given endpoint.
+     *
+     * @throws IOException if an error occurs while processing the update.
+     */
+    void processFlowUpdates() throws IOException;
+
+    /**
      * Called when data has been read from the remote peer.  The resource should
      * check the status of any pending work and complete or update the state to
      * match the new remote state.
+     *
+     * @throws IOException if an error occurs while processing the update.
      */
-    void processUpdates();
+    void processUpdates() throws IOException;
 
     /**
      * @return an Exception derived from the error state of the endpoint's Remote Condition.

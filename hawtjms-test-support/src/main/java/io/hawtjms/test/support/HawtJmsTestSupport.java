@@ -98,6 +98,10 @@ public class HawtJmsTestSupport {
         }
     }
 
+    public String getDestinationName() {
+        return name.getMethodName();
+    }
+
     public URI getBrokerOpenWireConnectionURI() {
         try {
             return new URI("tcp://127.0.0.1:" +

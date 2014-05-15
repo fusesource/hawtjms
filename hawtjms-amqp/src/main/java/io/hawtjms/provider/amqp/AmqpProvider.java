@@ -21,17 +21,7 @@ import io.hawtjms.jms.message.JmsDefaultMessageFactory;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.message.JmsMessageFactory;
 import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
-import io.hawtjms.jms.meta.JmsConnectionInfo;
-import io.hawtjms.jms.meta.JmsConsumerId;
-import io.hawtjms.jms.meta.JmsConsumerInfo;
-import io.hawtjms.jms.meta.JmsDefaultResourceVisitor;
-import io.hawtjms.jms.meta.JmsProducerId;
-import io.hawtjms.jms.meta.JmsProducerInfo;
-import io.hawtjms.jms.meta.JmsResource;
-import io.hawtjms.jms.meta.JmsResourceVistor;
-import io.hawtjms.jms.meta.JmsSessionId;
-import io.hawtjms.jms.meta.JmsSessionInfo;
-import io.hawtjms.jms.meta.JmsTransactionInfo;
+import io.hawtjms.jms.meta.*;
 import io.hawtjms.provider.AbstractAsyncProvider;
 import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
@@ -47,10 +37,13 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.JMSException;
 
+import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EngineFactory;
+import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Transport;
+import org.apache.qpid.proton.engine.impl.CollectorImpl;
 import org.apache.qpid.proton.engine.impl.EngineFactoryImpl;
 import org.apache.qpid.proton.engine.impl.ProtocolTracer;
 import org.apache.qpid.proton.engine.impl.TransportImpl;
@@ -77,6 +70,7 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
 
     private static final Logger TRACE_BYTES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".BYTES");
     private static final Logger TRACE_FRAMES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".FRAMES");
+    private static final int DEFAULT_MAX_FRAME_SIZE = 1024 * 1024 * 1;
 
     private AmqpConnection connection;
     private io.hawtjms.transports.Transport transport;
@@ -90,6 +84,7 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
     private final JmsDefaultMessageFactory messageFactory = new JmsDefaultMessageFactory();
     private final EngineFactory engineFactory = new EngineFactoryImpl();
     private final Transport protonTransport = engineFactory.createTransport();
+    private final Collector protonCollector = new CollectorImpl();
 
     /**
      * Create a new instance of an AmqpProvider bonded to the given remote URI.
@@ -129,6 +124,12 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
                 @Override
                 public void run() {
                     try {
+                        // If we are not connected then there is nothing we can do now
+                        // just signal success.
+                        if (!transport.isConnected()) {
+                            request.onSuccess();
+                        }
+
                         if (connection != null) {
                             connection.close(request);
                         }
@@ -136,16 +137,6 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
                         pumpToProtonTransport();
                     } catch (Exception e) {
                         LOG.debug("Caught exception while closing proton connection");
-                    } finally {
-                        if (transport != null) {
-                            try {
-                                transport.close();
-                            } catch (Exception e) {
-                                LOG.debug("Cuaght exception while closing down Transport: {}", e.getMessage());
-                            }
-                        }
-
-                        request.onSuccess();
                     }
                 }
             });
@@ -159,6 +150,14 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
             } catch (IOException e) {
                 LOG.warn("Error caught while closing Provider: ", e.getMessage());
             } finally {
+                if (transport != null) {
+                    try {
+                        transport.close();
+                    } catch (Exception e) {
+                        LOG.debug("Cuaght exception while closing down Transport: {}", e.getMessage());
+                    }
+                }
+
                 if (serializer != null) {
                     serializer.shutdown();
                 }
@@ -205,7 +204,9 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
                             requestTimeout = connectionInfo.getRequestTimeout();
 
                             Connection protonConnection = engineFactory.createConnection();
+                            protonTransport.setMaxFrameSize(DEFAULT_MAX_FRAME_SIZE);
                             protonTransport.bind(protonConnection);
+                            protonConnection.collect(protonCollector);
                             Sasl sasl = protonTransport.sasl();
                             if (sasl != null) {
                                 sasl.client();
@@ -337,8 +338,11 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
                         producer = session.getProducer(producerId);
                     }
 
-                    producer.send(envelope, request);
+                    boolean couldSend = producer.send(envelope, request);
                     pumpToProtonTransport();
+                    if (couldSend && envelope.isSendAsync()) {
+                        request.onSuccess();
+                    }
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -594,7 +598,7 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
             serializer.execute(new Runnable() {
                 @Override
                 public void run() {
-                    LOG.info("Transport connection remotely closed:");
+                    LOG.debug("Transport connection remotely closed:");
                     if (!closed.get()) {
                         fireProviderException(new IOException("Connection remotely closed."));
                     }
@@ -604,8 +608,45 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
     }
 
     private void processUpdates() {
-        connection.processUpdates();
-        // TODO - Handle exceptions and fire back to the client when they happen.
+        try {
+            Event protonEvent = null;
+            while ((protonEvent = protonCollector.peek()) != null) {
+                LOG.trace("New Proton Event: {}", protonEvent.getType());
+
+                AmqpResource amqpResource = null;
+                switch (protonEvent.getType()) {
+                    case CONNECTION_REMOTE_STATE:
+                        AmqpConnection connection = (AmqpConnection) protonEvent.getConnection().getContext();
+                        connection.processStateChange();
+                        break;
+                    case SESSION_REMOTE_STATE:
+                        AmqpSession session = (AmqpSession) protonEvent.getSession().getContext();
+                        session.processStateChange();
+                        break;
+                    case LINK_REMOTE_STATE:
+                        AmqpResource resource = (AmqpResource) protonEvent.getLink().getContext();
+                        resource.processStateChange();
+                        break;
+                    case LINK_FLOW:
+                        amqpResource = (AmqpResource) protonEvent.getLink().getContext();
+                        amqpResource.processFlowUpdates();
+                        break;
+                    case DELIVERY:
+                        amqpResource = (AmqpResource) protonEvent.getLink().getContext();
+                        amqpResource.processDeliveryUpdates();
+                        break;
+                    default:
+                        break;
+                }
+
+                protonCollector.pop();
+            }
+
+            connection.processUpdates();
+        } catch (Exception ex) {
+            LOG.warn("Caught Exception during update processing: {}", ex.getMessage());
+            fireProviderException(ex);
+        }
     }
 
     private void pumpToProtonTransport() {
