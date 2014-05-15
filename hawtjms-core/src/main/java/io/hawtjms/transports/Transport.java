@@ -33,6 +33,11 @@ public interface Transport {
     void connect() throws IOException;
 
     /**
+     * @return true if transport is connected or false if the connection is down.
+     */
+    boolean isConnected();
+
+    /**
      * Close the Transport, no additional send operations are accepted.
      *
      * @throws IOException if an error occurs while closing the connection.

@@ -93,6 +93,7 @@ public class TcpTransport implements Transport {
                         socket.closeHandler(new Handler<Void>() {
                             @Override
                             public void handle(Void event) {
+                                connected.set(false);
                                 listener.onTransportClosed();
                             }
                         });
@@ -100,6 +101,7 @@ public class TcpTransport implements Transport {
                         socket.exceptionHandler(new Handler<Throwable>() {
                             @Override
                             public void handle(Throwable event) {
+                                connected.set(false);
                                 listener.onTransportError(event);
                             }
                         });
@@ -156,6 +158,11 @@ public class TcpTransport implements Transport {
      */
     protected void configureNetClient(NetClient client) throws IOException {
         // NO-OP for this Transport.
+    }
+
+    @Override
+    public boolean isConnected() {
+        return this.connected.get();
     }
 
     private void checkConnected() throws IOException {
