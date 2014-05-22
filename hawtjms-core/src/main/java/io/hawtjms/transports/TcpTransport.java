@@ -57,7 +57,7 @@ public class TcpTransport implements Transport {
     private int soTimeout = -1;
     private int soLinger = Integer.MIN_VALUE;
     private boolean keepAlive;
-    private boolean tcpNoDelay;
+    private boolean tcpNoDelay = true;
 
     /**
      * Create a new instance of the transport.
