@@ -82,6 +82,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     private final IdGenerator clientIdGenerator;
     private boolean clientIdSet;
+    private boolean sendAcksAsync;
     private ExceptionListener exceptionListener;
     private final List<JmsSession> sessions = new CopyOnWriteArrayList<JmsSession>();
     private final Map<JmsConsumerId, JmsMessageDispatcher> dispatchers =
@@ -120,7 +121,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         executor = new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r, "AmqpJMS Connection Executor: ");
+                Thread thread = new Thread(r, "hawtjms Connection Executor: ");
                 return thread;
             }
         });
@@ -945,6 +946,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     public JmsMessageFactory getMessageFactory() {
         return messageFactory;
+    }
+
+    public boolean isSendAcksAsync() {
+        return sendAcksAsync;
+    }
+
+    public void setSendAcksAsync(boolean sendAcksAsync) {
+        this.sendAcksAsync = sendAcksAsync;
     }
 
     @Override

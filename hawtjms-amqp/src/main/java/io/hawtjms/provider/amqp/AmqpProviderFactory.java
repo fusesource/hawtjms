@@ -20,8 +20,10 @@ import io.hawtjms.provider.AsyncProvider;
 import io.hawtjms.provider.BlockingProvider;
 import io.hawtjms.provider.DefaultBlockingProvider;
 import io.hawtjms.provider.ProviderFactory;
+import io.hawtjms.util.PropertyUtil;
 
 import java.net.URI;
+import java.util.Map;
 
 /**
  * Factory for creating the AMQP provider.
@@ -35,7 +37,24 @@ public class AmqpProviderFactory extends ProviderFactory {
 
     @Override
     public AsyncProvider createAsyncProvider(URI remoteURI) throws Exception {
-        return new AmqpProvider(remoteURI);
+
+        Map<String, String> map = PropertyUtil.parseQuery(remoteURI.getQuery());
+        Map<String, String> providerOptions = PropertyUtil.filterProperties(map, "provider.");
+
+        remoteURI = PropertyUtil.replaceQuery(remoteURI, map);
+
+        AsyncProvider result = new AmqpProvider(remoteURI);
+
+        if (!PropertyUtil.setProperties(result, providerOptions)) {
+            String msg = ""
+                + " Not all provider options could be set on the AMQP Provider."
+                + " Check the options are spelled correctly."
+                + " Given parameters=[" + providerOptions + "]."
+                + " This provider instance cannot be started.";
+            throw new IllegalArgumentException(msg);
+        }
+
+        return result;
     }
 
     @Override

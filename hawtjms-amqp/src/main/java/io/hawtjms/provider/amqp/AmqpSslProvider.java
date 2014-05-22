@@ -17,8 +17,8 @@
 package io.hawtjms.provider.amqp;
 
 import io.hawtjms.jms.JmsSslContext;
-import io.hawtjms.transports.SslTransport;
 import io.hawtjms.transports.Transport;
+import io.hawtjms.transports.SslTransport;
 
 import java.net.URI;
 import java.util.Map;

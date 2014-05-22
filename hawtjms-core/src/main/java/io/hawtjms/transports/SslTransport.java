@@ -49,6 +49,8 @@ public class SslTransport extends TcpTransport {
 
     @Override
     protected void configureNetClient(NetClient client) throws IOException {
+        super.configureNetClient(client);
+
         client.setSSL(true);
         client.setKeyStorePath(context.getKeyStoreLocation());
         client.setKeyStorePassword(context.getKeyStorePassword());

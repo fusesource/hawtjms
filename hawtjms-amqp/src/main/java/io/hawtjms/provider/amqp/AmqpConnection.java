@@ -272,6 +272,20 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         return this.messageFactory;
     }
 
+    /**
+     * @return true if the provider has been configured for presettle operations.
+     */
+    public boolean isPresettleConsumers() {
+        return provider.isPresettleConsumers();
+    }
+
+    /**
+     * @return true if the provider has been configured for presettle operations.
+     */
+    public boolean isPresettleProducers() {
+        return provider.isPresettleProducers();
+    }
+
     @Override
     public String toString() {
         return "AmqpConnection { " + getConnectionInfo().getConnectionId() + " }";

@@ -53,6 +53,12 @@ public class TcpTransport implements Transport {
 
     private NetSocket socket;
 
+    private int socketBufferSize = 64 * 1024;
+    private int soTimeout = -1;
+    private int soLinger = Integer.MIN_VALUE;
+    private boolean keepAlive;
+    private boolean tcpNoDelay;
+
     /**
      * Create a new instance of the transport.
      *
@@ -157,7 +163,11 @@ public class TcpTransport implements Transport {
      * @throws IOException if an error occurs.
      */
     protected void configureNetClient(NetClient client) throws IOException {
-        // NO-OP for this Transport.
+        client.setSendBufferSize(getSocketBufferSize());
+        client.setReceiveBufferSize(getSocketBufferSize());
+        client.setSoLinger(soLinger);
+        client.setTCPKeepAlive(keepAlive);
+        client.setTCPNoDelay(tcpNoDelay);
     }
 
     @Override
@@ -169,5 +179,45 @@ public class TcpTransport implements Transport {
         if (!connected.get()) {
             throw new IOException("Cannot send to a non-connected transport.");
         }
+    }
+
+    public int getSocketBufferSize() {
+        return socketBufferSize;
+    }
+
+    public void setSocketBufferSize(int socketBufferSize) {
+        this.socketBufferSize = socketBufferSize;
+    }
+
+    public int getSoTimeout() {
+        return soTimeout;
+    }
+
+    public void setSoTimeout(int soTimeout) {
+        this.soTimeout = soTimeout;
+    }
+
+    public boolean isTcpNoDelay() {
+        return tcpNoDelay;
+    }
+
+    public void setTcpNoDelay(boolean tcpNoDelay) {
+        this.tcpNoDelay = tcpNoDelay;
+    }
+
+    public int getSoLinger() {
+        return soLinger;
+    }
+
+    public void setSoLinger(int soLinger) {
+        this.soLinger = soLinger;
+    }
+
+    public boolean isKeepAlive() {
+        return keepAlive;
+    }
+
+    public void setKeepAlive(boolean keepAlive) {
+        this.keepAlive = keepAlive;
     }
 }

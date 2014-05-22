@@ -57,6 +57,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String password;
     private boolean forceAsyncSend;
     private boolean alwaysSyncSend;
+    private boolean sendAcksAsync;
     private boolean omitHost;
     private boolean messagePrioritySupported = true;
     private String queuePrefix = "queue://";
@@ -639,5 +640,25 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setAlwaysSyncSend(boolean alwaysSyncSend) {
         this.alwaysSyncSend = alwaysSyncSend;
+    }
+
+    /**
+     * @return true if consumer acknowledgments are sent asynchronously or not.
+     */
+    public boolean isSendAcksAsync() {
+        return sendAcksAsync;
+    }
+
+    /**
+     * Should the message acknowledgments from a consumer be sent synchronously or
+     * asynchronously.  Sending the acknowledgments asynchronously can increase the
+     * performance of a consumer but opens up the possibility of a missed message
+     * acknowledge should the connection be unstable.
+     *
+     * @param sendAcksAsync
+     *        true to have the client send all message acknowledgments asynchronously.
+     */
+    public void setSendAcksAsync(boolean sendAcksAsync) {
+        this.sendAcksAsync = sendAcksAsync;
     }
 }

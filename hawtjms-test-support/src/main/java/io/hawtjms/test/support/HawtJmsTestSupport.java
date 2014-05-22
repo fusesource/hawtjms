@@ -123,6 +123,10 @@ public class HawtJmsTestSupport {
         return createBroker(name, deleteAllMessages, Collections.<String, Integer> emptyMap());
     }
 
+    protected void configureBrokerPolicies(BrokerService broker) {
+
+    }
+
     protected BrokerService createBroker(String name, boolean deleteAllMessages, Map<String, Integer> portMap) throws Exception {
         KahaDBStore kaha = new KahaDBStore();
         kaha.setDirectory(new File(KAHADB_DIRECTORY + "/" + name));
@@ -136,6 +140,8 @@ public class HawtJmsTestSupport {
         brokerService.setDataDirectory("target/" + name);
         brokerService.setPersistenceAdapter(kaha);
         brokerService.setStoreOpenWireVersion(10);
+
+        configureBrokerPolicies(brokerService);
 
         ArrayList<BrokerPlugin> plugins = new ArrayList<BrokerPlugin>();
         BrokerPlugin authenticationPlugin = configureAuthentication();
@@ -421,5 +427,21 @@ public class HawtJmsTestSupport {
         AuthorizationPlugin authorizationPlugin = new AuthorizationPlugin(authorizationMap);
 
         return authorizationPlugin;
+    }
+
+    protected boolean isForceAsyncSends() {
+        return false;
+    }
+
+    protected boolean isAlwaysSyncSend() {
+        return false;
+    }
+
+    protected boolean isMessagePrioritySupported() {
+        return true;
+    }
+
+    protected boolean isSendAcksAsync() {
+        return false;
     }
 }

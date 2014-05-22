@@ -68,6 +68,7 @@ public class AmqpAnonymousProducer extends AmqpProducer {
         // it will trigger the open event which will in turn trigger the send event and
         // when that succeeds it will trigger a close which completes the send chain.
         AmqpFixedProducer producer = new AmqpFixedProducer(session, info);
+        producer.setPresettle(isPresettle());
         AnonymousOpenRequest open = new AnonymousOpenRequest(request, producer, envelope);
         producer.open(open);
 

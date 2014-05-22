@@ -22,6 +22,7 @@ import java.net.URI;
 import java.util.Map;
 
 import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.TransportConnector;
@@ -36,16 +37,16 @@ public class AmqpTestSupport extends HawtJmsTestSupport {
         return false;
     }
 
-    protected boolean isForceAsyncSends() {
-        return false;
-    }
-
-    protected boolean isAlwaysSyncSend() {
-        return false;
-    }
-
     protected String getAmqpTransformer() {
         return "jms";
+    }
+
+    protected int getSocketBufferSize() {
+        return 64 * 1024;
+    }
+
+    protected int getIOBufferSize() {
+        return 8 * 1024;
     }
 
     @Override
@@ -55,7 +56,8 @@ public class AmqpTestSupport extends HawtJmsTestSupport {
             port = portMap.get("amqp");
         }
         TransportConnector connector = brokerService.addConnector(
-            "amqp://0.0.0.0:" + port + "?transport.transformer=" + getAmqpTransformer());
+            "amqp://0.0.0.0:" + port + "?transport.transformer=" + getAmqpTransformer() +
+            "&transport.socketBufferSize=" + getSocketBufferSize() + "&ioBufferSize=" + getIOBufferSize());
         connector.setName("amqp");
         if (isAmqpDiscovery()) {
             connector.setDiscoveryUri(new URI("multicast://default"));
@@ -64,10 +66,20 @@ public class AmqpTestSupport extends HawtJmsTestSupport {
         LOG.debug("Using amqp port: {}", port);
     }
 
+    public String getAmqpConnectionURIOptions() {
+        return "";
+    }
+
     public URI getBrokerAmqpConnectionURI() {
         try {
-            return new URI("amqp://127.0.0.1:" +
-                brokerService.getTransportConnectorByName("amqp").getPublishableConnectURI().getPort());
+            String uri = "amqp://127.0.0.1:" +
+                brokerService.getTransportConnectorByName("amqp").getPublishableConnectURI().getPort();
+
+            if (!getAmqpConnectionURIOptions().isEmpty()) {
+                uri = uri + "?" + getAmqpConnectionURIOptions();
+            }
+
+            return new URI(uri);
         } catch (Exception e) {
             throw new RuntimeException();
         }
@@ -101,15 +113,34 @@ public class AmqpTestSupport extends HawtJmsTestSupport {
     }
 
     public Connection createAmqpConnection(URI brokerURI, String username, String password) throws Exception {
+        ConnectionFactory factory = createAmqpConnectionFactory(brokerURI, username, password);
+        return factory.createConnection();
+    }
+
+    public ConnectionFactory createAmqpConnectionFactory() throws Exception {
+        return createAmqpConnectionFactory(getBrokerAmqpConnectionURI(), null, null);
+    }
+
+    public ConnectionFactory createAmqpConnectionFactory(URI brokerURI) throws Exception {
+        return createAmqpConnectionFactory(brokerURI, null, null);
+    }
+
+    public ConnectionFactory createAmqpConnectionFactory(String username, String password) throws Exception {
+        return createAmqpConnectionFactory(getBrokerAmqpConnectionURI(), username, password);
+    }
+
+    public ConnectionFactory createAmqpConnectionFactory(URI brokerURI, String username, String password) throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
         factory.setForceAsyncSend(isForceAsyncSends());
         factory.setAlwaysSyncSend(isAlwaysSyncSend());
+        factory.setMessagePrioritySupported(isMessagePrioritySupported());
+        factory.setSendAcksAsync(isSendAcksAsync());
         if (username != null) {
             factory.setUsername(username);
         }
         if (password != null) {
             factory.setPassword(password);
         }
-        return factory.createConnection();
+        return factory;
     }
 }

@@ -20,7 +20,6 @@ import io.hawtjms.test.support.AmqpTestSupport;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
@@ -33,39 +32,21 @@ import javax.jms.Topic;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Collect some basic throughput data on message producer.
- */
 @Ignore
-public class MessageProduceBenchTest extends AmqpTestSupport {
+public class ProduceToOpenWireTest extends AmqpTestSupport {
+
+    protected static final Logger LOG = LoggerFactory.getLogger(ProduceToOpenWireTest.class);
 
     private final int MSG_COUNT = 50 * 1000;
-    private final int NUM_RUNS = 20;
-
-    @Override
-    protected boolean isForceAsyncSends() {
-        return true;
-    }
-
-    @Override
-    protected boolean isAlwaysSyncSend() {
-        return false;
-    }
-
-    @Override
-    protected String getAmqpTransformer() {
-        return "raw";
-    }
-
-    @Override
-    public String getAmqpConnectionURIOptions() {
-        return "provider.presettle=true";
-    }
+    private final int NUM_RUNS = 40;
 
     @Test
     public void singleSendProfile() throws Exception {
-        connection = createAmqpConnection();
+        connection = createActiveMQConnection();
+
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Topic topic = session.createTopic(getDestinationName());
         MessageProducer producer = session.createProducer(topic);
@@ -74,13 +55,12 @@ public class MessageProduceBenchTest extends AmqpTestSupport {
         TextMessage message = session.createTextMessage();
         message.setText("hello");
         producer.send(message);
-        producer.close();
     }
 
     @Test
     public void testProduceRateToTopic() throws Exception {
 
-        connection = createAmqpConnection();
+        connection = createActiveMQConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Topic topic = session.createTopic(getDestinationName());
 
@@ -99,13 +79,12 @@ public class MessageProduceBenchTest extends AmqpTestSupport {
 
         long smoothed = cumulative / NUM_RUNS;
         LOG.info("Smoothed send time for {} messages: {}", MSG_COUNT, smoothed);
-        TimeUnit.SECONDS.sleep(1);
     }
 
     @Test
     public void testProduceRateToQueue() throws Exception {
 
-        connection = createAmqpConnection();
+        connection = createActiveMQConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(getDestinationName());
 
@@ -128,7 +107,6 @@ public class MessageProduceBenchTest extends AmqpTestSupport {
 
         long smoothed = cumulative / NUM_RUNS;
         LOG.info("Smoothed send time for {} messages: {}", MSG_COUNT, smoothed);
-        TimeUnit.SECONDS.sleep(1);
     }
 
     protected long produceMessages(Destination destination, int msgCount) throws Exception {
@@ -143,6 +121,7 @@ public class MessageProduceBenchTest extends AmqpTestSupport {
         for (int i = 0; i < msgCount; ++i) {
             producer.send(message);
         }
+
         long result = (System.currentTimeMillis() - startTime);
 
         producer.close();

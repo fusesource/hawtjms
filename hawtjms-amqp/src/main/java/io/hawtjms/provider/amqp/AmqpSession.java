@@ -69,6 +69,7 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
 
     @Override
     protected void doOpen() {
+        this.endpoint.setIncomingCapacity(Integer.MAX_VALUE);
         this.connection.addSession(this);
     }
 
@@ -98,16 +99,22 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     }
 
     public AmqpProducer createProducer(JmsProducerInfo producerInfo) {
+        AmqpProducer producer = null;
+
         // TODO - There seems to be an issue with Proton not allowing links with a Target
         //        that has no address.  Otherwise we could just ensure that messages sent
         //        to these anonymous targets have their 'to' value set to the destination.
         if (producerInfo.getDestination() != null) {
             LOG.debug("Creating fixed Producer for: {}", producerInfo.getDestination());
-            return new AmqpFixedProducer(this, producerInfo);
+            producer = new AmqpFixedProducer(this, producerInfo);
         } else {
             LOG.debug("Creating an Anonymous Producer: ");
-            return new AmqpAnonymousProducer(this, producerInfo);
+            producer = new AmqpAnonymousProducer(this, producerInfo);
         }
+
+        producer.setPresettle(connection.isPresettleProducers());
+
+        return producer;
     }
 
     public AmqpProducer getProducer(JmsProducerInfo producerInfo) {
@@ -123,11 +130,14 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
 
     public AmqpConsumer createConsumer(JmsConsumerInfo consumerInfo) {
         AmqpConsumer result = null;
+
         if (consumerInfo.isBrowser()) {
             result = new AmqpQueueBrowser(this, consumerInfo);
         } else {
             result = new AmqpConsumer(this, consumerInfo);
         }
+
+        result.setPresettle(connection.isPresettleConsumers());
         return result;
     }
 
@@ -262,6 +272,10 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
 
     boolean isTransacted() {
         return this.info.isTransacted();
+    }
+
+    boolean isAsyncAck() {
+        return this.info.isSendAcksAsync() || isTransacted();
     }
 
     @Override

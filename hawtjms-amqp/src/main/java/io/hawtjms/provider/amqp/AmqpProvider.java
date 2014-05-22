@@ -21,17 +21,30 @@ import io.hawtjms.jms.message.JmsDefaultMessageFactory;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.message.JmsMessageFactory;
 import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
-import io.hawtjms.jms.meta.*;
+import io.hawtjms.jms.meta.JmsConnectionInfo;
+import io.hawtjms.jms.meta.JmsConsumerId;
+import io.hawtjms.jms.meta.JmsConsumerInfo;
+import io.hawtjms.jms.meta.JmsDefaultResourceVisitor;
+import io.hawtjms.jms.meta.JmsProducerId;
+import io.hawtjms.jms.meta.JmsProducerInfo;
+import io.hawtjms.jms.meta.JmsResource;
+import io.hawtjms.jms.meta.JmsResourceVistor;
+import io.hawtjms.jms.meta.JmsSessionId;
+import io.hawtjms.jms.meta.JmsSessionInfo;
+import io.hawtjms.jms.meta.JmsTransactionInfo;
 import io.hawtjms.provider.AbstractAsyncProvider;
 import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
 import io.hawtjms.provider.ProviderRequest;
 import io.hawtjms.transports.TcpTransport;
 import io.hawtjms.transports.TransportListener;
+import io.hawtjms.util.IOExceptionSupport;
+import io.hawtjms.util.PropertyUtil;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -76,6 +89,8 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
     private io.hawtjms.transports.Transport transport;
     private boolean traceFrames;
     private boolean traceBytes;
+    private boolean presettleConsumers;
+    private boolean presettleProducers;
     private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
@@ -112,6 +127,24 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
         checkClosed();
 
         transport = createTransport(getRemoteURI());
+
+        Map<String, String> map = Collections.emptyMap();
+        try {
+            map = PropertyUtil.parseQuery(remoteURI.getQuery());
+        } catch (Exception e) {
+            IOExceptionSupport.create(e);
+        }
+        Map<String, String> providerOptions = PropertyUtil.filterProperties(map, "transport.");
+
+        if (!PropertyUtil.setProperties(transport, providerOptions)) {
+            String msg = ""
+                + " Not all transport options could be set on the AMQP Provider transport."
+                + " Check the options are spelled correctly."
+                + " Given parameters=[" + providerOptions + "]."
+                + " This provider instance cannot be started.";
+            throw new IOException(msg);
+        }
+
         transport.connect();
     }
 
@@ -124,6 +157,7 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
                 @Override
                 public void run() {
                     try {
+
                         // If we are not connected then there is nothing we can do now
                         // just signal success.
                         if (!transport.isConnected()) {
@@ -204,7 +238,7 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
                             requestTimeout = connectionInfo.getRequestTimeout();
 
                             Connection protonConnection = engineFactory.createConnection();
-                            protonTransport.setMaxFrameSize(DEFAULT_MAX_FRAME_SIZE);
+                            protonTransport.setMaxFrameSize(getMaxFrameSize());
                             protonTransport.bind(protonConnection);
                             protonConnection.collect(protonCollector);
                             Sasl sasl = protonTransport.sasl();
@@ -392,8 +426,13 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
 
                     consumer.acknowledge(envelope, ackType);
 
-                    pumpToProtonTransport();
-                    request.onSuccess();
+                    if (consumer.getSession().isAsyncAck()) {
+                        request.onSuccess();
+                        pumpToProtonTransport();
+                    } else {
+                        pumpToProtonTransport();
+                        request.onSuccess();
+                    }
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -723,6 +762,34 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
 
     public void setSendTimeout(long sendTimeout) {
         this.sendTimeout = sendTimeout;
+    }
+
+    public void setPresettle(boolean presettle) {
+        setPresettleConsumers(presettle);
+        setPresettleProducers(presettle);
+    }
+
+    public boolean isPresettleConsumers() {
+        return this.presettleConsumers;
+    }
+
+    public void setPresettleConsumers(boolean presettle) {
+        this.presettleConsumers = presettle;
+    }
+
+    public boolean isPresettleProducers() {
+        return this.presettleProducers;
+    }
+
+    public void setPresettleProducers(boolean presettle) {
+        this.presettleProducers = presettle;
+    }
+
+    /**
+     * @return the currently set Max Frame Size value.
+     */
+    public int getMaxFrameSize() {
+        return DEFAULT_MAX_FRAME_SIZE;
     }
 
     @Override

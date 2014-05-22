@@ -109,6 +109,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
         this.sessionInfo = new JmsSessionInfo(sessionId);
         this.sessionInfo.setAcknowledgementMode(acknowledgementMode);
+        this.sessionInfo.setSendAcksAsync(connection.isSendAcksAsync());
 
         this.sessionInfo = connection.createResource(sessionInfo);
         this.messageFactory = connection.getMessageFactory();

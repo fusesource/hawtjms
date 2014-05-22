@@ -56,6 +56,7 @@ import org.slf4j.LoggerFactory;
 public class AmqpFixedProducer extends AmqpProducer {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpFixedProducer.class);
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[] {};
 
     private final AmqpTransferTagGenerator tagGenerator = new AmqpTransferTagGenerator(true);
     private final Set<Delivery> pending = new LinkedHashSet<Delivery>();
@@ -63,6 +64,7 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     private final OutboundTransformer outboundTransformer = new AutoOutboundTransformer(AmqpJMSVendor.INSTANCE);
     private final String MESSAGE_FORMAT_KEY = outboundTransformer.getPrefixVendor() + "MESSAGE_FORMAT";
+    private boolean presettle = false;
 
     public AmqpFixedProducer(AmqpSession session, JmsProducerInfo info) {
         super(session, info);
@@ -91,15 +93,20 @@ public class AmqpFixedProducer extends AmqpProducer {
         LOG.trace("Producer sending message: {}", envelope.getMessage().getFacade().getMessageId());
 
         byte[] tag = tagGenerator.getNextTag();
-        Delivery delivery = endpoint.delivery(tag);
-        if (!envelope.isSendAsync()) {
-            delivery.setContext(request);
+        Delivery delivery = null;
+
+        if (presettle) {
+            delivery = endpoint.delivery(EMPTY_BYTE_ARRAY);
+        } else {
+            delivery = endpoint.delivery(tag);
         }
+
+        delivery.setContext(request);
+
         if (session.isTransacted()) {
             Binary amqpTxId = session.getTransactionContext().getAmqpTransactionId();
             TransactionalState state = new TransactionalState();
             state.setTxnId(amqpTxId);
-            state.setOutcome(Accepted.getInstance());
             delivery.disposition(state);
         }
 
@@ -128,9 +135,17 @@ public class AmqpFixedProducer extends AmqpProducer {
             if (sent > 0) {
                 sendBuffer.moveHead(sent);
                 if (sendBuffer.length == 0) {
+                    if (presettle) {
+                        delivery.settle();
+                    } else {
+                        pending.add(delivery);
+                    }
                     endpoint.advance();
-                    pending.add(delivery);
                     sendBuffer = null;
+
+                    if (envelope.isSendAsync() || presettle) {
+                        request.onSuccess();
+                    }
                 }
             } else {
                 LOG.warn("{} failed to send any data from current Message.", this);
@@ -166,18 +181,19 @@ public class AmqpFixedProducer extends AmqpProducer {
                 LOG.info("State of delivery is Transacted: {}", state);
             } else if (state instanceof Accepted) {
                 toRemove.add(delivery);
+                LOG.trace("State of delivery accepted: {}", delivery);
                 tagGenerator.returnTag(delivery.getTag());
-                if (request != null) {
+                if (request != null && !request.isComplete()) {
                     request.onSuccess();
                 }
             } else if (state instanceof Rejected) {
                 Exception remoteError = getRemoteError();
                 toRemove.add(delivery);
                 tagGenerator.returnTag(delivery.getTag());
-                if (request != null) {
+                if (request != null && !request.isComplete()) {
                     request.onFailure(remoteError);
                 } else {
-                    // TODO - Fire Error to provider listener indicating an error.
+                    connection.getProvider().fireProviderException(remoteError);
                 }
             } else {
                 LOG.warn("Message send updated with unsupported state: {}", state);
@@ -202,7 +218,11 @@ public class AmqpFixedProducer extends AmqpProducer {
         endpoint = session.getProtonSession().sender(senderName);
         endpoint.setSource(source);
         endpoint.setTarget(target);
-        endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+        if (presettle) {
+            endpoint.setSenderSettleMode(SenderSettleMode.SETTLED);
+        } else {
+            endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+        }
         endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
     }
 
@@ -221,6 +241,14 @@ public class AmqpFixedProducer extends AmqpProducer {
     @Override
     public boolean isAnonymous() {
         return false;
+    }
+
+    public void setPresettle(boolean presettle) {
+        this.presettle = presettle;
+    }
+
+    public boolean isPresettle() {
+        return this.presettle;
     }
 
     @Override

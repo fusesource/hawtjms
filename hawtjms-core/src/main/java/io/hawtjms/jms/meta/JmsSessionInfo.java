@@ -22,6 +22,7 @@ public final class JmsSessionInfo implements JmsResource {
 
     private final JmsSessionId sessionId;
     private int acknowledgementMode;
+    private boolean sendAcksAsync;
 
     public JmsSessionInfo(JmsConnectionInfo connectionMeta, long sessionId) {
         this.sessionId = new JmsSessionId(connectionMeta.getConnectionId(), sessionId);
@@ -50,5 +51,13 @@ public final class JmsSessionInfo implements JmsResource {
 
     public boolean isTransacted() {
         return this.acknowledgementMode == Session.SESSION_TRANSACTED;
+    }
+
+    public boolean isSendAcksAsync() {
+        return sendAcksAsync;
+    }
+
+    public void setSendAcksAsync(boolean sendAcksAsync) {
+        this.sendAcksAsync = sendAcksAsync;
     }
 }

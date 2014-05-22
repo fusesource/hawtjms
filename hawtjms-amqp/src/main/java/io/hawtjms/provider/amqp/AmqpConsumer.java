@@ -70,6 +70,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     protected final InboundTransformer inboundTransformer =
         new JMSMappingInboundTransformer(AmqpJMSVendor.INSTANCE);;
     protected final Map<JmsMessageId, Delivery> delivered = new LinkedHashMap<JmsMessageId, Delivery>();
+    protected boolean presettle;
 
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
         super(info);
@@ -108,7 +109,11 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         endpoint = session.getProtonSession().receiver(receiverName);
         endpoint.setSource(source);
         endpoint.setTarget(target);
-        endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+        if (isPresettle()) {
+            endpoint.setSenderSettleMode(SenderSettleMode.SETTLED);
+        } else {
+            endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+        }
         endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
     }
 
@@ -204,20 +209,18 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
                 }
             }
             delivered.put(messageId, delivery);
-            if (info.getPrefetchSize() > 0) {
-                endpoint.flow(1);
-            }
+            sendFlowIfNeeded();
         } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
             // A Consumer may not always send a delivered ACK so we need to check to
             // ensure we don't add to much credit to the link.
             if (delivered.remove(messageId) == null) {
-                if (info.getPrefetchSize() > 0) {
-                    endpoint.flow(1);
-                }
+                sendFlowIfNeeded();
             }
             LOG.debug("Consumed Ack of message: {}", messageId);
-            delivery.disposition(Accepted.getInstance());
-            delivery.settle();
+            if (!delivery.remotelySettled()) {
+                delivery.disposition(Accepted.getInstance());
+                delivery.settle();
+            }
         } else if (ackType.equals(ACK_TYPE.REDELIVERED)) {
             Modified disposition = new Modified();
             disposition.setUndeliverableHere(false);
@@ -228,6 +231,21 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             deliveryFailed(delivery, false);
         } else {
             LOG.warn("Unsupporeted Ack Type for message: {}", messageId);
+        }
+    }
+
+    /**
+     * We only send more credits as the credit window dwindles to a certain point and
+     * then we open the window back up to full prefetch size.
+     */
+    private void sendFlowIfNeeded() {
+        if (info.getPrefetchSize() == 0) {
+            return;
+        }
+
+        int currentCredit = endpoint.getCredit();
+        if (currentCredit <= info.getPrefetchSize() * 0.2) {
+            endpoint.flow(info.getPrefetchSize() - currentCredit);
         }
     }
 
@@ -329,6 +347,14 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     public boolean isBrowser() {
         return false;
+    }
+
+    public boolean isPresettle() {
+        return presettle;
+    }
+
+    public void setPresettle(boolean presettle) {
+        this.presettle = presettle;
     }
 
     @Override

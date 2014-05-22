@@ -32,6 +32,7 @@ public abstract class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo,
 
     protected final AmqpSession session;
     protected final AmqpConnection connection;
+    protected boolean presettle;
 
     public AmqpProducer(AmqpSession session, JmsProducerInfo info) {
         super(info);
@@ -67,5 +68,24 @@ public abstract class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo,
      */
     public JmsProducerId getProducerId() {
         return this.info.getProducerId();
+    }
+
+    /**
+     * @return true if the producer should presettle all sent messages.
+     */
+    public boolean isPresettle() {
+        return presettle;
+    }
+
+    /**
+     * Sets whether the producer will presettle all messages that it sends.  Sending
+     * presettled reduces the time it takes to send a message but increases the change
+     * of message loss should the connection drop during send.
+     *
+     * @param presettle
+     *        true if all messages are sent settled.
+     */
+    public void setPresettle(boolean presettle) {
+        this.presettle = presettle;
     }
 }
