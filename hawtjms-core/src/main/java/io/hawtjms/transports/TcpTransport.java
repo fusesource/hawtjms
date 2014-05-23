@@ -150,10 +150,15 @@ public class TcpTransport implements Transport {
     @Override
     public void send(ByteBuffer output) throws IOException {
         checkConnected();
-        Buffer sendBuffer = new Buffer(output.remaining());
-        while (output.hasRemaining()) {
-            sendBuffer.appendByte(output.get());
+        int length = output.remaining();
+        if (length == 0) {
+            return;
         }
+
+        byte[] copy = new byte[length];
+        output.get(copy);
+        Buffer sendBuffer = new Buffer(copy);
+
         vertx.eventBus().send(socket.writeHandlerID(), sendBuffer);
     }
 
