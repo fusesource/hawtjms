@@ -30,7 +30,11 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
+import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
+import org.apache.activemq.broker.region.policy.PolicyEntry;
+import org.apache.activemq.broker.region.policy.PolicyMap;
+import org.apache.activemq.broker.region.policy.VMPendingQueueMessageStoragePolicy;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -38,7 +42,7 @@ import org.junit.Test;
  * Collect some basic throughput data on message producer.
  */
 @Ignore
-public class MessageProduceBenchTest extends AmqpTestSupport {
+public class ProduceToAMQPTest extends AmqpTestSupport {
 
     private final int MSG_COUNT = 50 * 1000;
     private final int NUM_RUNS = 20;
@@ -147,5 +151,20 @@ public class MessageProduceBenchTest extends AmqpTestSupport {
 
         producer.close();
         return result;
+    }
+
+    @Override
+    protected void configureBrokerPolicies(BrokerService broker) {
+        PolicyEntry policyEntry = new PolicyEntry();
+        policyEntry.setPendingQueuePolicy(new VMPendingQueueMessageStoragePolicy());
+        policyEntry.setPrioritizedMessages(false);
+        policyEntry.setExpireMessagesPeriod(0);
+        policyEntry.setEnableAudit(false);
+        policyEntry.setOptimizedDispatch(true);
+        policyEntry.setQueuePrefetch(100);
+
+        PolicyMap policyMap = new PolicyMap();
+        policyMap.setDefaultEntry(policyEntry);
+        broker.setDestinationPolicy(policyMap);
     }
 }

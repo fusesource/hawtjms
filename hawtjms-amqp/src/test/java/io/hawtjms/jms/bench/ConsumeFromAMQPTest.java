@@ -36,7 +36,11 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
+import org.apache.activemq.broker.region.policy.PolicyEntry;
+import org.apache.activemq.broker.region.policy.PolicyMap;
+import org.apache.activemq.broker.region.policy.VMPendingQueueMessageStoragePolicy;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -76,7 +80,7 @@ public class ConsumeFromAMQPTest extends AmqpTestSupport {
 
     @Override
     public String getAmqpConnectionURIOptions() {
-        return "provider.presettleProducers=true&presettleConsumers=false";
+        return "provider.presettleProducers=true&presettleConsumers=true";
     }
 
     @Test
@@ -113,8 +117,9 @@ public class ConsumeFromAMQPTest extends AmqpTestSupport {
 
         // Warm Up the broker.
         produceMessages(queue, MSG_COUNT);
-
+        consumerMessages(queue, MSG_COUNT);
         QueueViewMBean queueView = getProxyToQueue(getDestinationName());
+        queueView.purge();
 
         List<Long> sendTimes = new ArrayList<Long>();
         long cumulative = 0;
@@ -142,6 +147,7 @@ public class ConsumeFromAMQPTest extends AmqpTestSupport {
 
         // Warm Up the broker.
         produceMessages(queue, MSG_COUNT);
+        consumerMessagesAsync(queue, MSG_COUNT);
 
         QueueViewMBean queueView = getProxyToQueue(getDestinationName());
 
@@ -199,7 +205,7 @@ public class ConsumeFromAMQPTest extends AmqpTestSupport {
     protected void produceMessages(Destination destination, int msgCount) throws Exception {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         MessageProducer producer = session.createProducer(destination);
-        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+        producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
 
         TextMessage message = session.createTextMessage();
         message.setText("hello");
@@ -209,5 +215,20 @@ public class ConsumeFromAMQPTest extends AmqpTestSupport {
         }
 
         producer.close();
+    }
+
+    @Override
+    protected void configureBrokerPolicies(BrokerService broker) {
+        PolicyEntry policyEntry = new PolicyEntry();
+        policyEntry.setPendingQueuePolicy(new VMPendingQueueMessageStoragePolicy());
+        policyEntry.setPrioritizedMessages(false);
+        policyEntry.setExpireMessagesPeriod(0);
+        policyEntry.setEnableAudit(false);
+        policyEntry.setOptimizedDispatch(false);
+        policyEntry.setQueuePrefetch(1000);
+
+        PolicyMap policyMap = new PolicyMap();
+        policyMap.setDefaultEntry(policyEntry);
+        broker.setDestinationPolicy(policyMap);
     }
 }
