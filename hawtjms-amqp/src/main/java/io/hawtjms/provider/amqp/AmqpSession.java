@@ -32,7 +32,6 @@ import java.util.Map;
 import javax.jms.IllegalStateException;
 
 import org.apache.qpid.proton.engine.Session;
-import org.apache.qpid.proton.message.MessageFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -265,11 +264,6 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     public Session getProtonSession() {
         return this.endpoint;
     }
-
-    public MessageFactory getMessageFactory() {
-        return this.connection.getMessageFactory();
-    }
-
     boolean isTransacted() {
         return this.info.isTransacted();
     }

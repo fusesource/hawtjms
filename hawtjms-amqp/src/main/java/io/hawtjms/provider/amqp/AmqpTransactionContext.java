@@ -147,7 +147,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
             throw new IOException("Begin called while a TX is still Active.");
         }
 
-        Message message = session.getMessageFactory().createMessage();
+        Message message = Message.Factory.create();
         Declare declare = new Declare();
         message.setBody(new AmqpValue(declare));
 
@@ -165,7 +165,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
 
         preCommit();
 
-        Message message = session.getMessageFactory().createMessage();
+        Message message = Message.Factory.create();
         Discharge discharge = new Discharge();
         discharge.setFail(false);
         discharge.setTxnId((Binary) current.getProviderHint());
@@ -185,7 +185,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
 
         preRollback();
 
-        Message message = session.getMessageFactory().createMessage();
+        Message message = Message.Factory.create();
         Discharge discharge = new Discharge();
         discharge.setFail(true);
         discharge.setTxnId((Binary) current.getProviderHint());
