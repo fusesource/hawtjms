@@ -31,7 +31,6 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -157,7 +156,6 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         return builder.toString();
     }
 
-    @Ignore
     @Test(timeout = 60 * 1000)
     public void testSendLargeMessage() throws Exception {
         connection = createAmqpConnection();

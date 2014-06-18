@@ -96,9 +96,9 @@ public class AmqpFixedProducer extends AmqpProducer {
         Delivery delivery = null;
 
         if (presettle) {
-            delivery = endpoint.delivery(EMPTY_BYTE_ARRAY);
+            delivery = endpoint.delivery(EMPTY_BYTE_ARRAY, 0, 0);
         } else {
-            delivery = endpoint.delivery(tag);
+            delivery = endpoint.delivery(tag, 0, tag.length);
         }
 
         delivery.setContext(request);
@@ -139,8 +139,8 @@ public class AmqpFixedProducer extends AmqpProducer {
                         delivery.settle();
                     } else {
                         pending.add(delivery);
+                        endpoint.advance();
                     }
-                    endpoint.advance();
                     sendBuffer = null;
 
                     if (envelope.isSendAsync() || presettle) {
@@ -177,9 +177,7 @@ public class AmqpFixedProducer extends AmqpProducer {
             @SuppressWarnings("unchecked")
             AsyncResult<Void> request = (AsyncResult<Void>) delivery.getContext();
 
-            if (state instanceof TransactionalState) {
-                LOG.info("State of delivery is Transacted: {}", state);
-            } else if (state instanceof Accepted) {
+            if (state instanceof Accepted) {
                 toRemove.add(delivery);
                 LOG.trace("State of delivery accepted: {}", delivery);
                 tagGenerator.returnTag(delivery.getTag());
@@ -195,6 +193,8 @@ public class AmqpFixedProducer extends AmqpProducer {
                 } else {
                     connection.getProvider().fireProviderException(remoteError);
                 }
+            } else if (state instanceof TransactionalState) {
+                LOG.info("State of delivery is Transacted: {}", state);
             } else {
                 LOG.warn("Message send updated with unsupported state: {}", state);
             }
@@ -243,10 +243,12 @@ public class AmqpFixedProducer extends AmqpProducer {
         return false;
     }
 
+    @Override
     public void setPresettle(boolean presettle) {
         this.presettle = presettle;
     }
 
+    @Override
     public boolean isPresettle() {
         return this.presettle;
     }

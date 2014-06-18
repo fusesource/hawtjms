@@ -21,17 +21,7 @@ import io.hawtjms.jms.message.JmsDefaultMessageFactory;
 import io.hawtjms.jms.message.JmsInboundMessageDispatch;
 import io.hawtjms.jms.message.JmsMessageFactory;
 import io.hawtjms.jms.message.JmsOutboundMessageDispatch;
-import io.hawtjms.jms.meta.JmsConnectionInfo;
-import io.hawtjms.jms.meta.JmsConsumerId;
-import io.hawtjms.jms.meta.JmsConsumerInfo;
-import io.hawtjms.jms.meta.JmsDefaultResourceVisitor;
-import io.hawtjms.jms.meta.JmsProducerId;
-import io.hawtjms.jms.meta.JmsProducerInfo;
-import io.hawtjms.jms.meta.JmsResource;
-import io.hawtjms.jms.meta.JmsResourceVistor;
-import io.hawtjms.jms.meta.JmsSessionId;
-import io.hawtjms.jms.meta.JmsSessionInfo;
-import io.hawtjms.jms.meta.JmsTransactionInfo;
+import io.hawtjms.jms.meta.*;
 import io.hawtjms.provider.AbstractAsyncProvider;
 import io.hawtjms.provider.AsyncResult;
 import io.hawtjms.provider.ProviderConstants.ACK_TYPE;
@@ -54,6 +44,7 @@ import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EngineFactory;
 import org.apache.qpid.proton.engine.Event;
+import org.apache.qpid.proton.engine.Event.Type;
 import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Transport;
 import org.apache.qpid.proton.engine.impl.CollectorImpl;
@@ -650,7 +641,9 @@ public class AmqpProvider extends AbstractAsyncProvider implements TransportList
         try {
             Event protonEvent = null;
             while ((protonEvent = protonCollector.peek()) != null) {
-                LOG.trace("New Proton Event: {}", protonEvent.getType());
+                if (!protonEvent.getType().equals(Type.TRANSPORT)) {
+                    LOG.trace("New Proton Event: {}", protonEvent.getType());
+                }
 
                 AmqpResource amqpResource = null;
                 switch (protonEvent.getType()) {

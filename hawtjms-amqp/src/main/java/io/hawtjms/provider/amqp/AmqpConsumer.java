@@ -72,6 +72,9 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     protected final Map<JmsMessageId, Delivery> delivered = new LinkedHashMap<JmsMessageId, Delivery>();
     protected boolean presettle;
 
+    private final ByteArrayOutputStream streamBuffer = new ByteArrayOutputStream();
+    private final byte incomingBuffer[] = new byte[1024 * 64];
+
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
         super(info);
         this.session = session;
@@ -208,16 +211,18 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
                     session.getTransactionContext().registerTxConsumer(this);
                 }
             }
-            delivered.put(messageId, delivery);
+            if (!isPresettle()) {
+                delivered.put(messageId, delivery);
+            }
             sendFlowIfNeeded();
         } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
             // A Consumer may not always send a delivered ACK so we need to check to
             // ensure we don't add to much credit to the link.
-            if (delivered.remove(messageId) == null) {
+            if (isPresettle() || delivered.remove(messageId) == null) {
                 sendFlowIfNeeded();
             }
             LOG.debug("Consumed Ack of message: {}", messageId);
-            if (!delivery.remotelySettled()) {
+            if (!delivery.isSettled()) {
                 delivery.disposition(Accepted.getInstance());
                 delivery.settle();
             }
@@ -285,10 +290,11 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             if (incoming != null && incoming.isReadable() && !incoming.isPartial()) {
                 LOG.trace("{} has incoming Message(s).", this);
                 processDelivery(incoming);
+                endpoint.advance();
             } else {
+                LOG.trace("{} has a partial incoming Message(s), deferring.", this);
                 incoming = null;
             }
-            endpoint.advance();
         } while (incoming != null);
     }
 
@@ -388,25 +394,20 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     }
 
     protected EncodedMessage readIncomingMessage(Delivery incoming) {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Buffer buffer;
+        int count;
 
-        try {
-            int count;
-            byte data[] = new byte[1024 * 4];
-            while ((count = endpoint.recv(data, 0, data.length)) > 0) {
-                stream.write(data, 0, count);
-            }
-
-            buffer = stream.toBuffer();
-        } finally {
-            try {
-                stream.close();
-            } catch (IOException e) {
-            }
+        while ((count = endpoint.recv(incomingBuffer, 0, incomingBuffer.length)) > 0) {
+            streamBuffer.write(incomingBuffer, 0, count);
         }
 
-        return new EncodedMessage(incoming.getMessageFormat(), buffer.data, buffer.offset, buffer.length);
+        buffer = streamBuffer.toBuffer();
+
+        try {
+            return new EncodedMessage(incoming.getMessageFormat(), buffer.data, buffer.offset, buffer.length);
+        } finally {
+            streamBuffer.reset();
+        }
     }
 
     public void preCommit() {
