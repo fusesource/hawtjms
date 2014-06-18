@@ -47,7 +47,7 @@
     <junit-version>4.11</junit-version>
     <slf4j-version>1.7.6</slf4j-version>
     <hawtbuf-version>1.10</hawtbuf-version>
-    <activemq-version>5.10-SNAPSHOT</activemq-version>
+    <activemq-version>5.10</activemq-version>
     <apollo-version>1.7</apollo-version>
     <proton-version>0.7</proton-version>
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
