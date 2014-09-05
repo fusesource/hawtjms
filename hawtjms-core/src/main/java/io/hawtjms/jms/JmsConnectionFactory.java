@@ -239,6 +239,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             connection.setExceptionListener(exceptionListener);
             connection.setUsername(username);
             connection.setPassword(password);
+            connection.setBrokerURI(brokerURI);
             return connection;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
