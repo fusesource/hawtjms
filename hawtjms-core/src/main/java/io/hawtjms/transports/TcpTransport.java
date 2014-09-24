@@ -31,8 +31,8 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.impl.DefaultVertxFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 
@@ -43,8 +43,8 @@ public class TcpTransport implements Transport {
 
     private static final Logger LOG = LoggerFactory.getLogger(TcpTransport.class);
 
-    private final Vertx vertx = VertxFactory.newVertx();
-    private final NetClient client = vertx.createNetClient();
+    private final Vertx vertx;
+    private final NetClient client;
     private final TransportListener listener;
     private final URI remoteLocation;
     private final AtomicBoolean connected = new AtomicBoolean();
@@ -70,6 +70,9 @@ public class TcpTransport implements Transport {
     public TcpTransport(TransportListener listener, URI remoteLocation) {
         this.listener = listener;
         this.remoteLocation = remoteLocation;
+
+        this.vertx = new DefaultVertxFactory().createVertx();
+        this.client = vertx.createNetClient();
     }
 
     @Override
