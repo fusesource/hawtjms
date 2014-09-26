@@ -49,7 +49,7 @@
     <hawtbuf-version>1.10</hawtbuf-version>
     <activemq-version>5.10.0</activemq-version>
     <apollo-version>1.7</apollo-version>
-    <proton-version>0.7</proton-version>
+    <proton-version>1.0-SNAPSHOT</proton-version>
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
     <jetty-version>8.1.14.v20131031</jetty-version>
     <vertex-version>2.0.2-final</vertex-version>
